@@ -237,6 +237,13 @@ section {
   align-items: center;
 }
 
+.horizontal-line {
+  border: none;                /* Clear default styling */
+  border-top: 2px solid #333;  /* Define thickness, style, and color */
+  width: 100%;                 /* Control the width */
+  margin: 2px auto;           /* Give it spacing top/bottom and center it */
+}
+
 
 .movementnotes {
     grid-area: moveinfo;
