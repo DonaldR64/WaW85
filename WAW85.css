@@ -15,7 +15,7 @@
 
 .mysheet {
     width: 830px;
-    height: 830px;
+    height: 630px;
 }
 .attributes {
     padding: 15px 0px 0px 15px;
@@ -45,15 +45,16 @@ input[type="hidden"][name="attr_nation"][value="UK"] ~ .mysheet {
 main {
   display: grid;
   width: 800px;
-  height: 800px;
+  height: 600px;
   grid-gap: 4px;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
-  grid-template-areas:"flag     header    header   flag2"
-                      "common   common    common   armour"
-                      "common   common    common   special"
-                      "movement movement  movement assault"
-                      "weapon   weapon    weapon   weapon";
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-areas:"flag     header    header   header flag2"
+                      "common   common    common   armour armour"
+                      "common   common    common   special special"
+                      "move1    move1     move2    move2  assault"
+                      "weapon   weapon    weapon   weapon weapon"
+                      "weapon   weapon    weapon   weapon weapon";
 }
 
 
@@ -161,11 +162,12 @@ section {
   grid-area: common;
   background-color: white;
 }
-
 .common > img {
-  object-fit: contain;
-  width: 100%;
-  max-height: 100%;
+    object-fit: contain;
+    width: 100%;
+    max-height: 100%;
+    align-self: center;
+    justify-self: center;
 }
 
 
@@ -225,11 +227,18 @@ section {
     display: none;
 }
 
-.movement {
-  grid-area: movement;
+.move1 {
+  grid-area: move1;
   background-color:  white;
   align-items: center;
 }
+
+.move2 {
+  grid-area: move2;
+  background-color:  white;
+  align-items: center;
+}
+
 
 .movementnotes {
     grid-area: moveinfo;
