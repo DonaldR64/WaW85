@@ -50,9 +50,9 @@ main {
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
   grid-template-areas:"common   common    common   header header"
+                      "common   common    common   special special"
                       "common   common    common   move move"
-                      "common   common    common   move move"
-                      "assault  flag      armour    special   special"
+                      "assault  flag      armour   move move"
                       "weapon   weapon    weapon   weapon weapon"
                       "weapon   weapon    weapon   weapon weapon";
 }
