@@ -49,13 +49,16 @@ main {
   grid-gap: 4px;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
-  grid-template-areas:"flag     header    header   armour   assault"
-                      "common   common    common   special  special"
-                      "common   common    common   move     move"
-                      "common   common    common   move     move"
-                      "weapon   weapon    weapon   weapon   weapon"
-                      "weapon   weapon    weapon   weapon   weapon";
+  grid-template-areas:"common   common    common   header header"
+                      "common   common    common   move1 move1"
+                      "common   common    common   move2 move2"
+                      "assault  flag      armour    special   special"
+                      "weapon   weapon    weapon   weapon weapon"
+                      "weapon   weapon    weapon   weapon weapon";
 }
+
+
+
 
 
 /*----------------- GENERAL CSS ------------------*/
@@ -228,12 +231,17 @@ section {
     display: none;
 }
 
-.move {
-  grid-area: move;
+.move1 {
+  grid-area: move1;
   background-color:  white;
   align-items: center;
 }
 
+.move2 {
+  grid-area: move2;
+  background-color:  white;
+  align-items: center;
+}
 
 
 .movementnotes {
