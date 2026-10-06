@@ -234,7 +234,8 @@ section {
 .move {
   grid-area: move;
   background-color:  white;
-  align-items: center;
+  justify-items: stretch; 
+  align-items: stretch;   
 }
 
 
