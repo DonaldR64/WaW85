@@ -768,19 +768,6 @@ log(weapons)
                 movement = parseInt(movement);
             }
 
-            let steps = parseInt(attributes.steps) || 1;
-            let health = "Full";
-            //if 2nd image then reduced
-            
-            let formationName = attributes.formation;
-            let formationID = attributes.formationNumber;
-            //use this to add units to formation
-            let morale = attributes.formationMorale;
-            let hqRange = Stats(attributes.formationhqrange); //array - 0 is range at full str, 1 is range at reduced str
-            
-            let commandBonus = parseInt(attributes.commandBonus) || 0;
-
-
 this.name = char.get("name");
 
             this.token = token;
@@ -788,11 +775,6 @@ this.name = char.get("name");
             this.group = group;
             this.player = player;
             this.nation = nation;
-
-            this.formationID = formationID;
-            this.formationName = formationName;
-            this.morale = morale;
-            this.hqRange = hqRange;
 
             this.hexLabel = hexLabel;
             this.lastHexLabel = hexLabel;
@@ -802,9 +784,6 @@ this.name = char.get("name");
             this.armour = armour;
             this.save = save;
             
-            this.health = health;
-            this.steps = steps;
-
             this.assaultFP = assaultFP;
             this.assaultToHit = assaultToHit;
             this.assaultDamage = 0;
@@ -813,9 +792,6 @@ this.name = char.get("name");
             this.artUnit = artUnit;
 
             this.attachedID = "";//id of unit THIS unit is attached to - HQ, leader etc
-
-
-            this.commandBonus = commandBonus;
 
             this.weapons = weapons;
 
@@ -828,11 +804,6 @@ this.name = char.get("name");
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
 
-            let formation = Formations[formationID];
-            if (!formation) {
-                formation = new Formation(formationID,formationName,hqRange,morale);
-            };
-            formation.Add(id);
 
 
 
@@ -1355,9 +1326,8 @@ this.name = char.get("name");
         }
 
 
-        //terrain
         AddTerrain();    
-        //AddTokens();        
+        AddTokens();        
         let elapsed = Date.now()-startTime;
         log("Hex Map Built in " + elapsed/1000 + " seconds");
     };
@@ -1459,7 +1429,6 @@ this.name = char.get("name");
      
     const AddTokens = () => {
         //add tokens on token layer to arrays
-        Formations = {};
         Units = {};
         //create an array of all tokens
         let start = Date.now();
@@ -1469,68 +1438,20 @@ this.name = char.get("name");
             _subtype: "token",
             layer: "objects",
         });
-
-        let c = tokens.length;
-        let s = (1===c?'':'s');     
-        
+   
+        let s = 0;
         tokens.forEach((token) => {
-            let character = getObj("character", token.get("represents"));      
-
-            if (character === null || character === undefined) {return};
-
-            let gmn = decodeURIComponent(token.get("gmnotes"));
-            if (gmn) {
-                gmn = gmn.split(";");
-                let team = new Team(token);
-                let unitName = gmn[0];
-                let unitID = gmn[1];
-
-                let unit = Formations[unitID]
-                if (unit) {
-                    unit.add(team);
-                } else {
-                    unit = new Unit(unitName,[team.id],false);
-                }
+            let character = getObj("character", token.get("represents"));   
+            if (character) {
+                let unit = new Unit(token.get("id"));
+                s++;
             }
-
-
-
-
-
-
-
-
-
-
-
-
         });
 
 
-
-
-        let elapsed = Date.now()-start;
-        log(`${c} token${s} checked in ${elapsed/1000} seconds - ` + Object.keys(Units).length + " placed in Team Array");
-
-
-
+        log(s + " Units added to Array");
     }
 
-    const DefineOffboard = (token) => {
-        let centre = new Point(token.get("left"),token.get('top'));
-        let halfW = token.get("width")/2;
-        let halfH = token.get("height")/2;
-        let minX = centre.x - halfW;
-        let maxX = centre.x + halfW;
-        let minY = centre.y - halfH;
-        let maxY = centre.y + halfH;
-        _.each(HexMap,hex => {
-            if (hex.centre.x < minX || hex.centre.x > maxX || hex.centre.y < minY || hex.centre.y > maxY) {
-                hex.terrain = "Offboard";
-                hex.offboard = true;
-            }
-        })
-    }
 
 
 
@@ -3311,8 +3232,6 @@ log("final hexCost: " + hexCost)
                 log(pageInfo);
                 log("STATE");
                 log(state.WaW85);
-                log("Formations");
-                log(Formations);
                 log("Units");
                 log(Units);
                 break;
@@ -3364,11 +3283,10 @@ log("final hexCost: " + hexCost)
         log("===> World at War 85 <===");
         log("===> Software Version: " + version + " <===")
         LoadPage();
-        PlayerIDs();
         DefineHexInfo();
         BuildMap();
         registerEventHandlers();
-        sendChat("","API Ready, Map Loaded")
+        sendChat("","API Ready at " + new Date().toLocaleTimeString("en-US", {timeZone: "America/Toronto"}) + " EST");
         log("On Ready Done")
     });
     return {

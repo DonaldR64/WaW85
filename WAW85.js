@@ -1,6 +1,6 @@
 const Main = (() => {
-    const version = '2026.10.1';
-    if (!state.Panzer) {state.Panzer = {}};
+    const version = '2026.9.21';
+    if (!state.WaW) {state.WaW = {}};
 
     const pageInfo = {};
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
@@ -9,7 +9,7 @@ const Main = (() => {
     let MapInfo = {};
     let UnitArray = {};
 
-    const MoveMarkers = ["https://files.d20.io/images/344441274/R0eEVMFzhYPanzerv6rigIA7GA/thumb.png?1685718541","https://s3.amazonaws.com/files.d20.io/images/435360245/m3tKJi3Pqb_40g75O6ouSg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360246/pXI3HBrGMZ05ldDfH-zYCQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360229/JKMY922qxhf0E3z1l10jQg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360228/YDGEQNR_qVFprdHJSjYNPg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360232/1TysQcieJ5zbgYvXV4pqiA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360240/KfCmoF5WyWTStCWOTPrkJg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360230/zjvzMFGWotZUORDeIVXrEw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360226/-TXBFvMfahwOIjXEuS0mTQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360237/gEr7oP4z0ByUKTXpvSHYQQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360241/2HAnTYlC0uVR6mqyMoaACA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360244/CDOLr8RkQ-pPhwjaOHTbEA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360243/023KSjjB8QHtrMNbuO3ENQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360242/xx2msq4HjqRN5dUaPl0vfA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360236/L-iuGURhzreq2t2mKOj3Qg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360247/v2Y15K10F2qZK268wPzYyw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360239/SXny1fVCh5PeYxLGtnoPTA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360233/EdB3z27csNyykkc2lWTefw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360227/JpFvEVLKlKV6n6JsE8zrVg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360234/5b2XrhzPgfgjdoI5y97LnQ/thumb.png?174356385","https://s3.amazonaws.com/files.d20.io/images/435360238/_sWU7YtYJsWT1NZC-wb80Q/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360231/n7HVTuPanzerWch59Aofq1v96w/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360235/yVtSNUPJOkxq0n2_FknMcA/thumb.png?1743563856"];
+    const MoveMarkers = ["https://files.d20.io/images/344441274/R0eEVMFzhYmwv6rigIA7GA/thumb.png?1685718541","https://s3.amazonaws.com/files.d20.io/images/435360245/m3tKJi3Pqb_40g75O6ouSg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360246/pXI3HBrGMZ05ldDfH-zYCQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360229/JKMY922qxhf0E3z1l10jQg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360228/YDGEQNR_qVFprdHJSjYNPg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360232/1TysQcieJ5zbgYvXV4pqiA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360240/KfCmoF5WyWTStCWOTPrkJg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360230/zjvzMFGWotZUORDeIVXrEw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360226/-TXBFvMfahwOIjXEuS0mTQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360237/gEr7oP4z0ByUKTXpvSHYQQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360241/2HAnTYlC0uVR6mqyMoaACA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360244/CDOLr8RkQ-pPhwjaOHTbEA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360243/023KSjjB8QHtrMNbuO3ENQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360242/xx2msq4HjqRN5dUaPl0vfA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360236/L-iuGURhzreq2t2mKOj3Qg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360247/v2Y15K10F2qZK268wPzYyw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360239/SXny1fVCh5PeYxLGtnoPTA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360233/EdB3z27csNyykkc2lWTefw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360227/JpFvEVLKlKV6n6JsE8zrVg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360234/5b2XrhzPgfgjdoI5y97LnQ/thumb.png?174356385","https://s3.amazonaws.com/files.d20.io/images/435360238/_sWU7YtYJsWT1NZC-wb80Q/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360231/n7HVTuMwWch59Aofq1v96w/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360235/yVtSNUPJOkxq0n2_FknMcA/thumb.png?1743563856"];
 
     //math constants
     const M = {
@@ -25,80 +25,133 @@ const Main = (() => {
 
     const DefineHexInfo = () => {
         HexSize = (70 * pageInfo.scale)/M.f0;
-        //Hex H or Flat Topped
-        HexInfo = {
-            size: HexSize,
-            pixelStart: {
-                x: HexSize,
-                y: (35 * pageInfo.scale),
-            },
-            width: pageInfo.scale*HexSize,
-            height: 70  * pageInfo.scale,
-            xSpacing: 3/2 * HexSize,
-            ySpacing: 70 * pageInfo.scale,
-            directions: {
-                "North": new Cube(0, -1, 1),
-                "Northeast": new Cube(1, -1, 0),
-                "Southeast": new Cube(1,0,-1),
-                "South": new Cube(0,1,-1),
-                "Southwest": new Cube(-1,1,0),
-                "Northwest": new Cube(-1,0,1),
-            },
-            halfToggleX: 0,
-            halfToggleY: 35 * pageInfo.scale,
+        if (pageInfo.type === "hex") {
+            HexInfo = {
+                size: HexSize,
+                pixelStart: {
+                    x: 35 * pageInfo.scale,
+                    y: HexSize,
+                },
+                width: 70  * pageInfo.scale,
+                height: pageInfo.scale*HexSize,
+                xSpacing: 70 * pageInfo.scale,
+                ySpacing: 3/2 * HexSize,
+                directions: {
+                    "Northeast": new Cube(1,-1,0),
+                    "East": new Cube(1,0,-1),
+                    "Southeast": new Cube(0,1,-1),
+                    "Southwest": new Cube(-1,1,0),
+                    "West": new Cube(-1,0,1),
+                    "Northwest": new Cube(0,-1,1),
+                },
+                halfToggleX: 35 * pageInfo.scale,
+                halfToggleY: 0,
+            }
+            DIRECTIONS = ["Northeast","East","Southeast","Southwest","West","Northwest"];
+        } else if (pageInfo.type === "hexr") {
+            //Hex H or Flat Topped
+            HexInfo = {
+                size: HexSize,
+                pixelStart: {
+                    x: HexSize,
+                    y: 35 * pageInfo.scale,
+                },
+                width: pageInfo.scale*HexSize,
+                height: 70  * pageInfo.scale,
+                xSpacing: 3/2 * HexSize,
+                ySpacing: 70 * pageInfo.scale,
+                directions: {
+                    "North": new Cube(0, -1, 1),
+                    "Northeast": new Cube(1, -1, 0),
+                    "Southeast": new Cube(1,0,-1),
+                    "South": new Cube(0,1,-1),
+                    "Southwest": new Cube(-1,1,0),
+                    "Northwest": new Cube(-1,0,1),
+                },
+                halfToggleX: 0,
+                halfToggleY: 35 * pageInfo.scale,
+            }
+            DIRECTIONS = ["North","Northeast","Southeast","South","Southwest","Northwest"];
         }
-        DIRECTIONS = ["North","Northeast","Southeast","South","Southwest","Northwest"];
     }
 
     let outputCard = {title: "",subtitle: "",side: "",body: [],buttons: [],};
 
-    const Factions = {
-          "Soviet": {
-            "short": "Soviet",
-            "image": "https://s3.amazonaws.com/files.d20.io/images/304547168/fMk9mH9WMsr8VSQFg6AZew/thumb.png?1663171370",
-            "dice": "Soviet",
-            "backgroundColour": "#FFFF00",
+    const Nations = {
+        "Soviet": {
+            "image": "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877",
+            "backgroundColour": "#FF0000",
             "titlefont": "Anton",
             "fontColour": "#000000",
-            "borderColour": "#FF0000",
-            "borderStyle": "5px ridge",
-            "flag": "status_Soviet::6433738",
+            "borderColour": "#FFFF00",
+            "borderStyle": "5px groove",
+            "dice": "Soviet",
         },
-        "Germany": {
-            "short": "German",
+        "West German": {
             "image": "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028",
-            "dice": "Germany",
             "backgroundColour": "#000000",
             "titlefont": "Bokor",
             "fontColour": "#FFFFFF",
             "borderColour": "#000000",
             "borderStyle": "5px double",
-            "flag":"status_Iron-Cross::7650254", 
+            "dice": "West-German",
         },
-
+        "British": {
+            "image": "https://s3.amazonaws.com/files.d20.io/images/330506939/YtTgDTM3q7p8m0fJ4-E13A/thumb.png?1677713592",
+            "backgroundColour": "#0E2A7A",
+            "titlefont": "Merriweather",
+            "fontColour": "#FFFFFF",
+            "borderColour": "#BC2D2F",
+            "borderStyle": "5px groove",
+            "dice": "British",
+            
+        },
+        "US Army": {
+            "image": "https://s3.amazonaws.com/files.d20.io/images/327595663/Nwyhbv22KB4_xvwYEbL3PQ/thumb.png?1676165491",
+            "backgroundColour": "#FFFFFF",
+            "titlefont": "Arial",
+            "fontColour": "#006400",
+            "borderColour": "#006400",
+            "borderStyle": "5px double",
+            "dice": "US-Army",
+            
+        },
 
         "Neutral": {
             "image": "",
             "backgroundColour": "#FFFFFF",
+            "dice": "UK",
             "titlefont": "Arial",
             "fontColour": "#000000",
             "borderColour": "#00FF00",
             "borderStyle": "5px ridge",
-            "dice": "White",
+            "objectiveimage": "https://s3.amazonaws.com/files.d20.io/images/312111244/vPCrjmQ7ep4nvKWu8LOmFQ/thumb.png?1667256328",
         },
 
     };
 
-    
 
-    //cover - 0 = none, 1 = light, 2 = medium, 3 = heavy
+
+
+
+    //terrain that is single object
+    //blockLOS - Semi = semi solid, eg woods, stops after 3, solid = buildings - stops after 1
+    //hills are covered by their elevation re blocking LOS
+
 
     const TerrainInfo = {
+        "Hill 1": {elevation: 1, terrainHeight: 0, moveCost: 1},
+        "Hill 2": {elevation: 2, terrainHeight: 0, moveCost: 1},
+        "Hill 3": {elevation: 3, terrainHeight: 0, moveCost: 1},
+        "Light Woods": {elevation: 0, terrainHeight: 2, moveCost: 2, blockLOS: "Semi", woods: true},
+        "Heavy Woods": {elevation: 0, terrainHeight: 2, moveCost: 3, blockLOS: "Semi", woods: true},
+        "Rough": {elevation: 0, terrainHeight: 0, moveCost: 2},
+        "Water Depth 0": {elevation: 0, terrainHeight: 0, moveCost: 2, water: true, blockLOS: "Solid"},
+        "Water Depth 1": {elevation: 0, terrainHeight: 1, moveCost: 2, water: true, blockLOS: "Solid"},
+        "Water Depth 2": {elevation: 0, terrainHeight: 2, moveCost: 2, water: true, blockLOS: "Solid"},
 
 
 
-
-        "Scrub": {height: 0, cover: 1, turn: 1, L: 1, T: 2, H: 2, W: 4},
 
     }
 
@@ -428,12 +481,6 @@ const Main = (() => {
             let point = cube.toPoint();
             return point;
         }
-        toHexNumber() {
-            let pt1 = this.col.toString().padStart(2,'0');
-            let pt2 = this.row.toString().padStart(2,'0');
-            let thn = pt1 + pt2;
-            return thn;
-        }
     };
 
     const Angle = (theta) => {
@@ -650,22 +697,16 @@ const Main = (() => {
             this.tokenIDs = [];
             this.cube = offset.toCube();
             this.label = offset.label();
-            this.hexNumber = offset.toHexNumber();
             this.elevation = 0;
             this.terrainHeight = 0;
             this.building = false;
             this.water = false;
             this.offmap = false;
-            this.cover = 0;
-            this.turn = 1;
-            this.moveCost = {
-                L: 1,
-                T: 1,
-                H: 1,
-                W: 1,
-            }
+
+            this.blockLOS = false;
+            this.moveCost = 1;
             this.road = false;
-            this.path = false;
+            this.woods = false;
 
             HexMap[this.label] = this;
         }
@@ -691,23 +732,119 @@ const Main = (() => {
             let aa = AttributeArray(charID);
   
             this.charName = char.get("name");
-            this.hexLabel = label;
-            //this.token = token;
             let name = token.get("name");
+            let mechName = this.charName.split("//")[0].trim();
+            mechName = mechName.split(" ");
+            let variant = mechName[mechName.length -1];
+            mechName.length--;
+            mechName = mechName.toString().replaceAll(","," ");
+            if (!name || name === "") {
+                name = mechName;
+            }
+
             this.name = name;
+            this.mechName = mechName;
+            this.variant = variant;
 
+            this.hexLabel = label;
+
+            this.id = id;
+            this.charID = charID;
+            let faction = aa.faction || "Neutral";
+            this.faction = faction;
+            let player = (state.WaW.factions.indexOf(faction));
+            if (player === -1) {
+                if (faction === "Neutral") {
+                    player = 2
+                } else {
+                    state.WaW.factions.push(faction);
+                    player = state.WaW.factions.length - 1;
+                }
+            }
+            this.player = player;
+            this.token = token;
             this.type = aa.type;
-            this.nation = aa.nation;
-            this.armourF = parseInt(aa.armourF);
-            this.armourR = parseInt(aa.armourR);
+            let heights = {BattleMech: 2};
+            this.height = heights[this.type];
+    
             this.move = parseInt(aa.move);
-            this.moveType = aa.movetype;
-            this.pathmove = aa.pathmove;
-            this.roadmove = aa.roadmove;
-            this.size = aa.size;
-            this.turret = aa.turret;
+            this.moveMax = parseInt(aa.move_max);
+            let moveSpecial = [];
+            if (aa.movespecial && aa.movespecial.includes("j")) {
+                moveSpecial.push("Jump");
+            }
+            this.moveSpecial = moveSpecial;
+            this.jumpMax = aa.jumpmove_max || "";
+            this.jumpMove = "";
+            if (moveSpecial.includes("Jump")) {
+                if (aa.jumpmove) {
+                    this.jumpMove = parseInt(aa.jumpmove)
+                } else {
+                    this.jumpMove = this.moveMax;
+                }
+            }
+
+            this.tmm = parseInt(aa.tmm) || 0;
+            this.tmmMax = parseInt(aa.tmm_max) || 0;
+            this.armour = parseInt(aa.armour) || 0;
+            this.armourMax = parseInt(aa.armour_max) || 0;
+            this.structure = parseInt(aa.structure) || 0;
+            this.structureMax = parseInt(aa.structure_max) || 0;
+
+            let special = [];
+            if (aa.special1) {special.push(aa.special1)};
+            if (aa.special2) {special.push(aa.special2)};
+            if (aa.special3) {special.push(aa.special3)};
+            if (aa.special4) {special.push(aa.special4)};
+            if (aa.special5) {special.push(aa.special5)};
+            if (aa.special6) {special.push(aa.special6)};
+            this.special = special;
 
 
+            this.skill = parseInt(aa.skill) || 4;
+
+            let weaponArray = [];
+            let unitMaxRange = rangeBands["Short"];
+            for (let w=1;w<4;w++) {
+                let phrase = "weapon" + w;
+                let wEquip = aa[phrase + "equipped"];
+                if (wEquip === "Off") {continue};
+                let wName = aa[phrase + "name"];
+                if (!wName) {continue};
+                let wType = aa[phrase + "type"];
+                let wShort = aa[phrase + "short"];
+                let wMed = aa[phrase + "medium"];
+                let wLong = aa[phrase + "long"];
+                let wShortMax = aa[phrase + "short_max"];
+                let wMedMax = aa[phrase + "medium_max"];
+                let wLongMax = aa[phrase + "long_max"];
+                let wSpecial = aa[phrase + "special"] || " ";
+                wSpecial = wSpecial.split(",").map(e => e.trim());
+                let wMaxRange = rangeBands["Short"];
+                if (wMedMax > 0) {
+                    wMaxRange = rangeBands["Medium"];
+                }
+                if (wLongMax > 0) {
+                     wMaxRange = rangeBands["Long"];
+                }
+                unitMaxRange = Math.max(unitMaxRange,wMaxRange);
+                let info = {
+                    name: wName,
+                    phrase: phrase,
+                    type: wType,
+                    short: wShort,
+                    shortMax: wShortMax,
+                    medium: wMed,
+                    mediumMax: wMedMax,
+                    long: wLong,
+                    longMax: wLongMax,
+                    special: wSpecial,
+                    maxRange: wMaxRange,
+                }
+                weaponArray.push(info);
+            }
+            this.weaponArray = weaponArray;
+            this.maxRange = unitMaxRange;
 
             let index = HexMap[label].tokenIDs.indexOf(id);
             if (index < 0) {
@@ -1060,6 +1197,8 @@ const Main = (() => {
         pageInfo.width = pageInfo.page.get("width") * 70;
         pageInfo.height = pageInfo.page.get("height") * 70;
         pageInfo.type = pageInfo.page.get("grid_type");
+
+
     }
 
     const BuildMap = () => {
@@ -1068,15 +1207,26 @@ const Main = (() => {
 
         let startX = HexInfo.pixelStart.x;
         let startY = HexInfo.pixelStart.y;
-
+        let halfToggleX = HexInfo.halfToggleX;
         let halfToggleY = HexInfo.halfToggleY;
-        for (let i=startX;i<=pageInfo.width;i+=HexInfo.xSpacing) {
-            for (let j=startY;j<=pageInfo.height;j+=HexInfo.ySpacing) {
-                let point = new Point(i,j);     
-                let hex = new Hex(point);
+        if (pageInfo.type === "hex") {
+            for (let j = startY; j <= pageInfo.height;j+=HexInfo.ySpacing){
+                for (let i = startX;i<= pageInfo.width;i+=HexInfo.xSpacing) {
+                    let point = new Point(i,j);     
+                    let hex = new Hex(point);
+                }
+                startX += halfToggleX;
+                halfToggleX = -halfToggleX;
             }
-            startY += halfToggleY;
-            halfToggleY = -halfToggleY;
+        } else if (pageInfo.type === "hexr") {
+            for (let i=startX;i<=pageInfo.width;i+=HexInfo.xSpacing) {
+                for (let j=startY;j<=pageInfo.height;j+=HexInfo.ySpacing) {
+                    let point = new Point(i,j);     
+                    let hex = new Hex(point);
+                }
+                startY += halfToggleY;
+                halfToggleY = -halfToggleY;
+            }
         }
         AddTerrain();    
         AddTokens();
@@ -1129,41 +1279,61 @@ const Main = (() => {
 
     const AddTerrain = () => {
         let start = Date.now();
-        //Add terrain by tokens
+
+        let waterTokens = [];
+        //Add Token Terrain, Building might be multihex
         let tokens = findObjs({_pageid: Campaign().get("playerpageid"),_type: "graphic",_subtype: "token",layer: "map",});
+
         _.each(tokens,token => {
             let name = token.get("name") || " ";
             if (name.includes("Map")) {
                 return;
             }
-            name = name.trim();
+            name = name.split("//")[0].trim();
             let terrain = TerrainInfo[name];
             if (terrain) {
                 let centre = new Point(token.get("left"),token.get('top'));
                 let label = centre.toCube().label()
                 let hex = HexMap[label];
                 if (hex) {
-
-///hills
-
-                    hex.terrainHeight = Math.max(hex.terrainHeight,terrain.height);
-                    hex.cover = Math.max(hex.cover,terrain.cover);
-                    hex.turn = Math.max(hex.turn,terrain.turn);
-                    hex.moveCost.L = Math.max(hex.moveCost.L,terrain.L);
-                    hex.moveCost.T = Math.max(hex.moveCost.T,terrain.T);
-                    hex.moveCost.H = Math.max(hex.moveCost.H,terrain.H);
-                    hex.moveCost.W = Math.max(hex.moveCost.W,terrain.W);
-                    if (hex.terrain.includes("Open") && name.includes("Hill") === false) {
+                    if (hex.terrain === "Open") {
                         hex.terrain = name;
                     } else {
                         hex.terrain += ", " + name;
+                    }
+                    if (terrain.blockLOS !== false) {
+                        hex.blockLOS = terrain.blockLOS;
+                    }
+                    hex.elevation = terrain.elevation;
+                    hex.terrainHeight = Math.max(terrain.terrainHeight,hex.terrainHeight);
+                    hex.moveCost = Math.max(terrain.moveCost,hex.moveCost);
+                    if (terrain.woods) {
+                        hex.woods = true;
+                    }
+                    //buildings
+                    if (terrain.building === true) {
+                        hex.building = true;
+
+                    }
+                    //water - see below
+                    if (terrain.water === true) {
+                        waterTokens.push(token);
                     }
                 }
             }
 
         });
 
-
+        _.each(waterTokens, token => {
+            let name = token.get("name") || " ";
+            name = name.split("//")[0].trim();
+            let terrain = TerrainInfo[name];
+            let centre = new Point(token.get("left"),token.get('top'));
+            let label = centre.toCube().label()
+            let hex = HexMap[label];
+            HexMap[label].elevation -= terrain.terrainHeight;
+            hex.water = true;
+        })
 
     
 /*
@@ -1225,10 +1395,10 @@ const Main = (() => {
         _.each(which,lines => {
             let array;
             if (lines === "LOS") {
-                array = state.Panzer.losLines;
+                array = state.WaW.losLines;
             }
             if (lines === "Deploy") {
-                array = state.Panzer.deployLines;
+                array = state.WaW.deployLines;
             }
             if (array) {
                 for (let i=0;i<array.length;i++) {
@@ -1274,9 +1444,9 @@ const Main = (() => {
             if (line) {
                 toFront(line);
                 if (type === "LOS") {
-                    state.Panzer.losLines.push(line.get("id"))
+                    state.WaW.losLines.push(line.get("id"))
                 } else {
-                    state.Panzer.deployLines.push(line.get("id"));
+                    state.WaW.deployLines.push(line.get("id"));
                 }
             }
         }
@@ -1289,15 +1459,16 @@ const Main = (() => {
             return;
         }
         let unit = UnitArray[msg.selected[0]._id];
+log(unit.token)
         if (!unit) {
             sendChat("","Not in UnitArray");
             return;
         };
-        let hex = HexMap[unit.hexLabel];
+        let label = unit.hexLabel;
+        let hex = HexMap[label];
         SetupCard(unit.name,"Info",unit.faction);
 
-
-        outputCard.body.push("Hex Number: " + hex.hexNumber);
+        outputCard.body.push("Hex Label: " + label);
         if (hex.offmap === true) {
             outputCard.body.push("Unit is Off Map");
         } else {
@@ -1306,14 +1477,7 @@ const Main = (() => {
             if (hex.terrainHeight > 0) {
                 outputCard.body.push("Terrain Height: " + hex.terrainHeight);
             }
-            let mc = hex.moveCost[unit.moveType];
-            outputCard.body.push("Move Cost: " + mc);
-            if (hex.road === true) {
-                outputCard.body.push("There is a Road");
-            }
-            if (hex.path === true) {
-                outputCard.body.push("There is a Path");
-            }
+            outputCard.body.push("Move Cost: " + hex.moveCost);
         }
 
 
@@ -1343,13 +1507,13 @@ const Main = (() => {
             }
         }
         if ((!id || !unit) && playerID) {
-            faction = state.Panzer.players[playerID];
-            player = (state.Panzer.faction[0] === faction) ? 0:1;
+            faction = state.WaW.players[playerID];
+            player = (state.WaW.faction[0] === faction) ? 0:1;
         }
 
-        if (!state.Panzer.players[playerID] || state.Panzer.players[playerID] === undefined) {
+        if (!state.WaW.players[playerID] || state.WaW.players[playerID] === undefined) {
             if (faction !== "Neutral") {    
-                state.Panzer.players[playerID] = faction;
+                state.WaW.players[playerID] = faction;
             } else {
                 sendChat("","Click on one of your tokens then select Roll again");
                 return;
@@ -1370,10 +1534,11 @@ const Main = (() => {
         RemoveDead();
         RemoveMoveMarkers();
         BuildMap();
+
         //clear arrays
         UnitArray = {};
 
-        state.Panzer = {
+        state.WaW = {
             players: {},
             factions: [],
             turn: 0,
@@ -1627,8 +1792,8 @@ const Main = (() => {
 
 
     const NextPhase = () => {
-        let currentPhase = state.Panzer.phase;
-        let currentTurn = state.Panzer.turn;
+        let currentPhase = state.WaW.phase;
+        let currentTurn = state.WaW.turn;
         RemoveLines(["LOS"]);
 
         if (currentTurn === 0) {
@@ -1645,8 +1810,8 @@ const Main = (() => {
         };
         currentPhase = phases[phaseNum];
 
-        state.Panzer.phase = currentPhase;
-        state.Panzer.turn = currentTurn;
+        state.WaW.phase = currentPhase;
+        state.WaW.turn = currentTurn;
 
         RemoveMoveMarkers();
 
@@ -1663,6 +1828,423 @@ const Main = (() => {
         }
     }
 
+
+    const Movement = () => {
+        let rolls = [[],[]];
+        let totals = [0,0];
+        for (let p=0;p<2;p++) {
+            for (let d=0;d<2;d++) {
+                let roll = randomInteger(6);
+                totals[p] += roll;
+                rolls[p].push(DisplayDice(roll,state.WaW.factions[p],24));
+            }
+        }
+        let winner = 2;
+        if (totals[0] === totals[1]) {
+            if (state.WaW.initiativePlayer === 2) {
+                winner = randomInteger(2);
+            } else {
+                winner = (state.WaW.initiativePlayer === 0) ? 1:0;
+            }
+        } else {
+            if (totals[0] > totals[1]) {
+                winner = 0;
+            } else {
+                winner = 1;
+            }
+        }
+        let loser = winner === 0 ? 1:0;
+        state.WaW.initiativePlayer = winner;
+        SetupCard("Movement","Turn " + state.WaW.turn,state.WaW.factions[winner]);
+        for (let i=0;i<2;i++) {
+            outputCard.body.push(state.WaW.factions[i] + ": " + rolls[i]);
+        }
+        outputCard.body.push("[hr]");
+        outputCard.body.push(state.WaW.factions[loser] + " activates and moves a Unit first");
+
+        let unitNumbers = [0,0];
+        _.each(UnitArray,unit => {
+            unitNumbers[unit.player]++;
+            unit.SetStatus("Not Activated");
+        })
+
+
+        outputCard.body.push("When both players have completed all their movement, Select Next Phase");
+        PrintCard();
+    }
+
+    const Combat = () => {
+        _.each(UnitArray,unit => {
+            if (unit.GetStatus() === "Not Activated") {
+                unit.SetStatus("Standstill");
+            }
+        })
+        SetupCard("Combat","Turn " + state.WaW.turn,"Neutral");
+        let a = state.WaW.initiativePlayer;
+        let b = (a === 0) ? 1:0;
+        outputCard.body.push(state.WaW.factions[a] + " Has Initiative");
+        outputCard;
+        outputCard.body.push(state.WaW.factions[b] + " attacks with all their units, then the Initiative Player");
+        outputCard.body.push("When all are done, advance to the End Phase");
+        PrintCard();
+    }
+
+
+    const End = () => {
+        //run through state.WaW.damage array, applying damage to each mech
+        //and heat
+        //change auras to clear once done applying damage, heat
+        //check victory conditions ?
+    }
+
+
+    const Activate = (msg) => {
+        RemoveMoveMarkers();
+        RemoveLines(["LOS"]);
+        let id = msg.selected[0]._id;
+        let unit = UnitArray[id];
+        let Tag = msg.content.split(";");
+        let order = Tag[1]; //Standstill, Move, Sprint, Jump
+        SetupCard(unit.name,order,unit.faction);
+        unit.startHexLabel = unit.hexLabel;
+
+        let hex = HexMap[unit.hexLabel];
+        if (hex.water === true && hex.terrainHeight > 0 && (order === "Jump" || order === "Death from Above") ) {
+            outputCard.body.push("Unit cannot Jump from Water Depths 1+");
+            PrintCard();
+            return;
+        }
+
+        let move = unit.move;
+        let jumpMove = unit.jumpMove || 0;
+        if (move === 0) {
+            order = "Standstill";
+            outputCard.subtitle = "Standstill";
+        }
+
+        unit.SetStatus(order)
+        if (order === "Standstill") {
+            outputCard.body.push("The Mech can turn to face any direction, staying in the same hex");
+            outputCard.body.push("The Mech can Attack.")
+        }
+        if (order === "Move") {
+            outputCard.body.push("The Mech has " + move + " MP");
+            outputCard.body.push("The Mech can turn to face any direction");
+            outputCard.body.push("The Mech can Attack");
+        }
+        if (order === "Sprint") {
+            move = Math.round(move * 1.5);
+            outputCard.body.push("The Mech has " + move + " MP");;
+            outputCard.body.push("The Mech can turn to face any direction");
+            outputCard.body.push("The Mech cannot Attack");
+        }
+        if (order === "Jump") {
+            outputCard.body.push("The Mech has " + jumpMove + " MP");;
+            outputCard.body.push("It will ignore Terrain Costs");
+            outputCard.body.push("It can jump " + Math.floor(jumpMove/2) + " levels high");
+            outputCard.body.push("Movement must be in a Straight Line, but the Mech can turn to face any direction at the end");
+            outputCard.body.push("The Mech can Attack");
+        }
+        if (order === "Charge") {
+            outputCard.body.push("The Mech has " + move + " MP");;
+            outputCard.body.push("The Mech must end facing the target");
+            outputCard.body.push("In the Attack Phase the Mech may do a Ram attack");
+        }
+        if (order === "Death from Above") {
+            outputCard.body.push("The Mech has " + jumpMove + " MP");;
+            outputCard.body.push("It will ignore Terrain Costs");
+            outputCard.body.push("It can jump over " + Math.floor(jumpMove/2) + " levels");
+            outputCard.body.push("Movement must be in a Straight Line towards the target, the Mech must end facing the target");
+            outputCard.body.push("In the Attack Phase the Mech may do a Death from Above attack");
+        }
+
+
+        //workout next activating player
+        let nextPlayer = unit.player === 0 ? 1:0;
+        let togo = [0,0];
+        _.each(UnitArray,unit2 => {
+            if (unit2.GetStatus() === "Not Activated") {
+                togo[unit2.player]++;
+            }
+        })
+        if (togo[unit.player] > 0 && togo[unit.player] >= (2 * togo[nextPlayer])) {
+            outputCard.body.push("[hr]");
+            outputCard.body.push("[#ff0000]Another Unit from this Faction should Move next[/#]");
+        }
+        if (togo[unit.player] === 0 && togo[nextPlayer] === 0) {
+            outputCard.body.push("[hr]");
+            outputCard.body.push("After this Unit has finished its movement, can proceed to the Combat Phase");
+        }
+
+        PrintCard();
+
+
+    }
+
+
+    const SetGame = () => {
+        ClearState();
+        let tokens = findObjs({
+            _pageid: Campaign().get("playerpageid"),
+            _type: "graphic",
+            _subtype: "token",
+            layer: "objects",
+        });
+        
+        tokens.forEach((token) => {
+            let character = getObj("character", token.get("represents"));   
+            if (character) {
+                let unit = new Unit(token.get("id"));
+                AddAbilities(unit);
+
+                unit.SetStatus("Not Activated");
+                unit.token.set({
+                    aura1_color: "transparent",
+                    aura1_radius: .2,
+                    aura1_options: "circleborder",
+                });
+            }
+        });
+
+        _.each(UnitArray, unit => {
+            let skill = unit.skill;
+            let rankA = String(Factions[unit.faction].rankA + skill);
+            let rankB = Factions[unit.faction].rankB + skill;
+            rankB = String(rankB).padStart(4,"0");
+            let rankSM = "status_letters_and_numbers" + rankB + "::" + rankA;
+log(rankSM)
+            unit.token.set(rankSM,true)
+            unit.name = unit.mechName;
+            unit.token.set("name",unit.mechName);
+            unit.startHexLabel = unit.hexLabel;
+            for (let i=0;i<unit.weaponArray.length;i++) {
+                let weapon = unit.weaponArray[i];
+                weapon.short = weapon.shortMax;
+                weapon.medium = weapon.mediumMax;
+                weapon.long = weapon.longMax;
+                AttributeSet(unit.charID,weapon.phrase + "short",weapon.shortMax);
+                AttributeSet(unit.charID,weapon.phrase + "medium",weapon.mediumMax);
+                AttributeSet(unit.charID,weapon.phrase + "long",weapon.longMax);
+            }
+            AttributeSet(unit.charID,"enginecrit",0);
+            AttributeSet(unit.charID,"mpcritlevel",0);
+            AttributeSet(unit.charID,"wpcritlevel",0);
+            AttributeSet(unit.charID,"heat",0);
+            unit.heat = 0;
+            AttributeSet(unit.charID,"move",unit.moveMax);
+            unit.move = unit.moveMax;
+            AttributeSet(unit.charID,"jumpmove",unit.jumpMax);
+            unit.jumpMove = unit.jumpMax;
+            AttributeSet(unit.charID,"tmm",unit.tmmMax);
+            unit.tmm = unit.tmmMax;
+            AttributeSet(unit.charID,"armour",unit.armourMax);
+            unit.armour = unit.armourMax;
+            AttributeSet(unit.charID,"structure",unit.structureMax);
+            unit.structure = unit.structureMax;
+            unit.token.set({
+                "bar1_value": unit.structureMax,
+                "bar2_value": unit.armourMax,
+                "bar3_value": unit.heat,
+            })
+        })
+
+        sendChat("","Game Set");
+
+
+    }
+
+    const ShowTargets = (msg) => {
+        let id = msg.selected[0]._id;
+        let unit = UnitArray[id];
+        RemoveLines(["LOS"]);
+
+        SetupCard(unit.name,"Targetting",unit.faction);
+
+
+        let targets = [];
+        _.each(UnitArray,unit2 => {
+            if (unit2.faction !== unit.faction) {
+                let losResult = LOS(unit,unit2);
+                if (losResult.los === true && losResult.distance <= unit.maxRange) {
+                    for (let i=0;i<unit.weaponArray.length; i++) {
+                        let weapon = unit.weaponArray[i];
+                        let damage = Damage(weapon,losResult.distance);
+                        if ((losResult.facings.facing === "Front" && damage !== 0) ||  (losResult.facings.facing === "Rear" && damage !== 0 && weapon.special.includes("Rear")) ){
+                            targets.push(unit2);
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+        targets = [...new Set(targets)];
+
+        let c = true;
+        if (targets.length === 0) {
+            outputCard.body.push("No Targets in LOS, Weapon Range or Arc");
+        } else {
+            _.each(targets,target => {
+                let info = SATOR(unit,target);
+                let tN = info.targetNumber;
+                let tip = info.tip;
+                tip = '[' + target.name + '](#" class="showtip" title="' + tip + ')';
+                outputCard.body.push(tip + ": Needing " + tN + "+");
+                //line coloured based on percent
+                let colour = "#000000";
+                if (tN > 9 && tN <= 12) {
+                    colour = "#ff0000";
+                } else if (tN > 6 && tN < 10) {
+                    colour = "#ffff00";
+                } else if (tN < 7) {
+                    colour = "#00ff00";
+                }
+                let A = [HexMap[unit.hexLabel].centre.x,HexMap[unit.hexLabel].centre.y];
+                let B =  [HexMap[target.hexLabel].centre.x,HexMap[target.hexLabel].centre.y];
+                DrawLine([A,B],colour,"LOS");
+            })
+        }
+        ButtonInfo("Remove Lines","!RemoveLines2")
+
+
+        PrintCard();
+    }
+
+
+
+
+    const Damage = (weapon,distance) => {
+        let damage = 0;
+        if (distance <= rangeBands["Long"]) {
+            damage = weapon.long;
+        }
+        if (distance <= rangeBands["Medium"]) {
+            damage = weapon.medium;
+        }
+        if (distance <= rangeBands["Short"]) {
+            damage = weapon.short;
+        }
+        return damage;
+    }
+
+    const SATOR = (shooter,target,combatType = "Ranged") => {
+        let shooterStatus = shooter.GetStatus();
+        if (shooterStatus === "Charge" || shooterStatus === "Death from Above") {
+            combatType = "Melee";
+        }
+        let targetStatus = target.GetStatus();
+        let losResult = LOS(shooter,target);
+        //S
+        let tN = shooter.skill;
+        let tip = "Skill: " + shooter.skill;
+        //A
+        if ((shooterStatus === "Jump" || shooterStatus === "Death from Above") && shooter.type !== "Infantry") {
+            tip += "<br>Jumping Move: +2";
+            tN += 2;
+        } else if (shooterStatus === "Standstill" && shooter.type !== "Infantry") {
+            tip += "<br>Standstill -1";
+            tN -= 1;
+        } else if (shooterStatus === "Move") {
+            tip += "<br>Normal Move +0";
+        }
+
+        //T
+        if (targetStatus === "Move" || targetStatus === "Sprint") {
+            tip += "<br>Normal TMM  +" + target.tmm;
+            tN += target.tmm;
+        } else if (targetStatus === "Standstill" && target.token.get(SM.immobile) === false) {
+            tip += "<br>Target Standstill: +0";
+        } else if (targetStatus === "Jump" || targetStatus === "Death from Above") {
+            let strong = target.special.find(e => e.includes("Strong Jump Jets"));
+            let weak = target.special.find(e => e.includes("Weak Jump Jets"));
+            tip += "<br>Jumping TMM +" + (target.tmm + 1);
+            tN += (target.tmm + 1);
+            if (strong) {
+                strong = strong.replace(/[^\d]/g,"");
+                tip += "<br>Strong Jump Jets +" + strong;
+                tN += strong;
+            } else if (weak) {
+                weak = weak.replace(/[^\d]/g,"");
+                tip += "<br>Weak Jump Jets -" + weak;
+                tN -= weak;
+            }
+        } else if (target.token.get(SM.immobile)) {
+            tip += "<br>Immobile -4";
+            tN -= 4;
+        }
+        //submersible movement
+        //hull down
+        //dropped by airborne unit
+        //O
+        if (losResult.woods) {
+            tip += "<br>Woods +1";
+            tN += 1;
+        }
+        if (losResult.underwater === true) {
+            tip += "<br>Both Underwater +1"
+        }
+        if (losResult.partial) {
+            tip += "<br>Partial Cover +1";
+            tN += 1;
+        }
+        //area effect
+        //indirect fire
+        //secondary
+        //unit is also spotting
+        if (losResult.facing === "Rear") {
+            tip += "<br>Rear Facing Weapons +1";
+            tN += 1;
+        }
+        if (shooter.special.find(e => e.includes("Shield")) && combatType === "Ranged") {
+            tip += "<br>Shooter has BattleMech Shield +1";
+            tN += 1;
+        }
+        let fC = Attribute(shooter.charID,"fccritlevel") || 0;
+        if (fC > 0 && combatType === "Ranged") {
+            tip += "<br>Fire Control Hits +" + (fC * 2);
+            tN += (fC*2); 
+        }
+        let heat = parseInt(shooter.token.get('bar3_value'));
+        if (heat > 0 && combatType === "Ranged") {
+            tip += "<br>Heat Level +" + heat;
+            tN += heat;
+        }
+        if (shooterStatus === "Charge") {
+            tip += "<br>Charge +1";
+            tN += 1;
+        }
+        if (shooterStatus === "Death from Above") {
+            tip += "<br>Death from Above +1";
+            tN += 1;
+        }
+        //antimech infantry attack
+        //target is airborn aerosapce, drop ship, vtol, battle armor
+        //target is hull down and not rear attack
+        //target is protomech
+        //target has STL Special active
+
+        //R
+        let dist = losResult.distance;
+        if (losResult.underwater) {
+            dist *= 2;
+            tip += "<br>Underwater Ranges are Halved";
+        }
+        if (dist <= 3) {
+            tip += "<br>Short Range +0";
+        } else if (dist > 3 && dist<= 12) {
+            tip += "<br>Medium Range +2";
+            tN += 2;
+        } else if (dist > 12 && dist <= 21) {
+            tip += "<br>Long Range +4";
+            tN += 4;
+        }
+        //extreme ???
+
+        let result = {
+            tip: tip,
+            targetNumber: tN,
+        }
+        return result;
+    }
 
 
     const aStar = (unit,goalHex) => {
@@ -1838,12 +2420,12 @@ const Main = (() => {
     }
 
     const RemoveMoveMarkers = () => {
-        let markers = state.Panzer.moveMarkers;
+        let markers = state.WaW.moveMarkers;
         _.each(markers,marker => {
             let token = getObj("graphic",marker);
             if (token) {token.remove()};
         })
-        state.Panzer.moveMarkers = [];
+        state.WaW.moveMarkers = [];
     }
 
     const CreateMoveMarker = (label,cost,lastLabel) => {
@@ -1868,7 +2450,7 @@ const Main = (() => {
 
         if (newToken) {
             toFront(newToken);
-            state.Panzer.moveMarkers.push(newToken.id);
+            state.WaW.moveMarkers.push(newToken.id);
         } 
     }
 
@@ -1882,19 +2464,37 @@ const Main = (() => {
         let prevLabel = new Point(prev.left,prev.top).toCube().label();
         if (unit && newLabel !== prevLabel) {
             RemoveLines(["LOS"]);
-            let newHex = HexMap[newLabel];
-            let prevHex = HexMap[prevLabel];
-            let distance = newHex.distance(prevHex);
-            let elevationChange = Math.abs(newHex.elevation - prevHex.elevation);
-            log(unit.name + " moving")
-            let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
-            if (index > -1) {
-                HexMap[prevLabel].tokenIDs.splice(index,1);
-                HexMap[newLabel].tokenIDs.push(tok.id);
-            }
-            unit.hexLabel = newLabel;
-            if (state.Panzer.turn > 0) {
-                aStar(unit,HexMap[newLabel]);
+            if (unit.GetStatus === "Standstill" || unit.token.get(SM.immobile)) {
+                tok.set({
+                    left: prev.left,
+                    top: prev.top,
+                })
+                sendChat("","Unit is not able to move");
+            } else {
+                let newHex = HexMap[newLabel];
+                let prevHex = HexMap[prevLabel];
+                let distance = newHex.distance(prevHex);
+                let elevationChange = Math.abs(newHex.elevation - prevHex.elevation);
+                let jump = (unit.GetStatus() === "Jump" || unit.GetStatus() === "Death from Above") ? true:false;
+                if (jump === true) {elevationChange = 0};
+                if (elevationChange > 2 && distance === 1 && state.WaW.turn > 0) {
+                    tok.set({
+                        left: prev.left,
+                        top: prev.top,
+                    })
+                    sendChat("","Elevation Change > 2");
+                } else {
+                    log(unit.name + " moving")
+                    let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
+                    if (index > -1) {
+                        HexMap[prevLabel].tokenIDs.splice(index,1);
+                        HexMap[newLabel].tokenIDs.push(tok.id);
+                    }
+                    unit.hexLabel = newLabel;
+                    if (state.WaW.turn > 0) {
+                        aStar(unit,HexMap[newLabel]);
+                    }
+                }
             }
         } 
         if (unit && tok.get("rotation") !== prev.rotation) {
@@ -1938,7 +2538,7 @@ const Main = (() => {
             case '!Dump':
                 log(HexMap)
                 log("State");
-                log(state.Panzer);
+                log(state.WaW);
                 log("UnitArray");
                 log(UnitArray)
                 break;
@@ -1957,7 +2557,15 @@ const Main = (() => {
             case '!NextPhase':
                 NextPhase();
                 break;
-
+            case '!Activate':
+                Activate(msg);
+                break;
+            case '!SetGame':
+                SetGame();
+                break;
+            case '!ShowTargets':
+                ShowTargets(msg);
+                break;
 
         }
     };
@@ -1973,7 +2581,7 @@ const Main = (() => {
         on('destroy:graphic',destroyGraphic);
     };
     on('ready', () => {
-        log("===> Panzer <===");
+        log("===> MechWarrior <===");
         log("===> Software Version: " + version + " <===")
         LoadPage();
         DefineHexInfo();
