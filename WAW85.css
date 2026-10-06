@@ -235,6 +235,8 @@ section {
   grid-area: move;
   background-color:  white;
   align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 
