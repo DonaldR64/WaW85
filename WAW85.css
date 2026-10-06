@@ -50,8 +50,8 @@ main {
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
   grid-template-areas:"common   common    common   header header"
-                      "common   common    common   move1 move1"
-                      "common   common    common   move2 move2"
+                      "common   common    common   move move"
+                      "common   common    common   move move"
                       "armour    assault     flag    special   special"
                       "weapon   weapon    weapon   weapon weapon"
                       "weapon   weapon    weapon   weapon weapon";
@@ -229,17 +229,12 @@ section {
     display: none;
 }
 
-.move1 {
-  grid-area: move1;
+.move {
+  grid-area: move;
   background-color:  white;
   align-items: center;
 }
 
-.move2 {
-  grid-area: move2;
-  background-color:  white;
-  align-items: center;
-}
 
 
 .movementnotes {
