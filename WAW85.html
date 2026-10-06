@@ -162,7 +162,7 @@
           </section>
 
           <section class="common f-center">
-            <img alt="Character Avatar" name="attr_character_avatar" style="width:auto;height:190px; bottom: 0;"/>
+            <img alt="Character Avatar" name="attr_character_avatar" style="width:auto;height:270px; bottom: 0;"/>
           </section>
 
           <section class="armour f-col">
@@ -211,15 +211,6 @@
                 <h3>Firepower: <span name="attr_assaultfp"></span></h3>
                 <h3>To Hit: <span name="attr_assaulttohit"></span>+</h3>
             </div>
-          </section>
-
-
-          <section class="flag">
-            <img name="attr_nationimage">
-          </section>
-          
-          <section class="flag2">
-            <img name="attr_nationimage">
           </section>
 
           <section class="weapon">
@@ -289,28 +280,10 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["nation","movementtype","type"], function(values) {
-            let nationImage,movetext0,movetext1,movetext2;
-            let nation = values.nation;
+        getAttrs(["movementtype","type"], function(values) {
             let type = values.type;
             let mtype = values.movementtype;
 
-            if (nation === "Soviet") {
-                nationImage = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
-            }
-           
-            if (nation === "UK") {
-                nationImage = "https://s3.amazonaws.com/files.d20.io/images/341534797/XqqtHf_6iRq2DKyTLFVNSQ/thumb.png?1683944363";
-            }
-            if (nation === "US Army") {
-                nationImage = "https://s3.amazonaws.com/files.d20.io/images/327591694/wOEPfGDaGsOwSNTlLvC5VA/thumb.png?1676164120";
-            }
-            if (nation === "US Marine Corps") {
-                nationImage = "https://s3.amazonaws.com/files.d20.io/images/327770708/SxnQ76mw9gYbJZg1SJVAxw/thumb.png?1676241515";
-            }
-            if (nation === "West Germany") {
-                nationImage = "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028";
-            }
             if (type === "Infantry") {
                 movetext0 = "Clear, Cultivated, City, Woods = 1 MP";
                 movetext1 = "Rough = 2 MP";
@@ -332,7 +305,6 @@
 
 
             setAttrs({
-                "nationimage": nationImage,
                 "movetext0": movetext0,
                 "movetext1": movetext1,
                 "movetext2": movetext2,

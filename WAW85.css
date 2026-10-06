@@ -49,9 +49,9 @@ main {
   grid-gap: 4px;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
-  grid-template-areas:"flag     header    header   header flag2"
-                      "common   common    common   armour armour"
-                      "common   common    common   special special"
+  grid-template-areas:"common   common    common   header header"
+                      "common   common    common   armour special"
+                      "common   common    common   armour special"
                       "move1    move1     move2    move2  assault"
                       "weapon   weapon    weapon   weapon weapon"
                       "weapon   weapon    weapon   weapon weapon";
@@ -128,24 +128,6 @@ section {
 /*------------- Section-specific CSS -------------*/
 
 
-.flag {
-  grid-area: flag;
-  align-items: center;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  border-style: none;
-}
-
-.flag2 {
-  grid-area: flag2;
-  align-items: center;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  border-style: none;
-}
-
 .header {
   grid-area: header;
   flex-direction: center;
@@ -153,15 +135,20 @@ section {
 }
 
 .header h3 {
+  text-align: center;
   color: white;
 }
 
 
 
 .common {
-  grid-area: common;
-  background-color: white;
-}
+    grid-area: common;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+  }
+  
 .common > img {
     object-fit: contain;
     width: 100%;
@@ -184,7 +171,8 @@ section {
 
 
 .armour {
-  grid-area: armour;
+  grid-area: armour;    
+  flex-direction: center;
   background-color: white;
 }
 
@@ -198,6 +186,7 @@ section {
 
 .special {
   grid-area: special;
+  flex-direction: center;
   background-color: white;
 }
 .specialinfo h3 {
