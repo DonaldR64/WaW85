@@ -194,7 +194,10 @@
           <section class = "special">
             <h3><u>Special</u></h3>
             <div class="specialinfo">
-                <h3><span name="attr_special"></span></h3>
+                <h3><span name="attr_specials1"></span></h3>
+                <h3><span name="attr_specials2"></span></h3>
+                <h3><span name="attr_specials3"></span></h3>
+                <h3><span name="attr_specials4"></span></h3>
             </div>
           </section>
 
@@ -278,7 +281,7 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["nation","movementtype","type"], function(values) {
+        getAttrs(["nation","movementtype","type","special"], function(values) {
             let nation = values.nation;
             if (nation === "Soviet") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
@@ -296,6 +299,9 @@
             if (nation === "West Germany") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028";
             }
+
+            let specialatt = values.special;
+            let specials = specialatt.split(",").map((e) => e.trim());
 
 
 
@@ -327,6 +333,11 @@
                 "movetext0": movetext0,
                 "movetext1": movetext1,
                 "movetext2": movetext2,
+                "specials1": specials[0],
+                "specials2": specials[1],
+                "specials3": specials[2],
+                "specials4": specials[3],
+
             });
         });    
     });  
