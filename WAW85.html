@@ -208,6 +208,11 @@
             </div>
           </section>
 
+          <section class = "flag f-center">
+                <img name="attr_flag" style="width:auto;height:90px; bottom: 0;"/>
+          </section>
+
+
           <section class="weapon">
             <h3><u>Weapons</u></h3>
             <div class="weaponinfo">
@@ -275,7 +280,27 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["movementtype","type"], function(values) {
+        getAttrs(["nation","movementtype","type"], function(values) {
+            let nation = values.nation;
+            if (nation === "Soviet") {
+                flag = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
+            }
+           
+            if (nation === "UK") {
+                flag = "https://s3.amazonaws.com/files.d20.io/images/341534797/XqqtHf_6iRq2DKyTLFVNSQ/thumb.png?1683944363";
+            }
+            if (nation === "US Army") {
+                flag = "https://s3.amazonaws.com/files.d20.io/images/327591694/wOEPfGDaGsOwSNTlLvC5VA/thumb.png?1676164120";
+            }
+            if (nation === "US Marine Corps") {
+                flag = "https://s3.amazonaws.com/files.d20.io/images/327770708/SxnQ76mw9gYbJZg1SJVAxw/thumb.png?1676241515";
+            }
+            if (nation === "West Germany") {
+                flag = "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028";
+            }
+
+
+
             let type = values.type;
             let mtype = values.movementtype;
 
@@ -300,6 +325,7 @@
 
 
             setAttrs({
+                "flag": flag,
                 "movetext0": movetext0,
                 "movetext1": movetext1,
                 "movetext2": movetext2,
