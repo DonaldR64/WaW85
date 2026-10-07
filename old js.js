@@ -1801,8 +1801,8 @@ log("Smoke")
                     blockLabel = label;
                     continue;
                 }
-                if (shooterHeight === targetHeight && interHex.height === shooterHeight) {
-                    if (interHex.los === "Blocks" || interHex.rubble === true) {
+                if (shooterHeight === targetHeight) {
+                    if ((interHex.los === "Blocks" || interHex.rubble === true) && interHex.height > shooterHeight) {
 log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
