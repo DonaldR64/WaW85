@@ -1754,12 +1754,12 @@ this.name = char.get("name");
         outputCard.body.push("Range: " + losResult.distance);
         if (losResult.los === true) {
             outputCard.body.push("There is LOS to the Target");
-            if (los.obscured === true) {
+            if (losResult.obscured === true) {
                 outputCard.body.push("LOS Is Obscured");
             }
         } else {
             outputCard.body.push("No LOS To Target");
-            outputCard.body.push("Blocked at " + los.losBlocked);
+            outputCard.body.push("Blocked at " + losResult.losBlocked);
         }
 
 
@@ -1784,7 +1784,7 @@ this.name = char.get("name");
 log("S: " + shooterHeight)
 log("T: " + targetHeight)
 
-
+log(interLabels)
         let finalBlockAt;
         let finalLOS = true;
         let finalObscured = 0;
@@ -1799,19 +1799,23 @@ log("T: " + targetHeight)
             for (let side=0;side<2;side++) {
                 let label = interLabels[side][i];
                 let interHex = HexMap[label];
-
+log(side + " - " + label + ": " + interHex.terrain)
+log("H:" + interHex.height)
+log("LOS: " + interHex.los)
                 //terrain
                 if (shooterHeight === targetHeight) {
                     if (interHex.smoke !== false) {
+log("Smoke")
                         //1 smoke hex, even if hexside, blocks LOS
                         blocked = 2;
                         blockLabel = label;
-                        break;
+                        continue;
                     }
                     if (interHex.los === "Blocks") {
+log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
-                        break;
+                        continue;
                     } else if (interHex.los === "Obscures") {
                         obscured++;
                         blockLabel = label;
@@ -1819,36 +1823,42 @@ log("T: " + targetHeight)
                 } else {
                     //terrain height than both = LOS Blocked
                     if (interHex.height > shooterHeight && interHex.height > targetHeight) {
+log("Intervening Higher Terrain")
                         blocked++;
                         blockLabel = label;
-                        break;
+                        continue;
                     }
                     //terrain higher than one and equal to other = LOS Blocked
                     if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
+log("Higher than one, equal to other")
                         blocked++;
                         blockLabel = label;
-                        break;
+                        continue;
                     }
                     //Blind Spots for 1 height difference
                     if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
                         if (len < 2*i) {
+log("Blind Spot")
                             blocked++;
                             blockLabel = label;
-                            break;
+                            continue;
                         }
                     }
                     if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
                         if (len > 2*i) {
+log("Blind Spot")
+
                             blocked++;
                             blockLabel = label;
-                            break;
+                            continue;
                         }
                     }
                     //Blind spot for 2 height+ differrence is one hex
-                    if ((shooterHeight - interHex.height > 1 && i === (len-1)) ||  (targetHeight - interHex.height > 1 && i === 0) ) {
+                    if ((shooterHeight - interHex.height > 1 && i === (len-1) && interHex.height > targetHeight) ||  (targetHeight - interHex.height > 1 && i === 0 && interHex.height > shooterHeight) ) {
+log("Blind Spot 2+")
                         blocked++;
                         blockLabel = label;
-                        break;
+                        continue;
                     }
 
                 }
@@ -1858,6 +1868,7 @@ log("T: " + targetHeight)
             if (obscured === 2) {
                 finalObscured++;
                 if (finalObscured > 1) {
+log("2 Obscuring Hexes")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
@@ -1869,11 +1880,13 @@ log("T: " + targetHeight)
             if (blocked === 1) {
                 edgeBlock++;
                 if (edgeBlock > 1) {
+log("2 Blocking Edges")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
                 } 
             } else if (blocked === 2) {
+log("both hexes block")
                 finalBlockAt = blockLabel;
                 finalLOS = false;
                 break;
