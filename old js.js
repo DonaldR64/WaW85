@@ -215,7 +215,6 @@ const WaW85 = (() => {
                 "CAS": 2,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": true, "Vehicles": false},
         },
         "Rough": {
             terrain: "Rough",
@@ -234,7 +233,6 @@ const WaW85 = (() => {
                 "CAS": 2,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "City": {
             terrain: "City",
@@ -253,7 +251,6 @@ const WaW85 = (() => {
                 "CAS": 3,    
             },
             assaultMod: true,
-            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Woods": {
             terrain: "Woods",
@@ -272,7 +269,6 @@ const WaW85 = (() => {
                 "CAS": 3,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Hill - Clear": {
             terrain: "Hill - Clear",
@@ -292,7 +288,6 @@ const WaW85 = (() => {
                 "CAS": 4,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": false, "Vehicles": false},
         },
 
         "Hill - City": {
@@ -313,7 +308,6 @@ const WaW85 = (() => {
                 "CAS": 5,    
             },
             assaultMod: true,
-            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Hill - Woods": {
             terrain: "Hill - Woods",
@@ -333,7 +327,6 @@ const WaW85 = (() => {
                 "CAS": 5,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Water": {
             terrain: "Water",
@@ -353,7 +346,6 @@ const WaW85 = (() => {
                 "CAS": 1,    
             },
             assaultMod: false,
-            concealBonus: {"Troops": false, "Vehicles": false},
         },
 
 
@@ -672,7 +664,6 @@ const WaW85 = (() => {
             this.smoke = false; //or is the id of smoke
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
-            this.concealBonus = {"Troops": false, "Vehicles": false};
             this.road = false;
             this.assaultMod = false;
 
@@ -1803,20 +1794,20 @@ log(side + " - " + label + ": " + interHex.terrain)
 log("H:" + interHex.height)
 log("LOS: " + interHex.los)
                 //terrain
-                if (shooterHeight === targetHeight) {
-                    if (interHex.smoke !== false) {
+                if (interHex.smoke !== false || interHex.fire === true) {
 log("Smoke")
-                        //1 smoke hex, even if hexside, blocks LOS
-                        blocked = 2;
-                        blockLabel = label;
-                        continue;
-                    }
-                    if (interHex.los === "Blocks") {
+                    //1 smoke or fire hex, even if hexside, blocks LOS
+                    blocked = 2;
+                    blockLabel = label;
+                    continue;
+                }
+                if (shooterHeight === targetHeight && interHex.height === shooterHeight) {
+                    if (interHex.los === "Blocks" || interHex.rubble === true) {
 log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
-                    } else if (interHex.los === "Obscures") {
+                    } else if (interHex.los === "Obscures" || interHex.wrecks === true) {
                         obscured++;
                         blockLabel = label;
                     }
