@@ -1,11 +1,10 @@
 const WaW85 = (() => {
-    const version = '2025.4.21';
+    const version = '2026.10.7';
     if (!state.WaW85) {state.WaW85 = {}};
 
     const pageInfo = {};
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
 
-    let Formations = {}; 
     let Units = {};
     let HexMap = {}; 
     let activeUnitID;
@@ -215,6 +214,8 @@ const WaW85 = (() => {
                 "Helo Flying": 2,
                 "CAS": 2,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": true, "Vehicles": false},
         },
         "Rough": {
             terrain: "Rough",
@@ -232,6 +233,8 @@ const WaW85 = (() => {
                 "Helo Flying": 2,
                 "CAS": 2,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "City": {
             terrain: "City",
@@ -249,6 +252,8 @@ const WaW85 = (() => {
                 "Helo Flying": 3,
                 "CAS": 3,    
             },
+            assaultMod: true,
+            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Woods": {
             terrain: "Woods",
@@ -266,6 +271,8 @@ const WaW85 = (() => {
                 "Helo Flying": 3,
                 "CAS": 3,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Hill - Clear": {
             terrain: "Hill - Clear",
@@ -284,7 +291,10 @@ const WaW85 = (() => {
                 "Helo Flying": 4,
                 "CAS": 4,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": false, "Vehicles": false},
         },
+
         "Hill - City": {
             terrain: "Hill - City",
             //note need to check in program re uphill for defense 
@@ -302,6 +312,8 @@ const WaW85 = (() => {
                 "Helo Flying": 5,
                 "CAS": 5,    
             },
+            assaultMod: true,
+            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Hill - Woods": {
             terrain: "Hill - Woods",
@@ -320,6 +332,8 @@ const WaW85 = (() => {
                 "Helo Flying": 5,
                 "CAS": 5,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": true, "Vehicles": true},
         },
         "Water": {
             terrain: "Water",
@@ -338,6 +352,8 @@ const WaW85 = (() => {
                 "Helo Flying": 1,
                 "CAS": 1,    
             },
+            assaultMod: false,
+            concealBonus: {"Troops": false, "Vehicles": false},
         },
 
 
@@ -645,6 +661,8 @@ const WaW85 = (() => {
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
             this.concealBonus = {"Troops": false, "Vehicles": false};
             this.road = false;
+            this.assaultMod = false;
+
 //a function will be needed for player to place imp. positions and minefields, while random imefields are from firing
 
 
@@ -2872,20 +2890,30 @@ this.name = char.get("name");
 
 
     const changeGraphic = (tok,prev) => {
-        if (tok.get('subtype') === "token") {
-            log(tok.get("name") + " moving in changeGraphic");
-            if (tok.get("left") !== prev.left || tok.get("top") !== prev.top || tok.get("rotation") !== prev.rotation) { 
-                let unit = Units[tok.id];
-                if (!unit) {return};
+        let unit = Units[tok.id];
+        let newLabel = new Point(tok.get("left"),tok.get("top")).toCube().label();
+        let prevLabel = new Point(prev.left,prev.top).toCube().label();
+        if (unit && newLabel !== prevLabel) {
+            let newHex = HexMap[newLabel];
+            let prevHex = HexMap[prevLabel];
+            log(unit.name + " moving")
+//check if can 'fit' in hex, if valid move etc here
 
 
 
-
-
-
-
+            let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
+            if (index > -1) {
+                HexMap[prevLabel].tokenIDs.splice(index,1);
+                HexMap[newLabel].tokenIDs.push(tok.id);
             }
+            unit.hexLabel = newLabel;
         }
+
+
+
+
+
+
     }
 
 
