@@ -281,7 +281,7 @@ const WaW85 = (() => {
                 "Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1,
             },
             defenseBonus: {"Troops": 0, "Vehicles": 0},
-            los: "Normal",
+            los: "Blocks",
             height: 2,
             unitHeight: {
                 "Ground": 2,
@@ -515,13 +515,26 @@ const WaW85 = (() => {
             return new Cube(this.q * (1.0 - t) + b.q * t, this.r * (1.0 - t) + b.r * t, this.s * (1.0 - t) + b.s * t);
         }
         linedraw(b) {
-            //returns array of hexes between this hex and hex 'b'
+            //returns array of hexes between this hex and hex 'b' excl. hex 'b'
             var N = this.distance(b);
             var a_nudge = new Cube(this.q + 1e-06, this.r + 1e-06, this.s - 2e-06);
             var b_nudge = new Cube(b.q + 1e-06, b.r + 1e-06, b.s - 2e-06);
             var results = [];
             var step = 1.0 / Math.max(N, 1);
-            for (var i = 0; i < N; i++) {
+            for (var i = 1; i < N; i++) {
+                results.push(a_nudge.lerp(b_nudge, step * i).round());
+            }
+            return results;
+        }
+
+        linedraw2(b) {
+            //returns array of hexes between this hex and hex 'b' incl. hex 'b', nudging other way from above 
+            var N = this.distance(b);
+            var a_nudge = new Cube(this.q - 1e-06, this.r - 1e-06, this.s + 2e-06);
+            var b_nudge = new Cube(b.q - 1e-06, b.r - 1e-06, b.s + 2e-06);
+            var results = [];
+            var step = 1.0 / Math.max(N, 1);
+            for (var i = 1; i < N; i++) {
                 results.push(a_nudge.lerp(b_nudge, step * i).round());
             }
             return results;
@@ -668,6 +681,15 @@ const WaW85 = (() => {
 
             HexMap[this.label] = this;
         }
+
+
+        Distance(b) {
+            let dist = this.cube.distance(b.cube);
+            return dist;
+        }
+
+
+
     }
 
     class Formation {
@@ -720,13 +742,6 @@ const WaW85 = (() => {
                 group = "Support"
             }
 
-            let heightType = "Ground";
-            if (type === "Helicopter") {
-                //Landed, /NOE, Flying, Hover
-            }
-            if (type === "Aircraft") {
-                heightType = "CAS"
-            }
 
             let armourType = attributes.armourtype;
             let armour;
@@ -796,7 +811,6 @@ this.name = char.get("name");
 
             this.hexLabel = hexLabel;
             this.lastHexLabel = hexLabel;
-            this.heightType = heightType;
 
             this.armourType = armourType;
             this.armour = armour;
@@ -924,9 +938,32 @@ this.name = char.get("name");
 
 
 
+        Distance(b) {
+            return HexMap[this.hexLabel].Distance(HexMap[b.hexLabel]);
+        }
 
+        Height() {
+            let height;
+            let hex = HexMap[this.hexLabel];
+            if (this.type === "Aircraft") {
+                height = hex.unitHeight["CAS"];
+            }
+            if (this.group === "Ground") {
+                height = hex.unitHeight["Ground"];
+            }
+            if (this.type === "Helicopter") {
+                let heloStatus = this.HeloStatus();
+                height = hex.unitHeight[heloStatus];
+            }
+            return height;
+        }
 
+        HeloStatus() {
+            let status = "Helo NOE";
+            //change this based on ? SM ?
 
+            return status
+        }
 
 
 
@@ -1717,11 +1754,12 @@ this.name = char.get("name");
         outputCard.body.push("Range: " + losResult.distance);
         if (losResult.los === true) {
             outputCard.body.push("There is LOS to the Target");
+            if (los.obscured === true) {
+                outputCard.body.push("LOS Is Obscured");
+            }
         } else {
             outputCard.body.push("No LOS To Target");
-            _.each(losResult.losReasons,reason => {
-                outputCard.body.push(reason);
-            })
+            outputCard.body.push("Blocked at " + los.losBlocked);
         }
 
 
@@ -1732,207 +1770,126 @@ this.name = char.get("name");
     }
 
 
-    const LOS = (unit1,unit2,weapon) => {
-        if (!weapon){
-            weapon = "range: 500";
-        }
-        let hex1 = HexMap[unit1.hexLabel];
-        let hex2 = HexMap[unit2.hexLabel];
+    const LOS = (shooter,target) => {
+        let shooterHex = HexMap[shooter.hexLabel];
+        let targetHex = HexMap[target.hexLabel];
+        let distance = shooter.Distance(target);
+        let shooterHeight = shooter.Height();
+        let targetHeight = target.Height();
 
-        let los = true;
-        let losReasons = [];
-        let delta = hex1.unitHeight[unit1.heightType] - hex2.unitHeight[unit2.heightType];
-    
-        let distance = Math.max(1,hex1.cube.distance(hex2.cube));
+        let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
+        let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
+        let len = interLabels[0].length;
 
-        let startHex = hex1;
-        let endHex = hex2;
-        let startUnit = unit1;
-        let endUnit = unit2;
-
-        if (delta < 0) {
-            startHex = hex2;
-            endHex = hex1;
-            startUnit = unit2;
-            endUnit = unit1;
-        } 
-
-        let startHeight = startHex.unitHeight[startUnit.heightType];
-        let endHeight = endHex.unitHeight[endUnit.heightType];
+log("S: " + shooterHeight)
+log("T: " + targetHeight)
 
 
+        let finalBlockAt;
+        let finalLOS = true;
+        let finalObscured = 0;
+        let edgeBlock = 0;
 
-        let interCubes = startHex.cube.linedraw(endHex.cube);
-        let absDelta = Math.abs(delta);
+        for (let i=0;i<len;i++) {
+            let los = true;
+            let obscured = 0;
+            let blocked = 0;
+            let blockLabel;
 
-        let smokeHexes = 0;
-        let pt1 = new Point(0,startHeight);
-        let pt2 = new Point(distance,endHeight);
-        let pt3,pt4;
-        let obscured = 0;
-        //will always be going from start to end, highest to lowest
-        //so if hex2 higher than hex 1 is target -> shooter in essence
-        for (let i=1;i<interCubes.length;i++) {
-            let interHex = HexMap[interCubes[i].label()];
-    
-            let blind = 0;
-            if (interHex.smoke !== false) {
-                smokeHexes++;
-                if (unit1.special.includes("Thermal") === false || state.WaW85.weatherLevel > 1 || state.WaW85.squalls === true) {
-                    los = false;
-                    losReasons.push("Smoke Blocks at " + interHex.label);
-                    break;
-                } 
-            }
-            if (absDelta === 0) {
-                if (interHex.los === "Blocks" || interHex.height > startHeight) {
-                    los = false;
-                    losReasons.push("Blocked at " + interHex.label);
-                    break;
-                }
-                if (interHex.los === "Obscures") {
-                    obscured++;
-                    if (obscured > 1) {
-                        los = false;
-                        losReasons.push("2nd Obscured Terrain at " + interHex.label);
+            for (let side=0;side<2;side++) {
+                let label = interLabels[side][i];
+                let interHex = HexMap[label];
+
+                //terrain
+                if (shooterHeight === targetHeight) {
+                    if (interHex.smoke !== false) {
+                        //1 smoke hex, even if hexside, blocks LOS
+                        blocked = 2;
+                        blockLabel = label;
                         break;
                     }
+                    if (interHex.los === "Blocks") {
+                        blocked++;
+                        blockLabel = label;
+                        break;
+                    } else if (interHex.los === "Obscures") {
+                        obscured++;
+                        blockLabel = label;
+                    }
+                } else {
+                    //terrain height than both = LOS Blocked
+                    if (interHex.height > shooterHeight && interHex.height > targetHeight) {
+                        blocked++;
+                        blockLabel = label;
+                        break;
+                    }
+                    //terrain higher than one and equal to other = LOS Blocked
+                    if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
+                        blocked++;
+                        blockLabel = label;
+                        break;
+                    }
+                    //Blind Spots for 1 height difference
+                    if (shooterHeight - interHex.height === 1) {
+                        if (len < 2*i) {
+                            blocked++;
+                            blockLabel = label;
+                            break;
+                        }
+                    }
+                    if (targetHeight - interHex.height === 1) {
+                        if (len > 2*i) {
+                            blocked++;
+                            blockLabel = label;
+                            break;
+                        }
+                    }
+                    //Blind spot for 2 height+ differrence is one hex
+                    if ((shooterHeight - interHex.height > 1 && i === (len-1)) ||  (targetHeight - interHex.height > 1 && i === 0) ) {
+                        blocked++;
+                        blockLabel = label;
+                        break;
+                    }
+
                 }
-                if (interHex.smoke === true) {
-                    los = false;
-                    losReasons.push("Smoke Blocks at " + interHex.label);
-                    break;
-                }
-            } else if (absDelta > 0 && interHex.height > 0) {
-                if (interHex.height > startHeight) {
-                    los = false;
-                    losReasons.push("Blocked at " + interHex.label);
-                    break;
-                }
-                if (startHeight === (interHex.height + 1)) {
-                    blind = i;
-                }
-                if (startHeight > (interHex.height + 1)) {
-                    blind = 1;
-                }
-                if (blind >= distance) {
-                    los = false;
-                    losReasons.push("Target in Blind Spot from " + interHex.label);
+            }
+
+            //if only 1 of hexes is obscured, then obscured will be 1 and ignore, if both are obscured, then los is obscured
+            if (obscured === 2) {
+                finalObscured++;
+                if (finalObscured > 1) {
+                    finalBlockAt = blockLabel;
+                    finalLOS = false;
                     break;
                 }
             }
 
-
-
-        }
-
-        if (los === true && smokeHexes > 0 && distance > weapon.range) {
-            los = false;
-            losReasons.push("Unable to Penetrate Smoke");
-        }
-
-
-        let losResult = {
-            los: los,
-            losReasons: losReasons,
-            distance: distance,
-            delta: delta,
-            smokeHexes: smokeHexes,
-        }
-    
-
-
-
-
-
-
-        return losResult;
-    }
-
-    const LOS2 = (hex1,hex2,note) => {
-
-        let indirect = false;
-
-        if (note === true) {
-            indirect = true;
-        }
-
-        let elevation1 = hex1.elevation;
-        let elevation2 = hex2.elevation;
-    
-        let los = true;
-        let losReasons = [];
-        let delta = elevation1 - elevation2;
-    
-        let distance = hex1.cube.distance(hex2.cube);
-    
-        let startHex = hex1;
-        let endHex = hex2;
-        if (delta < 0) {
-            startHex = hex2;
-            endHex = hex1;
-        } 
-        let interCubes = startHex.cube.linedraw(endHex.cube);
-        let absDelta = Math.abs(delta);
-        let smoke = false;
-        let dispersed = false;
-        if (startHex.smoke === true || endHex.smoke === true) {
-            smoke = true;
-        }
-        if (startHex.smoke === "Dispersed" || endHex.smoke === "Dispersed") {
-            dispersed = true;
-        }
-
-        let pt1 = new Point(0,startHex.elevation);
-        let pt2 = new Point(distance,endHex.elevation);
-        let pt3,pt4;
-
-        //will always be going from start to end, highest to lowest
-        //so if hex2 higher than hex 1 is target -> shooter in essence
-        for (let i=1;i<interCubes.length;i++) {
-            let interHex = HexMap[interCubes[i].label()];
-            if (interHex.smoke === true) {
-                smoke = true;
-            }
-            if (interHex.smoke === "Dispersed") {
-                dispersed = true;
-            }
-            if (interHex.height > startHex.elevation) {
-                los = false;
-                losReasons.push("Intervening Terrain at " + interHex.label);
+            //if only 1 of hexes is blocked, then add to edgeBlock
+            //if 2 edges blocked, or 2 of hexes blocked then no LOS
+            if (blocked === 1) {
+                edgeBlock++;
+                if (edgeBlock > 1) {
+                    finalBlockAt = blockLabel;
+                    finalLOS = false;
+                    break;
+                } 
+            } else if (blocked === 2) {
+                finalBlockAt = blockLabel;
+                finalLOS = false;
                 break;
             }
-            if (interHex.blockLOS === true) {
-                pt3 = new Point(i,0);
-                pt4 = new Point(i,interHex.height);
-                let point = lineLine(pt1,pt2,pt3,pt4);
-                if (point) {
-                    los = false;
-                    losReasons.push("Intervening Terrain at " + interHex.label);
-                    break;
-                }
-            }
+        } 
 
+        let obscured = (finalObscured > 0) ? true:false;
 
-
-            
-
-
-
-
-        }
-
-
-        let losResult = {
-            los: los,
-            losReasons: losReasons,
+        let result = {
             distance: distance,
-            delta: delta,
-            smoke: smoke,
-            indirect: indirect,
+            los: finalLOS,
+            losBlocked: finalBlockAt,
+            obscured: obscured,
         }
-    
-        return losResult;
+
+        return result;
     }
 
     const HexData = (msg) => {
