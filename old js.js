@@ -1830,14 +1830,14 @@ log("T: " + targetHeight)
                         break;
                     }
                     //Blind Spots for 1 height difference
-                    if (shooterHeight - interHex.height === 1) {
+                    if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
                         if (len < 2*i) {
                             blocked++;
                             blockLabel = label;
                             break;
                         }
                     }
-                    if (targetHeight - interHex.height === 1) {
+                    if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
                         if (len > 2*i) {
                             blocked++;
                             blockLabel = label;
