@@ -800,8 +800,9 @@ this.name = char.get("name");
             this.player = player;
             this.nation = nation;
 
-            this.hexLabel = hexLabel;
-            this.startHexLabel = hexLabel;
+            this.hexLabel = hexLabel; //current location
+            this.startHexLabel = hexLabel; //start of turn
+            this.latestHexLabel = hexLabel; //last time shot at might update this
 
             this.armourType = armourType;
             this.armour = armour;
