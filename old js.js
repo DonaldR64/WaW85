@@ -801,7 +801,7 @@ this.name = char.get("name");
             this.nation = nation;
 
             this.hexLabel = hexLabel;
-            this.lastHexLabel = hexLabel;
+            this.startHexLabel = hexLabel;
 
             this.armourType = armourType;
             this.armour = armour;
@@ -1576,7 +1576,6 @@ this.name = char.get("name");
     //game functions
     const ClearState = (msg) => {
         //clear arrays
-        Formations = {};
         HexMap = {}; 
         Units = {};
         
@@ -1625,6 +1624,7 @@ this.name = char.get("name");
             weatherLevel: 0,
             squalls: false,
             daytime: true,
+            movemarkers: [],
         }
     
         for (let i=0;i<UnitMarkers.length;i++) {
@@ -2847,12 +2847,12 @@ log("both hexes block")
 
 
     const RemoveMoveMarkers = () => {
-        let markers = state.MW.moveMarkers;
+        let markers = state.WaW85.moveMarkers;
         _.each(markers,marker => {
             let token = getObj("graphic",marker);
             if (token) {token.remove()};
         })
-        state.MW.moveMarkers = [];
+        state.WaW85.moveMarkers = [];
     }
 
     const CreateMoveMarker = (label,cost,lastLabel) => {
@@ -2877,7 +2877,7 @@ log("both hexes block")
 
         if (newToken) {
             toFront(newToken);
-            state.MW.moveMarkers.push(newToken.id);
+            state.WaW85.moveMarkers.push(newToken.id);
         } 
     }
 
@@ -2889,7 +2889,7 @@ log("both hexes block")
 
         let startHex = HexMap[unit.startHexLabel];
 
-        let totalDistance = goalHex.distance(startHex);
+        let totalDistance = goalHex.Distance(startHex);
         let totalMove = unit.move;
         let moveType = unit.MoveType();
         if (moveType === "None") {
@@ -2971,7 +2971,7 @@ log("both hexes block")
 
                 //if this step has not been explored
                 if (!isExplored && !isFrontier) {
-                    let est = cost + stepHex.distance(goalHex);
+                    let est = cost + stepHex.Distance(goalHex);
                     //add the step to the frontier, using the cost and distance
                     frontier.push({
                         label: stepHex.label,
@@ -2998,7 +2998,7 @@ log("both hexes block")
                 let current = 0;
                 for (let i=0;i<explored.length;i++) {
                     let next = explored[i];
-                    if (HexMap[next.label].cube.distance(HexMap[last.label].cube) === 1 && next.cost < lowestCost) {
+                    if (HexMap[next.label].Distance(HexMap[last.label]) === 1 && next.cost < lowestCost) {
                         lowestCost = next.cost;
                         current = i;
                     }
@@ -3069,14 +3069,13 @@ log("both hexes block")
         let prevLabel = new Point(prev.left,prev.top).toCube().label();
         if (unit && newLabel !== prevLabel) {
             let newHex = HexMap[newLabel];
-            let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
 //check if can 'fit' in hex, if valid move etc here
 
 
 
             aStar(unit,newHex);
-            let newLabel = unit.hexLabel;
+            newLabel = unit.hexLabel;
 
             let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
             if (index > -1) {
