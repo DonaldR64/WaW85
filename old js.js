@@ -818,7 +818,7 @@ this.name = char.get("name");
 
             this.weapons = weapons;
 
-            this.movement = movement;
+            this.move = movement;
             this.movementType = movementType;
             this.action = "";
 
