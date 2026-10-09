@@ -645,11 +645,12 @@ const WaW85 = (() => {
             }
             this.edges = edges;
             this.terrain = "Clear";
-            this.improved = false; //improved positions
-            this.minefield = false; //false, placed or random
-            this.wrecks = false; //changed in firing
-            this.rubble = false;
-            this.fire = false;
+            this.improved = []; //improved positions
+            this.minefield = [];
+            this.minefieldType = ""; //placed or random
+            this.wrecks = []; //changed in firing
+            this.rubble = [];
+            this.fire = [];
             this.height = 0; //height of terrain itself
             this.unitHeight = {
                 "Ground": 0,
@@ -661,8 +662,8 @@ const WaW85 = (() => {
             }
             this.offboard = (this.translatedLabel === "Offboard") ? true:false;
             this.los = "Normal";
-            this.smoke = false;
-            this.smokeID = "";
+            this.smoke = [];
+            this.smokeType = ""; //full or half
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
             this.roadIDs = [];
@@ -803,7 +804,8 @@ this.name = char.get("name");
 
             this.hexLabel = hexLabel; //current location
             this.startHexLabel = hexLabel; //start of turn
-            this.latestHexLabel = hexLabel; //last time shot at might update this
+            this.moveLabels = [];
+
 
             this.armourType = armourType;
             this.armour = armour;
@@ -929,6 +931,14 @@ this.name = char.get("name");
             }
         }
 
+        Active() {
+            if (this.token.get("aura1_color") === "#00ff00") {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
 
 
         Distance(b) {
@@ -974,6 +984,21 @@ this.name = char.get("name");
             }
             return mt
         }
+
+        Stackable() {
+            let st = false;
+            if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
+                st = true;
+            }
+            if (this.type === "Helicopter") {
+                let hs = this.HeloStatus();
+                if (hs === "Helo Flying" || hs === "Helo Hovering") {
+                    st = true;
+                }
+            }
+            return st;
+        }
+
 
 
     }
@@ -3108,12 +3133,13 @@ log(nodeHex.label + ": " + dir + " - " + edge)
         let prevLabel = new Point(prev.left,prev.top).toCube().label();
         if (unit && newLabel !== prevLabel) {
             let newHex = HexMap[newLabel];
+            let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
 //check if can 'fit' in hex, if valid move etc here
+            MoveHex(unit,prevHex,newHex);
 
-
-
-            aStar(unit,newHex);
+/*
+            //aStar(unit,newHex);
             newLabel = unit.hexLabel;
 
             let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
@@ -3122,8 +3148,7 @@ log(nodeHex.label + ": " + dir + " - " + edge)
                 HexMap[newLabel].tokenIDs.push(tok.id);
             }
         }
-
-
+*/
 
 
 
