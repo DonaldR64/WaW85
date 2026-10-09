@@ -237,7 +237,7 @@ const WaW85 = (() => {
         "City": {
             terrain: "City",
             movementCosts: {
-                "Troops": 1, "Vehicles": 2, "Helo NOE": false, "Helo Flying": 1
+                "Troops": 1, "Vehicles": 2, "Helo NOE": 100, "Helo Flying": 1
             },
             defenseBonus: {"Troops": 2, "Vehicles": 1},
             los: "Blocks",
@@ -255,7 +255,7 @@ const WaW85 = (() => {
         "Woods": {
             terrain: "Woods",
             movementCosts: {
-                "Troops": 1, "Vehicles": 2, "Helo NOE": false, "Helo Flying": 1
+                "Troops": 1, "Vehicles": 2, "Helo NOE": 100, "Helo Flying": 1
             },
             defenseBonus: {"Troops": 1, "Vehicles": 1},
             los: "Blocks",
@@ -294,7 +294,7 @@ const WaW85 = (() => {
             terrain: "Hill - City",
             //note need to check in program re uphill for defense 
             movementCosts: {
-                "Troops": 1, "Vehicles": 2, "Helo NOE": false, "Helo Flying": 1,
+                "Troops": 1, "Vehicles": 2, "Helo NOE": 100, "Helo Flying": 1,
             },
             defenseBonus: {"Troops": 2, "Vehicles": 1},
             los: "Blocks",
@@ -313,7 +313,7 @@ const WaW85 = (() => {
             terrain: "Hill - Woods",
             //note need to check in program re uphill for defense 
             movementCosts: {
-                "Troops": 1, "Vehicles": 2, "Helo NOE": false, "Helo Flying": 1,
+                "Troops": 1, "Vehicles": 2, "Helo NOE": 100, "Helo Flying": 1,
             },
             defenseBonus: {"Troops": 1, "Vehicles": 1},
             los: "Blocks",
@@ -332,7 +332,7 @@ const WaW85 = (() => {
             terrain: "Water",
             //note need to check in program re amphbious
             movementCosts: {
-                "Troops": false, "Vehicles": false, "Helo NOE": 1, "Helo Flying": 1,
+                "Troops": 100, "Vehicles": 100, "Helo NOE": 1, "Helo Flying": 1,
             },
             defenseBonus: {"Troops": 0, "Vehicles": -1},
             los: "Normal",
@@ -2951,7 +2951,7 @@ log("both hexes block")
 
                 let stepHexCost = stepHex.movementCosts[moveType];
                 //river, check if crossing, then if river and not amphibious make cost 'false' and if amphibious cost is all remaining movement and totalDistance === 1
-                let dir = HexMap[nodeHex].cube.whatDirection(stepCube);
+                let dir = nodeHex.cube.whatDirection(stepCube);
                 let edge = nodeHex.edges[dir];
                 if (edge === "River") {
                     if (stepHex.label === goalHex.label && unit.special.includes("Amphibious") && stepHexCost !== false) {
