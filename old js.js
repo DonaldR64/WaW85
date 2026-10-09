@@ -2936,11 +2936,13 @@ const MoveHex = (unit,startHex,endHex) => {
 
     if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
         if (hexIndex > -1) {
-            let remainingMove = hexesVisited[hexIndex].remainingMove
-            let mmID = hexesVisited[hexIndex].markerID;
+            let remainingMove = hexesVisited[hexIndex].remainingMove;
             unit.token.set("bar3_value",remainingMove);
-            let mmtoken = getObj("graphic",mmID);
-            if (token) {mmtoken.remove()};
+            for (let i=hexIndex;i<hexesVisited.length;i++) {
+                let mmdID = hexesVisited[i].markerID;
+                let mmtoken = getObj("graphic",mmID);
+                if (mmtoken) {mmtoken.remove()};
+            }
         } else if (distance > 1 || remainingMove === 0) {
             endHex = startHex;
         } else {
