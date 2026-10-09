@@ -822,7 +822,7 @@ this.name = char.get("name");
 
             this.weapons = weapons;
 
-            this.move = movement;
+            this.movement = movement;
             this.movementType = movementType;
             this.action = "";
 
@@ -2915,17 +2915,21 @@ log("both hexes block")
 
 
 const MoveHex = (unit,startHex,endHex) => {
-    RemoveMoveMarkers();
+    if (unit.id !== activeUnitID) {
+        RemoveMoveMarkers();
+        activeUnitID = unit.id;
+    } 
     let distance = startHex.Distance(endHex);
-    let totalMove = unit.movement;
+    let totalMove = parseInt(unit.movement);
     let remainingMove = parseInt(unit.token.get("bar3_value"));
+    let usedMove = totalMove - remainingMove;
     let moveType = unit.MoveType();
-    //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
+//skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
 //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
 //maybe transported units remain ? or move off/on with macro? ??
 
-    if ((state.WaW85.turn > 0 && unit.type !== "Aircraft") && endHex.offboard !== true) {
-        if (distance > 1 && remainingMove === 0) {
+    if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
+        if (distance > 1 || remainingMove === 0) {
             endHex = startHex;
         } else {
             let cost = endHex.movementCosts[moveType] || 100;
@@ -2942,7 +2946,7 @@ log("On the Road")
                 if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};            
             }
             if (endHex.smoke.length > 0) {
-                cost = Math.max(cost + 1, totalMove);
+                cost = cost++;
             }
             if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
                 cost++;
@@ -2983,7 +2987,8 @@ log("Water / Amphibious")
 
             if (cost <= remainingMove) {
                 //place a move marker
-                CreateMoveMarker(startHex,endHex,cost);
+                totalCost = cost + usedMove;
+                CreateMoveMarker(startHex,endHex,totalCost);
                 //update remaining movement
                 remainingMove -= cost;
                 unit.token.set("bar3_value",remainingMove);
@@ -3008,7 +3013,7 @@ log("Water / Amphibious")
 }
 
 
-
+/*
 
     const aStar = (unit,goalHex) => {
 log(unit.name)
@@ -3203,7 +3208,7 @@ log(nodeHex.label + ": " + dir + " - " + edge)
     }
 
 
-
+*/
 
     const InitializeLocations = () => {
         _.each(Formations,unit => {
@@ -3228,21 +3233,8 @@ log(nodeHex.label + ": " + dir + " - " + edge)
             let newHex = HexMap[newLabel];
             let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
-//check if can 'fit' in hex, if valid move etc here
             MoveHex(unit,prevHex,newHex);
-
-/*            //aStar(unit,newHex);
-
-            newLabel = unit.hexLabel;
-
-            let index = HexMap[prevLabel].tokenIDs.indexOf(tok.id);
-            if (index > -1) {
-                HexMap[prevLabel].tokenIDs.splice(index,1);
-                HexMap[newLabel].tokenIDs.push(tok.id);
-            }
         }
-*/
-
 
 
 
@@ -3320,8 +3312,9 @@ log(nodeHex.label + ": " + dir + " - " + edge)
             case '!MoveInfo':
                 MoveInfo(msg);
                 break;
-
-
+            case '!Test':
+                state.WaW85.turn = (state.WaW85.turn === 0) ? 1:0;
+                break;
         }
     };
 
