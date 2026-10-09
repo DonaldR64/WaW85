@@ -2904,12 +2904,12 @@ log("both hexes block")
             name: "Map Marker",
             pageid: Campaign().get("playerpageid"),
             imgsrc: getCleanImgSrc(MoveMarkers[cost]),
-            layer: "map",
+            layer: "foreground",
         })
 
         if (newToken) {
             toFront(newToken);
-            state.WaW85.moveMarkers.push(newToken.id);
+            state.WaW85.movemarkers.push(newToken.id);
             return newToken.id;
         } 
     }
@@ -2949,7 +2949,9 @@ const MoveHex = (unit,startHex,endHex) => {
             let cost = endHex.movementCosts[moveType] || 100;
             let dir = startHex.cube.whatDirection(endHex.cube);
             let edge = startHex.edges[dir];
-
+            if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
+                cost++;
+            }
             if (startHex.roadIDs.some(item => endHex.roadIDs.includes(item))) {
 log("On the Road")
                 cost = 1;
@@ -2961,9 +2963,6 @@ log("On the Road")
             }
             if (endHex.smoke.length > 0) {
                 cost = cost++;
-            }
-            if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
-                cost++;
             }
             //Rivers then Water
             if (edge === "River") {
