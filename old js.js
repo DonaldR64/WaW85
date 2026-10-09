@@ -2893,7 +2893,8 @@ log("both hexes block")
 
 
     const aStar = (unit,goalHex) => {
-
+log(unit.name)
+log(unit.special)
         RemoveMoveMarkers();
 
         let startHex = HexMap[unit.startHexLabel];
@@ -2952,16 +2953,18 @@ log("both hexes block")
                 let stepHexCost = stepHex.movementCosts[moveType];
                 //river, check if crossing, then if river and not amphibious make cost 'false' and if amphibious cost is all remaining movement and totalDistance === 1
                 let dir = nodeHex.cube.whatDirection(stepCube);
+log(dir)
                 let edge = nodeHex.edges[dir];
+log(nodeHex.label + ": " + dir + " - " + edge)
                 if (edge === "River") {
-                    if (stepHex.label === goalHex.label && unit.special.includes("Amphibious") && stepHexCost !== false) {
+                    if (totalDistance === 1 && unit.special.includes("Amphibious") && stepHexCost < 100) {
                         stepHexCost = remainingMove;
                     } else {
-                        stepHexCost = false;
+                        stepHexCost = 100;
                     }
                 }
 
-                if (stepHexCost === false) {continue};
+                if (stepHexCost === 100) {continue};
 
                 //road
                 if (nodeHex.roadIDs.some(item => stepHex.roadIDs.includes(item))) {
