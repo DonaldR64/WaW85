@@ -2900,6 +2900,7 @@ log("both hexes block")
 
         let totalDistance = goalHex.Distance(startHex);
         let totalMove = unit.move;
+        let remainingMove = parseInt(unit.token.get("bar3_value"));
         let moveType = unit.MoveType();
         if (moveType === "None") {
 ////????
@@ -2950,7 +2951,15 @@ log("both hexes block")
 
                 let stepHexCost = stepHex.movementCosts[moveType];
                 //river, check if crossing, then if river and not amphibious make cost 'false' and if amphibious cost is all remaining movement and totalDistance === 1
-                
+                let dir = HexMap[nodeHex].cube.whatDirection(stepCube);
+                let edge = nodeHex.edges[dir];
+                if (edge === "River") {
+                    if (stepHex.label === goalHex.label && unit.special.includes("Amphibious") && stepHexCost !== false) {
+                        stepHexCost = remainingMove;
+                    } else {
+                        stepHexCost = false;
+                    }
+                }
 
                 if (stepHexCost === false) {continue};
 
