@@ -67,13 +67,10 @@ log("Water / Amphibious")
 
             if (cost <= remainingMove) {
                 //place a move marker
-                //update movementlabel array
+                CreateMoveMarker(startHex,endHex,cost);
                 //update remaining movement
-
-
-
-
-
+                remainingMove -= cost;
+                unit.token.set("bar3_value",remainingMove);
             } else {
                 endHex = startHex;
             }
@@ -91,13 +88,5 @@ log("Water / Amphibious")
     if (!endHex.tokenIDs.includes(unit.id)) {
         endHex.tokenIDs.push(unit.id);
     }
-
-
-
-
-
-
-
-
 
 }
