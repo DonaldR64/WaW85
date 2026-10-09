@@ -661,10 +661,11 @@ const WaW85 = (() => {
             }
             this.offboard = (this.translatedLabel === "Offboard") ? true:false;
             this.los = "Normal";
-            this.smoke = false; //or is the id of smoke
+            this.smoke = false;
+            this.smokeID = "";
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
-            this.road = false;
+            this.roadIDs = [];
             this.assaultMod = false;
 
 //a function will be needed for player to place imp. positions and minefields, while random imefields are from firing
@@ -1472,16 +1473,23 @@ this.name = char.get("name");
             return el.get("stroke").toLowerCase() === "#ffffff";
         });
         _.each(roads,road => {
+            let id = road.get("id");
             let vertices = translatePoly(road);
             for (let i=0;i<(vertices.length-1);i++) {
                 let cube1 = vertices[i].toCube();
                 let cube2 = vertices[i+1].toCube();
                 let interCubes = cube1.linedraw(cube2);
                 _.each(interCubes, cube => {
-                    HexMap[cube.label()].road = true;
+                    if (!HexMap[cube.label()].roadIDs.includes(id)) {
+                        HexMap[cube.label()].roadIDs.push(id);
+                    }
                 })
-                HexMap[cube1.label()].road = true;
-                HexMap[cube2.label()].road = true;
+                if (!HexMap[cube1.label()].roadIDs.includes(id)) {
+                    HexMap[cube1.label()].roadIDs.push(id);
+                }
+                if (!HexMap[cube2.label()].roadIDs.includes(id)) {
+                    HexMap[cube2.label()].roadIDs.push(id);
+                }
             }
         })
     }
@@ -1924,7 +1932,7 @@ log("both hexes block")
         SetupCard(label,"","Neutral");
         outputCard.body.push("Translated Label: " + translatedLabel);
         outputCard.body.push("Terrain: " + hex.terrain);
-        if (hex.road === true) {
+        if (hex.roadIDs.length > 0) {
             outputCard.body.push("Road Present");
         }
         outputCard.body.push("Height of Terrain: " + hex.height);
@@ -2941,10 +2949,28 @@ log("both hexes block")
                 if (stepHex.offmap === true) {continue};
 
                 let stepHexCost = stepHex.movementCosts[moveType];
+                //river, check if crossing, then if river and not amphibious make cost 'false' and if amphibious cost is all remaining movement and totalDistance === 1
+                
+
                 if (stepHexCost === false) {continue};
+
+                //road
+                if (nodeHex.roadIDs.some(item => stepHex.roadIDs.includes(item))) {
+                    stepHexCost = 1; //road connects 2 hexes
+                }
+                if (stepHex.rubble) {
+                    if (moveType === "Troops") {stepHexCost = 2};
+                    if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};
+                }
+
                 if (stepHex.terrain.includes("Hill") && nodeHex.terrain.includes("Hill") === false) {
                     stepHexCost++;
                 }
+                if (stepHex.smoke !== false) {
+                    stepHexCost++;
+                }
+
+
                 let cost = stepHexCost + node.cost;
     //log("Cost: " + cost);
                 //check if this step has already been explored
