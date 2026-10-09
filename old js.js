@@ -805,7 +805,7 @@ this.name = char.get("name");
             this.hexLabel = hexLabel; //current location
             this.startHexLabel = hexLabel; //start of turn
             this.rubicon = false; //flag for a unit that has triggered Op Fire and now cannot be moved back
-
+            this.hexes = [hexLabel];
 
             this.armourType = armourType;
             this.armour = armour;
@@ -2924,6 +2924,11 @@ const MoveHex = (unit,startHex,endHex) => {
     let remainingMove = parseInt(unit.token.get("bar3_value"));
     let usedMove = totalMove - remainingMove;
     let moveType = unit.MoveType();
+    let hexesVisited = unit.hexes;
+
+
+
+
 //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
 //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
 //maybe transported units remain ? or move off/on with macro? ??
@@ -2992,6 +2997,10 @@ log("Water / Amphibious")
                 //update remaining movement
                 remainingMove -= cost;
                 unit.token.set("bar3_value",remainingMove);
+                unit.hexes.push({
+                    label: endHex.label,
+                    cost: cost,
+                })
             } else {
                 endHex = startHex;
             }
@@ -3012,203 +3021,6 @@ log("Water / Amphibious")
 
 }
 
-
-/*
-
-    const aStar = (unit,goalHex) => {
-log(unit.name)
-log(unit.special)
-        RemoveMoveMarkers();
-
-        let startHex = HexMap[unit.startHexLabel];
-
-        let totalDistance = goalHex.Distance(startHex);
-        let totalMove = unit.move;
-        let remainingMove = parseInt(unit.token.get("bar3_value"));
-        let moveType = unit.MoveType();
-        if (moveType === "None") {
-////????
-            sendChat("","No Movement");
-            return;
-        }
-        let nodes = 1;
-        let explored = [];
-        let frontier = [{
-            label: startHex.label,
-            cost: 0,
-            estimate: totalDistance,
-        }]
-
-        while (frontier.length > 0) {
-            //sort paths in frontier by cost,lowest cost first
-            //choose lowest cost path from the frontier
-            //if more than one, choose one with highest cost       
-            frontier.sort(function(a,b) {
-                return a.estimate - b.estimate || b.cost - a.cost; //2nd part used if estimates are same
-            })
-            let node = frontier.shift();
-            let nodeHex = HexMap[node.label];
-            nodes++
-            //add this node to explored paths
-            explored.push(node);
-    //log("Explored")
-    //log(explored)
-            //if this node reaches goal, end loop
-            if (node.label === goalHex.label) {
-                break;
-            }
-    //log("Node: " + node.label);
-            //generate possible next steps
-            let next = HexMap[node.label].cube.neighbours(); // will be cubes
-            //for each possible next step
-            for (let i=0;i<next.length;i++) {
-                //calculate the cost of the next step 
-                //by adding the step's cost to the node's cost
-                let stepCube = next[i];
-                let stepHexLabel = stepCube.label();
-                if (stepHexLabel === undefined) {continue};
-
-    //log("stepHexLabel: " + stepHexLabel);
-                let stepHex = HexMap[stepHexLabel];
-                if (!stepHex) {continue};
-                if (stepHex.offmap === true) {continue};
-
-                let stepHexCost = stepHex.movementCosts[moveType];
-                //river, check if crossing, then if river and not amphibious make cost 'false' and if amphibious cost is all remaining movement and totalDistance === 1
-                let dir = nodeHex.cube.whatDirection(stepCube);
-log(dir)
-                let edge = nodeHex.edges[dir];
-log(nodeHex.label + ": " + dir + " - " + edge)
-                if (edge === "River") {
-                    if (totalDistance === 1 && unit.special.includes("Amphibious") && stepHexCost < 100) {
-                        stepHexCost = remainingMove;
-                    } else {
-                        stepHexCost = 100;
-                    }
-                }
-
-                if (stepHexCost === 100) {continue};
-
-                //road
-                if (nodeHex.roadIDs.some(item => stepHex.roadIDs.includes(item))) {
-                    stepHexCost = 1; //road connects 2 hexes
-                }
-                if (stepHex.rubble) {
-                    if (moveType === "Troops") {stepHexCost = 2};
-                    if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};
-                }
-
-                if (stepHex.terrain.includes("Hill") && nodeHex.terrain.includes("Hill") === false) {
-                    stepHexCost++;
-                }
-                if (stepHex.smoke !== false) {
-                    stepHexCost++;
-                }
-
-
-                let cost = stepHexCost + node.cost;
-    //log("Cost: " + cost);
-                //check if this step has already been explored
-                let isExplored = (explored.find(e=> {
-                    return e.label === stepHexLabel
-                }));
-                if (isExplored) {
-                    if (cost < isExplored.cost) {
-                        let dif = isExplored.cost - cost;
-                        isExplored.cost -= dif;
-                        isExplored.estimate -= dif;
-                    }
-                }
-                //avoid repeated nodes during the calculation of neighbours
-                let isFrontier = (frontier.find(e=> {
-                    return e.label === stepHexLabel;
-                }));
-                if (isFrontier) {
-                    if (cost < isFrontier.cost) {
-                        let dif = isFrontier.cost - cost;
-                        isFrontier.cost -= dif;
-                        isFrontier.estimate -= dif;
-                    }
-                }
-
-                //if this step has not been explored
-                if (!isExplored && !isFrontier) {
-                    let est = cost + stepHex.Distance(goalHex);
-                    //add the step to the frontier, using the cost and distance
-                    frontier.push({
-                        label: stepHex.label,
-                        cost: cost,
-                        estimate: est,
-                    });
-                }
-            }
-        }
-    //log(explored)
-        //If there are no paths left to explore or hit target hex
-        if (explored.length > 0) {
-            array = [];
-            results = [];
-            explored.sort((a,b) => {
-                return b.cost - a.cost;
-            })
-            let last = explored.shift(); //end hex
-            array.push(last);
-            let finished = explored.length > 0 ? false:true;
-
-            while (finished === false) {
-                let lowestCost = last.cost;
-                let current = 0;
-                for (let i=0;i<explored.length;i++) {
-                    let next = explored[i];
-                    if (HexMap[next.label].Distance(HexMap[last.label]) === 1 && next.cost < lowestCost) {
-                        lowestCost = next.cost;
-                        current = i;
-                    }
-                }
-                last = explored[current];
-                explored.splice(current,1);
-                array.push(last);
-                if (last.label === startHex.label) {
-                    finished = true;
-                }
-            }
-            array.reverse();
-
-            //log(array)
-
-            //run through array, stop when reach units movement points (based on move vs sprint etc)
-            //place marker showing cost per hex
-            //might stop before end
-            let prevNodeLabel;
-            for (let i=0;i<array.length;i++) {
-                let node = array[i];
-                if (node.cost > totalMove) {
-                    break;
-                }
-                //place marker showing nodeCost ie. cost for that hex
-                if (node.cost > 0) {
-                    CreateMoveMarker(node.label,node.cost,prevNodeLabel);
-                }
-                prevNodeLabel = node.label;
-                results.push(node);
-            }
-
-            //move unit back to last hex in results
-            let lastNode = results[results.length - 1];
-            let lastHex = HexMap[lastNode.label];
-            unit.token.set({
-                left: lastHex.centre.x,
-                top: lastHex.centre.y,
-            })
-            unit.hexLabel = lastHex.label;
-
-        } else {
-            sendChat("","No Path");
-        }
-    }
-
-
-*/
 
     const InitializeLocations = () => {
         _.each(Formations,unit => {
