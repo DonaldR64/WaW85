@@ -2910,6 +2910,7 @@ log("both hexes block")
         if (newToken) {
             toFront(newToken);
             state.WaW85.moveMarkers.push(newToken.id);
+            return newToken.id;
         } 
     }
 
@@ -2925,7 +2926,7 @@ const MoveHex = (unit,startHex,endHex) => {
     let usedMove = totalMove - remainingMove;
     let moveType = unit.MoveType();
     let hexesVisited = unit.hexes;
-
+    let hexIndex = hexesVisited.indexOf((e) => e.label === endHex.label);
 
 
 
@@ -2934,7 +2935,13 @@ const MoveHex = (unit,startHex,endHex) => {
 //maybe transported units remain ? or move off/on with macro? ??
 
     if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
-        if (distance > 1 || remainingMove === 0) {
+        if (hexIndex > -1) {
+            let remainingMove = hexesVisited[hexIndex].remainingMove
+            let mmID = hexesVisited[hexIndex].markerID;
+            unit.token.set("bar3_value",remainingMove);
+            let mmtoken = getObj("graphic",mmID);
+            if (token) {mmtoken.remove()};
+        } else if (distance > 1 || remainingMove === 0) {
             endHex = startHex;
         } else {
             let cost = endHex.movementCosts[moveType] || 100;
@@ -2993,13 +3000,14 @@ log("Water / Amphibious")
             if (cost <= remainingMove) {
                 //place a move marker
                 totalCost = cost + usedMove;
-                CreateMoveMarker(startHex,endHex,totalCost);
+                let mmID = CreateMoveMarker(startHex,endHex,totalCost);
                 //update remaining movement
                 remainingMove -= cost;
                 unit.token.set("bar3_value",remainingMove);
                 unit.hexes.push({
                     label: endHex.label,
-                    cost: cost,
+                    remainingMove: remainingMove,
+                    markerID: mmID,
                 })
             } else {
                 endHex = startHex;
