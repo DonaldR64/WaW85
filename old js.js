@@ -1657,7 +1657,7 @@ this.name = char.get("name");
             weatherLevel: 0,
             squalls: false,
             daytime: true,
-            movemarkers: [],
+            moveMarkers: [],
         }
     
         for (let i=0;i<UnitMarkers.length;i++) {
@@ -1842,7 +1842,7 @@ log(side + " - " + label + ": " + interHex.terrain)
 log("H:" + interHex.height)
 log("LOS: " + interHex.los)
                 //terrain
-                if (interHex.smoke !== false || interHex.fire === true) {
+                if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
 log("Smoke")
                     //1 smoke or fire hex, even if hexside, blocks LOS
                     blocked = 2;
@@ -1850,12 +1850,12 @@ log("Smoke")
                     continue;
                 }
                 if (shooterHeight === targetHeight) {
-                    if ((interHex.los === "Blocks" || interHex.rubble === true) && interHex.height > shooterHeight) {
+                    if ((interHex.los === "Blocks" || interHex.rubble.length > 0) && interHex.height > shooterHeight) {
 log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
-                    } else if (interHex.los === "Obscures" || interHex.wrecks === true) {
+                    } else if (interHex.los === "Obscures" || interHex.wrecks.length > 0) {
                         obscured++;
                         blockLabel = label;
                     }
@@ -2908,120 +2908,117 @@ log("both hexes block")
 
         if (newToken) {
             toFront(newToken);
-            state.WaW85.movemarkers.push(newToken.id);
+            state.WaW85.moveMarkers.push(newToken.id);
             return newToken.id;
         } 
     }
 
 
-const MoveHex = (unit,startHex,endHex) => {
-    if (unit.id !== activeUnitID) {
-        RemoveMoveMarkers();
-        activeUnitID = unit.id;
-    } 
-    let distance = startHex.Distance(endHex);
-    let totalMove = parseInt(unit.movement);
-    let remainingMove = parseInt(unit.token.get("bar3_value"));
-    let usedMove = totalMove - remainingMove;
-    let moveType = unit.MoveType();
+    const MoveHex = (unit,startHex,endHex) => {
+        let distance = startHex.Distance(endHex);
+        let totalMove = parseInt(unit.movement);
+        let remainingMove = parseInt(unit.token.get("bar3_value"));
+        let usedMove = totalMove - remainingMove;
+        let moveType = unit.MoveType();
 
-//skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
-//need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
-//maybe transported units remain ? or move off/on with macro? ??
+    //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
+    //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
+    //maybe transported units remain ? or move off/on with macro? ??
 
-    if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
-        if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
-            //moving back 1 hex, reset remainingMove and remove the last movemarker
-            unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
-            let mmToken = getObj("graphic",unit.lastHexInfo.markerID);
-            if (mmToken) {mmToken.remove()};
-        } else if (distance > 1 || remainingMove === 0) {
-            endHex = startHex;
-        } else {
-            let cost = endHex.movementCosts[moveType] || 100;
-            let dir = startHex.cube.whatDirection(endHex.cube);
-            let edge = startHex.edges[dir];
-            if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
-                cost++;
-            }
-            if (startHex.roadIDs.some(item => endHex.roadIDs.includes(item))) {
-log("On the Road")
-                cost = 1;
-            }
-            //rubble here, should override the road cost of 1 above
-            if (endHex.rubble.length > 0) {
-                if (moveType === "Troops") {stepHexCost = 2};
-                if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};            
-            }
-            if (endHex.smoke.length > 0) {
-                cost = cost++;
-            }
-            //Rivers then Water
-            if (edge === "River") {
-log("River")
-                if (unit.special.includes("Amphibious")) {
-                    cost = totalMove;
-                } else {
-                    cost = 100;
-                }
-            }
-            if (endHex.terrain.includes("Water") && unit.special.includes("Amphibious")) {
-log("Water / Amphibious")
-                cost = totalMove;
-            } 
-            //fire hexes
-            if (endHex.fire.length > 0) {
-                cost = 100;
-            }
-
-            //Stacking
-            if (endHex.tokenIDs.length > 0 && unit.Stackable() === false) {
-                let friendly = 0;
-                _.each(endHex.tokenIDs, tokenID => {
-                    if (tokenID !== unit.id) {
-                        let unit2 = Units[tokenID]
-                        if (unit2.player === unit.player && unit2.Stackable() === false) {
-                            friendly++;
-                        }
-                    }
-                })
-                if (friendly >= 2) {
-                    cost = 100;
-                }
-            }
-
-            if (cost <= remainingMove) {
-                //place a move marker
-                totalCost = cost + usedMove;
-                let mmID = CreateMoveMarker(startHex,endHex,totalCost);
-                //update remaining movement
-                remainingMove -= cost;
-                unit.token.set("bar3_value",remainingMove);
-                unit.lastHexInfo = {
-                    label: endHex.label,
-                    remainingMove: remainingMove,
-                    markerID: mmID,
-                }
-            } else {
+        if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
+            if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
+                //moving back 1 hex, reset remainingMove and remove the last movemarker
+                unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
+                let mmToken = getObj("graphic",unit.lastHexInfo.markerID);
+                if (mmToken) {mmToken.remove()};
+            } else if (distance > 1 || remainingMove === 0) {
                 endHex = startHex;
+            } else {
+                let cost = endHex.movementCosts[moveType] || 100;
+                let dir = startHex.cube.whatDirection(endHex.cube);
+                let edge = startHex.edges[dir];
+                if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
+                    cost++;
+                }
+                if (startHex.roadIDs.some(item => endHex.roadIDs.includes(item))) {
+    log("On the Road")
+                    cost = 1;
+                }
+                //rubble here, should override the road cost of 1 above
+                if (endHex.rubble.length > 0) {
+                    if (moveType === "Troops") {stepHexCost = 2};
+                    if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};            
+                }
+                if (endHex.smoke.length > 0) {
+                    cost = cost++;
+                }
+                //Rivers then Water
+                if (edge === "River") {
+    log("River")
+                    if (unit.special.includes("Amphibious")) {
+                        cost = totalMove;
+                    } else {
+                        cost = 100;
+                    }
+                }
+                if (endHex.terrain.includes("Water") && unit.special.includes("Amphibious")) {
+    log("Water / Amphibious")
+                    cost = totalMove;
+                } 
+                //fire hexes
+                if (endHex.fire.length > 0) {
+                    cost = 100;
+                }
+
+                //Stacking
+                if (endHex.tokenIDs.length > 0 && unit.Stackable() === false) {
+                    let friendly = 0;
+                    _.each(endHex.tokenIDs, tokenID => {
+                        if (tokenID !== unit.id) {
+                            let unit2 = Units[tokenID]
+                            if (unit2.player === unit.player && unit2.Stackable() === false) {
+                                friendly++;
+                            }
+                        }
+                    })
+                    if (friendly >= 2) {
+                        cost = 100;
+                    }
+                }
+
+                if (cost <= remainingMove) {
+                    //place a move marker
+                    totalCost = cost + usedMove;
+                    let mmID = CreateMoveMarker(startHex,endHex,totalCost);
+                    //update remaining movement
+                    let newMove = remainingMove - cost;
+                    unit.token.set("bar3_value",newMove);
+                    unit.lastHexInfo = {
+                        label: startHex.label,
+                        remainingMove: remainingMove,
+                        markerID: mmID,
+                    }
+                } else {
+                    endHex = startHex;
+                }
             }
         }
-    }
-//adapt this later to fit 2 or more tokens
+    //adapt this later to fit 2 or more tokens
 
-    unit.token.set({
-        left: endHex.centre.x,
-        top: endHex.centre.y,
-    })
-    let index = startHex.tokenIDs.indexOf(unit.id);
-    if (index > -1) {
-        startHex.tokenIDs.splice(index,1);
-    }
-    if (!endHex.tokenIDs.includes(unit.id)) {
-        endHex.tokenIDs.push(unit.id);
-    }
+        unit.token.set({
+            left: endHex.centre.x,
+            top: endHex.centre.y,
+        })
+        unit.hexLabel = endHex.label;
+        let index = startHex.tokenIDs.indexOf(unit.id);
+        if (index > -1) {
+            startHex.tokenIDs.splice(index,1);
+        }
+        if (!endHex.tokenIDs.includes(unit.id)) {
+            endHex.tokenIDs.push(unit.id);
+        }
 
-}
+    }
 
 
     const InitializeLocations = () => {
@@ -3114,6 +3111,9 @@ log("Water / Amphibious")
                 AddUnits(msg);
                 break;
 
+            case '!ClearMarkers':
+                RemoveMoveMarkers();
+                break;
             case '!DirectFire':
                 DirectFire(msg);
                 break;
