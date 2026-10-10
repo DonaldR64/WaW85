@@ -1790,7 +1790,9 @@ this.name = char.get("name");
         let losResult = LOS(unit1,unit2);
 
         SetupCard("LOS","",unit1.nation);
-        outputCard.body.push("Range: " + losResult.distance);
+        let d = losResult.distance * 150;
+        d = (d > 1000) ? d/1000 + "km": d + "m";
+        outputCard.body.push("Range: " + losResult.distance + " hexes [" + d + "]");
         if (losResult.los === true) {
             outputCard.body.push("There is LOS to the Target");
             if (losResult.obscured === true) {
