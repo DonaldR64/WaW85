@@ -804,8 +804,7 @@ this.name = char.get("name");
 
             this.hexLabel = hexLabel; //current location
             this.startHexLabel = hexLabel; //start of turn
-            this.rubicon = false; //flag for a unit that has triggered Op Fire and now cannot be moved back
-            this.hexes = [hexLabel];
+            this.lastHexInfo = {}; //last hex moved into during movement, blank at start of turn and when fired at
 
             this.armourType = armourType;
             this.armour = armour;
@@ -2925,24 +2924,17 @@ const MoveHex = (unit,startHex,endHex) => {
     let remainingMove = parseInt(unit.token.get("bar3_value"));
     let usedMove = totalMove - remainingMove;
     let moveType = unit.MoveType();
-    let hexesVisited = unit.hexes;
-    let hexIndex = hexesVisited.indexOf((e) => e.label === endHex.label);
-
-
 
 //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
 //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
 //maybe transported units remain ? or move off/on with macro? ??
 
     if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
-        if (hexIndex > -1) {
-            let remainingMove = hexesVisited[hexIndex].remainingMove;
-            unit.token.set("bar3_value",remainingMove);
-            for (let i=hexIndex;i<hexesVisited.length;i++) {
-                let mmdID = hexesVisited[i].markerID;
-                let mmtoken = getObj("graphic",mmID);
-                if (mmtoken) {mmtoken.remove()};
-            }
+        if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
+            //moving back 1 hex, reset remainingMove and remove the last movemarker
+            unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
+            let mmToken = getObj("graphic",unit.lastHexInfo.markerID);
+            if (mmToken) {mmToken.remove()};
         } else if (distance > 1 || remainingMove === 0) {
             endHex = startHex;
         } else {
@@ -3005,16 +2997,17 @@ log("Water / Amphibious")
                 //update remaining movement
                 remainingMove -= cost;
                 unit.token.set("bar3_value",remainingMove);
-                unit.hexes.push({
+                unit.lastHexInfo = {
                     label: endHex.label,
                     remainingMove: remainingMove,
                     markerID: mmID,
-                })
+                }
             } else {
                 endHex = startHex;
             }
         }
     }
+//adapt this later to fit 2 or more tokens
 
     unit.token.set({
         left: endHex.centre.x,
