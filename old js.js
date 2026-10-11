@@ -119,8 +119,6 @@ const WaW85 = (() => {
     const TurnMarkers = ["","https://s3.amazonaws.com/files.d20.io/images/361055772/zDURNn_0bbTWmOVrwJc6YQ/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055766/UZPeb6ZiiUImrZoAS58gvQ/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055764/yXwGQcriDAP8FpzxvjqzTg/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055768/7GFjIsnNuIBLrW_p65bjNQ/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055770/2WlTnUslDk0hpwr8zpZIOg/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055771/P9DmGozXmdPuv4SWq6uDvw/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055765/V5oPsriRTHJQ7w3hHRBA3A/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055767/EOXU3ujXJz-NleWX33rcgA/thumb.png?1695998303","https://s3.amazonaws.com/files.d20.io/images/361055769/925-C7XAEcQCOUVN1m1uvQ/thumb.png?1695998303"];
 
 
-    const UnitMarkers = ["Plus-1d4::2006401","Minus-1d4::2006429","Plus-1d6::2006402","Minus-1d6::2006434","Plus-1d20::2006409","Minus-1d20::2006449","Hot-or-On-Fire-2::2006479","Animal-Form::2006480","Red-Cloak::2006523","A::6001458","B::6001459","C::6001460","D::6001461","E::6001462","F::6001463","G::6001464","H::6001465","I::6001466","J::6001467","L::6001468","M::6001469","O::6001471","P::6001472","Q::6001473","R::6001474","S::6001475"];
-
     const MoveMarkers = ["https://files.d20.io/images/344441274/R0eEVMFzhYmwv6rigIA7GA/thumb.png?1685718541","https://s3.amazonaws.com/files.d20.io/images/435360245/m3tKJi3Pqb_40g75O6ouSg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360246/pXI3HBrGMZ05ldDfH-zYCQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360229/JKMY922qxhf0E3z1l10jQg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360228/YDGEQNR_qVFprdHJSjYNPg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360232/1TysQcieJ5zbgYvXV4pqiA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360240/KfCmoF5WyWTStCWOTPrkJg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360230/zjvzMFGWotZUORDeIVXrEw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360226/-TXBFvMfahwOIjXEuS0mTQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360237/gEr7oP4z0ByUKTXpvSHYQQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360241/2HAnTYlC0uVR6mqyMoaACA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360244/CDOLr8RkQ-pPhwjaOHTbEA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360243/023KSjjB8QHtrMNbuO3ENQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360242/xx2msq4HjqRN5dUaPl0vfA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360236/L-iuGURhzreq2t2mKOj3Qg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360247/v2Y15K10F2qZK268wPzYyw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360239/SXny1fVCh5PeYxLGtnoPTA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360233/EdB3z27csNyykkc2lWTefw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360227/JpFvEVLKlKV6n6JsE8zrVg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360234/5b2XrhzPgfgjdoI5y97LnQ/thumb.png?174356385","https://s3.amazonaws.com/files.d20.io/images/435360238/_sWU7YtYJsWT1NZC-wb80Q/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360231/n7HVTuMwWch59Aofq1v96w/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360235/yVtSNUPJOkxq0n2_FknMcA/thumb.png?1743563856"];
 
     let weaponSounds = {
@@ -138,8 +136,11 @@ const WaW85 = (() => {
 
     let outputCard = {title: "",subtitle: "",nation: "",body: [],buttons: [],};
 
-    const RedFor = ["Soviet","Poland","Syria","Russia"];
-    const BlueFor = ["US Army","US Marine Corps","British","West Germany","Canada","Israel","Ukraine"];
+    const RedFor = ["Soviet",];
+    const BlueFor = ["US Army","US Marine Corps","British","West Germany","Canada"];
+
+    const RedForFlag = ["Warpact::5862802"];
+    const BlueForFlag = ["NATO::5862803"];
 
     const squadMarkers = ["Red-01::2006626","Red-02::2006628","Red-03::2006629","Red-04::2006631","Red-05::2006633"];
 
@@ -685,27 +686,7 @@ const WaW85 = (() => {
 
     }
 
-    class Formation {
-        constructor(formationID,name,hqRange,morale) {
-            this.id = formationID;
-            this.name = name;
-            this.hqRange = hqRange;
-            this.morale = morale;
-            this.unitIDs = [];
-            Formations[formationID] = this;
-        }
-        Add(unitID) {
-            if (this.unitIDs.includes(unitID) === false) {
-                this.unitIDs.push(unitID);
-            }
-        }
-        Remove(unitID) {
-            let index = this.unitIDs.indexOf(unitID);
-            if (index > -1) {
-                this.unitIDs.splice(index,1);
-            }
-        }
-    }
+
 
 
 
@@ -794,8 +775,9 @@ log(weapons)
                 movement = parseInt(movement);
             }
 
-this.name = char.get("name");
-
+            this.name = token.get("name");
+            this.charName = char.get("name");
+            this.charID = charID;
             this.token = token;
             this.type = type;
             this.group = group;
@@ -1525,7 +1507,6 @@ this.name = char.get("name");
         //add tokens on token layer to arrays
         Units = {};
         //create an array of all tokens
-        let start = Date.now();
         let tokens = findObjs({
             _pageid: Campaign().get("playerpageid"),
             _type: "graphic",
@@ -1535,9 +1516,11 @@ this.name = char.get("name");
    
         let s = 0;
         tokens.forEach((token) => {
-            let character = getObj("character", token.get("represents"));   
-            if (character) {
+            let character = getObj("character", token.get("represents"));
+            let unitInfo = state.WaW85.unitInfo[token.id];
+            if (character && unitInfo) {
                 let unit = new Unit(token.get("id"));
+                unit.formationID = unitInfo;
                 s++;
             }
         });
@@ -1630,17 +1613,11 @@ this.name = char.get("name");
                 tint_color: "transparent",
                 aura1_color: "transparent",
                 aura1_radius: 0,
-                aura2_color: "transparent",
-                aura2_radius: 0,
-                showplayers_bar1: true,
+                showplayers_aura1: true,
                 showname: true,
                 showplayers_aura1: true,
-                bar3_value: 0,
-                bar3_max: "",
-                bar2_value: 0,
-                bar2_max: "",
-                bar1_value: 0,
-                bar1_max: "",
+                disableSnapping: true,
+                disableTokenMenu: true,
                 gmnotes: "",
                 statusmarkers: "",
                 tooltip: "",
@@ -1652,18 +1629,18 @@ this.name = char.get("name");
             nations: ["",""],
             playerInfo: ["",""],
             turn: 0,
-            phase: "",
-            markers: [[],[]],
+            phase: "Operations",
+            cards: [],
+            endOps: 0,
+            initiative: false,
             weatherLevel: 0,
             squalls: false,
             daytime: true,
             moveMarkers: [],
+            formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
+            unitInfo: {}, //ref by token ID, is the formationID of that token
         }
     
-        for (let i=0;i<UnitMarkers.length;i++) {
-            state.WaW85.markers[0].push(i);
-            state.WaW85.markers[1].push(i);
-        }
 
 
 
@@ -1990,22 +1967,63 @@ log("both hexes block")
         })
     }
 
-    const AddUnits = (msg) => {
+    const CreateFormation = (msg) => {
         if (!msg.selected) {return};
+        let formationName = msg.content.split(";")[1];
+        let formationID = stringGen();
+        let unitIDs = [];
+        let unitNames = {};
+        let platName = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th"];
+        let nations = ["US ","Soviet "];
+        let formNation;
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
-            unit.token.set({
-                aura1_color: "#00ff00",
-                aura1_radius: .5,
-                tint_color: "transparent",
-                bar1_value: unit.movement,
-                bar1_max: unit.movement,
+            formNation = unit.nation;
+            let name = unit.charName;
+            _.each(nations,nation => {
+                name = name.replace(nation,"");
             })
-
-
+            if (unit.type === "Infantry" || unit.type === "Vehicle" || unit.type === "Helicopter") {
+                if (unitNames[name] !== undefined) {
+                    unitNames[name] = unitNames[name] + 1;
+                } else {
+                    unitNames[name] = 0;
+                }
+                name = name + " " + platName[unitNames[name]] + " Plt";
+            } 
+            unit.token.set("name",name);
+            unit.name = name;
+            unitIDs.push(id);
+            unit.formationID = formationID;
+            state.WaW85.unitInfo[id] = formationID;
         })
+
+        state.WaW85.formationInfo[formationID] = {
+            name: formationName,
+            unitIDs: unitIDs,
+            id: formationID,
+            nation: formNation,
+        }
     }
+
+    const PlaceHQ = (msg) => {
+        if (!msg.selected) {sendChat("","Pick a Unit");return};
+        let id = msg.selected[0]._id;
+        let unit = Units[id];
+        if (!unit) {sendChat("","Pick a Valid Unit");return};
+
+        SetupCard("HQ","",unit.nation);
+        outputCard.body.push("HQ Attached to " + unit.name);
+        PrintCard();
+
+        //Create HQ Marker and place on unit
+
+
+    }
+
+
+
 
 
     const DirectFire = (msg) => {
@@ -2640,42 +2658,98 @@ log("both hexes block")
     }
 
 
+    const CreateOpsDeck = () => {
+        let formations = state.WaW85.formationInfo;
+        let cards = [];
+        _.each(formations,formation => {
+            cards.push(formation);
+        })
+        cards.push({name: "End Operations"});
+        cards.push({name: "End Operations"});
+//3rd based on scenario
+//others based on scenario
 
+        state.WaW85.cards = cards;
+log(cards)
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-    const ChangeHex = (team,newHex) => {
-        //update tokenIDs and centre token
-        let oldHex = HexMap[team.hexLabel];
-        let index = oldHex.tokenIDs.indexOf(team.id);
-        if (index > -1) {
-            oldHex.tokenIDs.splice(index,1);
+    const NextPhase = () => {
+        let turn = state.WaW85.turn;
+        let phase = state.WaW85.phase;
+        if (turn === 0) {
+            CreateOpsDeck();
+            if (state.WaW85.initiative) {
+                phase = "Initiative";
+            } else {
+                turn = 1;
+                state.WaW85.turn = 1;
+            }
+        } 
+        SetupCard(phase + " Phase","Turn " + turn,"Neutral");
+        if (phase === "Operations") {
+            OperationsPhase();
+        } else if (phase === "Initiative") {
+            InitiativePhase();
+        } else {
+            EndPhase();
         }
-        if (newHex) {
-            team.token.set({
-                left: newHex.centre.x,
-                top: newHex.centre.y,
-            })
-            newHex.tokenIDs.push(team.id);
-            team.hexLabel = newHex.label;
-            team.cube = newHex.cube;
-            if (newHex.offboard === true) {
-                team.offboard = true;
-            }
-            if (newHex.offboard === false) {
-                team.offboard = false;
-            }
+        PrintCard();
+    }
+
+
+    const OperationsPhase = () => {
+        //draw card randomly
+log(state.WaW85.cards)
+        let index = randomInteger(state.WaW85.cards.length) - 1;
+log(index)
+        let card = state.WaW85.cards.splice(index,1)[0];
+log(card.name)
+        if (card.name === "End Operations") {
+            state.WaW85.endOps++;
+        }
+        outputCard.body.push("[B]" + card.name + "[/b]");
+        if (state.WaW85.endOps > 1) {
+            outputCard.body.push("2nd End Operations Card");
+            outputCard.body.push("Turn is Over");
+            outputCard.body.push("Click End Phase to Run End Phase");
+            ButtonInfo("Start End Phase","!NextPhase");
+            state.WaW85.phase = "End";
+        } else if (card.name !== "End Operations") {
+            outputCard.nation = card.nation;
+            outputCard.body.push("Place HQ For Formation with a Unit");
+            outputCard.body.push("Transfer any Leaders");
+            outputCard.body.push("Select Activate Formation when Done")
+            ButtonInfo("Activate Formation","!ActivateFormation;" + card.id);
         }
     }
+
+    const ActivateFormation = (msg) => {
+
+
+
+
+    }
+
+
+
+
+        
+    const EndPhase = () => {
+
+
+
+
+
+        //make up new deck if going to next turn
+//this bit will have to be done after end phase done / 'printed'
+        CreateOpsDeck();
+        state.WaW85.phase = "Operations";
+        state.WaW85.endOps = 0;
+        state.WaW85.turn++;
+    }
+
+
+
 
     const Activate = (msg) => { 
         let Tag = msg.content.split(";");
@@ -3109,8 +3183,8 @@ log("both hexes block")
                 SizeTokens(msg);
                 break;
 
-            case '!AddUnits':
-                AddUnits(msg);
+            case '!CreateFormation':
+                CreateFormation(msg);
                 break;
 
             case '!ClearMarkers':
@@ -3130,6 +3204,12 @@ log("both hexes block")
                 break;
             case '!Test':
                 state.WaW85.turn = (state.WaW85.turn === 0) ? 1:0;
+                break;
+            case '!PlaceHQ':
+                PlaceHQ(msg);
+                break;
+            case '!NextPhase':
+                NextPhase();
                 break;
         }
     };
