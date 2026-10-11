@@ -1969,7 +1969,12 @@ log("both hexes block")
 
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
-        let formationName = msg.content.split(";")[1];
+        let Tag = msg.content.split(";");
+        let formationName = Tag[1];
+        let morale = Tag[2];
+        let commandRangeNormal = Tag[3];
+        let commandRangeReduced = Tag[4];
+
         let formationID = stringGen();
         let unitIDs = [];
         let unitNames = {};
@@ -2004,6 +2009,8 @@ log("both hexes block")
             unitIDs: unitIDs,
             id: formationID,
             nation: formNation,
+            morale: morale,
+            commandRange: [commandRangeNormal,commandRangeReduced],
         }
     }
 
