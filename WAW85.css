@@ -185,19 +185,19 @@ section {
 
 
 
-input[type="hidden"][value="Support"].armour-status ~ .move {
+input[type="hidden"][value="Support"].armour-status ~ .armour {
     display: none;
 }
-input[type="hidden"][value="HQ"].armour-status ~ .move {
+input[type="hidden"][value="HQ"].armour-status ~ .armour {
     display: none;
 }
-input[type="hidden"][value="Leader"].armour-status ~ .move {
+input[type="hidden"][value="Leader"].armour-status ~ .armour {
     display: none;
 }
-input[type="hidden"][value="Towed"].armour-status ~ .move {
+input[type="hidden"][value="Towed"].armour-status ~ .armour {
     display: none;
 }
-input[type="hidden"][value="Offboard Artillery"].armour-status ~ .move {
+input[type="hidden"][value="Offboard Artillery"].armour-status ~ .armour {
     display: none;
 }
 
