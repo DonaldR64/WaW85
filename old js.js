@@ -3006,11 +3006,13 @@ log(card.name)
         let usedMove = totalMove - remainingMove;
         let moveType = unit.MoveType();
 
+        let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
+
     //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
     //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
     //maybe transported units remain ? or move off/on with macro? ??
 
-        if (state.WaW85.turn > 0 && unit.type !== "Aircraft" && endHex.offboard !== true) {
+        if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true) {
             if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
                 //moving back 1 hex, reset remainingMove and remove the last movemarker
                 unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
