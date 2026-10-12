@@ -1013,12 +1013,14 @@ log(weapons)
 
     const Stats = (str) => {
         let array = [];
-        for (let i=0;i<str.length;i++) {
-            let a = parseInt(str[i]);
-            if (isNaN(a)) {continue};
-            array.push(a);
+        if (str && str.length > 0) {
+            for (let i=0;i<str.length;i++) {
+                let a = parseInt(str[i]);
+                if (isNaN(a)) {continue};
+                array.push(a);
+            }
+            if (array.length === 1) {array.push(array[0])};
         }
-        if (array.length === 1) {array.push(array[0])};
         return array;
     }
 
