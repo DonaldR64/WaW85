@@ -194,9 +194,6 @@ input[type="hidden"][value="HQ"].armour-status ~ .armour {
 input[type="hidden"][value="Leader"].armour-status ~ .armour {
     display: none;
 }
-input[type="hidden"][value="Towed"].armour-status ~ .armour {
-    display: none;
-}
 input[type="hidden"][value="Offboard Artillery"].armour-status ~ .armour {
     display: none;
 }
