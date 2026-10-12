@@ -166,6 +166,10 @@ section {
   display: none;
 }
 
+
+
+
+
 .flag {
     grid-area: flag;
     display: flex;
@@ -190,6 +194,8 @@ section {
   flex-direction: center;
   background-color: white;
 }
+
+
 
 .armourinfo h3 {
   color: darkred;
@@ -226,8 +232,7 @@ section {
 }
 
 
-.togglemove:not([value="Other"]) ~ .movement,
-.togglemove:not([value="Aircraft"]) ~ .airmove {
+input[type="hidden"][value="Support"].move-status ~ .move {
     display: none;
 }
 
