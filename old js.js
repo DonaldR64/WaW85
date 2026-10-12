@@ -2774,7 +2774,6 @@ log(cards)
 
     const OperationsPhase = () => {
         //draw card randomly
-log(state.WaW85.cards)
         let index = randomInteger(state.WaW85.cards.length) - 1;
         let card = state.WaW85.cards.splice(index,1)[0];
         if (card.name === "End Operations") {
