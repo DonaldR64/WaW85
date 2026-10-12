@@ -2715,7 +2715,7 @@ log(hex)
 
 
     const CreateOpsDeck = () => {
-        let formations = state.WaW85.formationInfo;
+        let formations = Scenario.formations;
         let cards = [];
         _.each(formations,formation => {
             cards.push(formation);
@@ -2750,6 +2750,7 @@ log(cards)
     }
 
     const InitiativePhase = () => {
+        CreateOpsDeck();
         if (Scenario.initiativeFormation > 0) {
             let formation = Scenario.formations[Scenario.initiativeFormation];
             outputCard.body.push("[U]Initiative Phase[/u]");
@@ -2762,7 +2763,6 @@ log(cards)
             state.WaW85.phase = "Operations";
             state.WaW85.turn = 1;
         } else {
-            CreateOpsDeck();
             state.WaW85.phase = "Operations";
             state.WaW85.turn = 1;
         }
@@ -2776,9 +2776,7 @@ log(cards)
         //draw card randomly
 log(state.WaW85.cards)
         let index = randomInteger(state.WaW85.cards.length) - 1;
-log(index)
         let card = state.WaW85.cards.splice(index,1)[0];
-log(card.name)
         if (card.name === "End Operations") {
             state.WaW85.endOps++;
         }
