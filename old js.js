@@ -112,7 +112,6 @@ const WaW85 = (() => {
         reload: "status_blue",
         landed: "status_green",
         noe: "status_brown",
-
     }; 
 
 
@@ -667,7 +666,7 @@ const WaW85 = (() => {
             this.smokeType = ""; //full or half
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
-            this.roadIDs = [];
+            this.road = false;
             this.assaultMod = false;
 
 //a function will be needed for player to place imp. positions and minefields, while random imefields are from firing
@@ -1477,27 +1476,33 @@ log(weapons)
     }
     
     const AddRoads = () => {
+    
+    /*
         let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
             return el.get("stroke").toLowerCase() === "#ffffff";
         });
+    */
+        let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
+            return el.get("stroke").toLowerCase() === "#980000";
+        });
+
+log(roads)
+        
         _.each(roads,road => {
-            let id = road.get("id");
             let vertices = translatePoly(road);
             for (let i=0;i<(vertices.length-1);i++) {
                 let cube1 = vertices[i].toCube();
                 let cube2 = vertices[i+1].toCube();
                 let interCubes = cube1.linedraw(cube2);
+                interCubes.push(cube1);
+                interCubes.push(cube2);
                 _.each(interCubes, cube => {
-                    if (!HexMap[cube.label()].roadIDs.includes(id)) {
-                        HexMap[cube.label()].roadIDs.push(id);
+                    let label = cube.label();
+log(label)
+                    if (label && HexMap[label]) {
+                        HexMap[label].road = true;
                     }
                 })
-                if (!HexMap[cube1.label()].roadIDs.includes(id)) {
-                    HexMap[cube1.label()].roadIDs.push(id);
-                }
-                if (!HexMap[cube2.label()].roadIDs.includes(id)) {
-                    HexMap[cube2.label()].roadIDs.push(id);
-                }
             }
         })
     }
@@ -1937,7 +1942,7 @@ log("both hexes block")
         SetupCard(label,"","Neutral");
         outputCard.body.push("Translated Label: " + translatedLabel);
         outputCard.body.push("Terrain: " + hex.terrain);
-        if (hex.roadIDs.length > 0) {
+        if (hex.road) {
             outputCard.body.push("Road Present");
         }
         outputCard.body.push("Height of Terrain: " + hex.height);
@@ -3027,7 +3032,7 @@ log(card.name)
                 if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
                     cost++;
                 }
-                if (startHex.roadIDs.some(item => endHex.roadIDs.includes(item))) {
+                if (startHex.road && endHex.road) {
     log("On the Road")
                     cost = 1;
                 }
