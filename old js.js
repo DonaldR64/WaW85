@@ -8,8 +8,9 @@ const WaW85 = (() => {
     let Units = {};
     let HexMap = {}; 
     let activeUnitID;
-
-
+    let ScenarioInfo = {};
+    let MapInfo = {};
+    let UnitIDList = []; //used in create formation
 
     let playerInfo = [];
 
@@ -638,7 +639,6 @@ const WaW85 = (() => {
             this.tokenIDs = [];
             this.cube = offset.toCube();
             this.label = offset.label();
-            this.translatedLabel = TranslateLabel(this.offset);
             let edges = {};
             for (let i=0;i<6;i++) {
                 edges[DIRECTIONS[i]] = "Open";
@@ -660,7 +660,7 @@ const WaW85 = (() => {
                 "Helo Flying": 2,
                 "CAS": 2,    
             }
-            this.offboard = (this.translatedLabel === "Offboard") ? true:false;
+            this.offboard = true;
             this.los = "Normal";
             this.smoke = [];
             this.smokeType = ""; //full or half
@@ -983,6 +983,18 @@ log(weapons)
 
     }
 
+    const DefineScenario = () => {
+        let name = pageInfo.name;
+        let info = ScenarioInfo(name);
+
+
+
+
+    }
+
+
+
+
 
     const TranslateLabel = (offset) => {
         let newLabel;
@@ -997,6 +1009,24 @@ log(weapons)
         }
         return newLabel;
     }
+
+
+    const DefineMap = () => {
+        let map = findObjs({_type: "graphic",_subtype: "token",layer: "map"}).filter((e) => e.get("name").includes("Map"))[0];
+        let w = map.get("width")/2;
+        let h = map.get("height")/2;
+        let x = map.get("left");
+        let y = map.get("top");
+        MapInfo.top = new Point(x-w,y-h);
+        MapInfo.bottom = new Point(x+w,y+h);
+        MapInfo.centre = new Point(x,y);
+
+        _.each(HexMap,hex => {
+             if (hex.centre.x >= MapInfo.top.x && hex.centre.x <= MapInfo.bottom.x && hex.centre.y >= MapInfo.top.y && hex.centre.y <= MapInfo.bottom.y) {hex.offboard = false};
+        })
+
+    }
+
 
     const edgeCrossed= (unit) => {
         let hex = HexMap[unit.hexLabel];
@@ -1398,6 +1428,7 @@ log(weapons)
 
         AddTerrain();    
         AddTokens();        
+        DefineMap();
         let elapsed = Date.now()-startTime;
         log("Hex Map Built in " + elapsed/1000 + " seconds");
     };
@@ -1624,16 +1655,11 @@ log(label)
         });
     
         state.WaW85 = {
-            nations: ["",""],
-            playerInfo: ["",""],
             turn: 0,
-            phase: "Operations",
+            phase: "Game Start",
             cards: [],
             endOps: 0,
-            initiative: false,
-            weatherLevel: 0,
-            squalls: false,
-            daytime: true,
+            scenario: "",
             moveMarkers: [],
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
@@ -1646,7 +1672,11 @@ log(label)
 
         //CleanMap("All");
         BuildMap();
+
         sendChat("","Cleared State/Arrays");
+
+
+
     }
 
 
@@ -1929,24 +1959,22 @@ log("both hexes block")
         let cube = point.toCube();
         let label = cube.label();
         let hex = HexMap[label];
-        let translatedLabel = hex.translatedLabel || "Undefined";
+log(hex)
         SetupCard(label,"","Neutral");
-        outputCard.body.push("Translated Label: " + translatedLabel);
-        outputCard.body.push("Terrain: " + hex.terrain);
-        if (hex.road) {
-            outputCard.body.push("Road Present");
+        if (hex.offboard === true) {
+            outputCard.body.push("Offboard");
+        } else {
+            outputCard.body.push("Terrain: " + hex.terrain);
+            if (hex.road) {
+                outputCard.body.push("Road Present");
+            }
+            for (let i=0;i<6;i++) {
+                let edge = hex.edges[DIRECTIONS[i]];
+                if (edge !== "Open") {
+                    outputCard.body.push(DIRECTIONS[i] + " Side: " + edge);
+                }
+            }
         }
-        outputCard.body.push("Height of Terrain: " + hex.height);
-        outputCard.body.push("LOS: " + hex.los);
-        outputCard.body.push("Movement Costs");
-        let keys = Object.keys(hex.movementCosts);
-        let line = [];
-        _.each(keys,key => {
-            line.push(key + ": " + hex.movementCosts[key]);
-        })
-        outputCard.body.push(line.toString());
-
-
         PrintCard();
     }
 
@@ -1965,24 +1993,42 @@ log("both hexes block")
         })
     }
 
+    const CreateFormation2 = (msg) => {
+        let formNum = msg.content.split(";")[1];
+        _.each(UnitIDList,unitID => {
+            let unit = Units[unitID];
+            unit.formationID = formNum;
+            state.WaW85.unitInfo[unitID] = formNum;
+        })
+        let formation = ScenarioData[state.WaW85.scenario].formations[formNum]
+
+        state.WaW85.formationInfo[formNum] = {
+            name: formation.name,
+            unitIDs: UnitIDList,
+            id: formNum,
+            nation: formation.nation,
+            morale: formation.morale,
+            commandRange: formation.command,
+        }
+        sendChat("",formation.name + " Entered");
+
+    }
+
+
+
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
-        let Tag = msg.content.split(";");
-        let formationName = Tag[1];
-        let morale = Tag[2];
-        let commandRangeNormal = Tag[3];
-        let commandRangeReduced = Tag[4];
-
-        let formationID = stringGen();
-        let unitIDs = [];
+        if (state.WaW85.scenario === "") {
+            sendChat("","Pick Scenario");
+            return;
+        }
+        UnitIDList= [];
         let unitNames = {};
         let platName = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th"];
         let nations = ["US ","Soviet "];
-        let formNation;
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
-            formNation = unit.nation;
             let name = unit.charName;
             _.each(nations,nation => {
                 name = name.replace(nation,"");
@@ -1997,19 +2043,14 @@ log("both hexes block")
             } 
             unit.token.set("name",name);
             unit.name = name;
-            unitIDs.push(id);
-            unit.formationID = formationID;
-            state.WaW85.unitInfo[id] = formationID;
+            UnitIDList.push(id);
         })
-
-        state.WaW85.formationInfo[formationID] = {
-            name: formationName,
-            unitIDs: unitIDs,
-            id: formationID,
-            nation: formNation,
-            morale: morale,
-            commandRange: [commandRangeNormal,commandRangeReduced],
-        }
+        SetupCard("Formation Creation","","Neutral");
+        outputCard.body.push("Pick their Formation");
+        _.each(ScenarioData[state.WaW85.scenario].formations,formation => {
+            ButtonInfo(formation.name,"!CreateFormation2;" + formation.id);
+        })
+        PrintCard();
     }
 
     const PlaceHQ = (msg) => {
@@ -2027,7 +2068,11 @@ log("both hexes block")
 
     }
 
-
+    const PickScenario = (msg) => {
+        let Tag = msg.content.split(";");
+        state.WaW85.scenario = "Scenario " + Tag[1];
+        sendChat("",state.WaW85.scenario + " Selected");
+    }
 
 
 
@@ -2680,26 +2725,41 @@ log(cards)
 
     const NextPhase = () => {
         let turn = state.WaW85.turn;
-        let phase = state.WaW85.phase;
+        if (state.WaW85.phase = "Game Start") {
+log("Load Scenarion Date for " + pageInfo.name)
+            ScenarioData(pageInfo.name);
+        }
         if (turn === 0) {
-            CreateOpsDeck();
-            if (state.WaW85.initiative) {
-                phase = "Initiative";
-            } else {
-                turn = 1;
+            if (state.WaW85.phase === "Operations") {
+                CreateOpsDeck();
                 state.WaW85.turn = 1;
             }
         } 
-        SetupCard(phase + " Phase","Turn " + turn,"Neutral");
-        if (phase === "Operations") {
+        SetupCard(state.WaW85.phase + " Phase","Turn " + state.WaW85.turn,"Neutral");
+        if (state.WaW85.phase === "Operations") {
             OperationsPhase();
-        } else if (phase === "Initiative") {
+        } else if (state.WaW85.phase === "Initiative") {
             InitiativePhase();
         } else {
             EndPhase();
         }
         PrintCard();
     }
+
+    const InitiativePhase = () => {
+        outputCard.body.push("[U]Initiative Phase[/u]");
+        outputCard.body.push(state.WaW85.initiative + " has Initiative");
+        let formInfo = Object.values(state.WaW85.formationInfo).find(formation => formation.name = state.WaW85.initiative);
+        outputCard.nation = formInfo.nation;
+        outputCard.body.push("Place HQ For Formation with a Unit");
+        outputCard.body.push("Transfer any Leaders");
+        outputCard.body.push("Select Activate Formation when Done")
+        ButtonInfo("Activate Formation","!ActivateFormation;" + formInfo.id);
+        state.WaW85.phase = "Operations";
+    }
+
+
+
 
 
     const OperationsPhase = () => {
@@ -3193,6 +3253,10 @@ log(card.name)
             case '!CreateFormation':
                 CreateFormation(msg);
                 break;
+            case '!CreateFormation2':
+                CreateFormation2(msg);
+                break;
+
 
             case '!ClearMarkers':
                 RemoveMoveMarkers();
@@ -3217,6 +3281,9 @@ log(card.name)
                 break;
             case '!NextPhase':
                 NextPhase();
+                break;
+            case '!PickScenario':
+                PickScenario(msg);
                 break;
         }
     };
