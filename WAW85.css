@@ -210,7 +210,9 @@ input[type="hidden"][value="Offboard Artillery"].armour-status ~ .armour {
   color: darkred;
 }
 
-
+input[type="hidden"][value="Infantry"].armournum-status ~ .armournum {
+    display: none;
+}
 
 
 
