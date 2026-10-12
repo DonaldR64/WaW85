@@ -159,12 +159,7 @@ section {
 
 
 
-.toggle:not([value="Vehicle"],[value="Infantry"],[value="Towed"]) ~ .armourdisplay {
-  display:  none;
-}
-.toggle:not([value="Helicopter"]) ~ .helicopterdisplay {
-  display: none;
-}
+
 
 
 
@@ -188,6 +183,23 @@ section {
 }
 
 
+
+
+input[type="hidden"][value="Support"].armour-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="HQ"].armour-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Leader"].armour-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Towed"].armour-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Offboard Artillery"].armour-status ~ .move {
+    display: none;
+}
 
 .armour {
   grid-area: armour;    
@@ -215,6 +227,19 @@ section {
 }
 
 
+input[type="hidden"][value="Support"].assault-status ~ .assault {
+    display: none;
+}
+input[type="hidden"][value="HQ"].assault-status ~ .assault {
+    display: none;
+}
+input[type="hidden"][value="Leader"].assault-status ~ .assault {
+    display: none;
+}
+input[type="hidden"][value="Offboard Artillery"].assault-status ~ .assault {
+    display: none;
+}
+
 
 .assault {
   grid-area: assault;
@@ -223,6 +248,15 @@ section {
 
 .assaultinfo h3{
   color: darkred;
+}
+
+
+
+input[type="hidden"][value="HQ"].weapon-status ~ .weapon {
+    display: none;
+}
+input[type="hidden"][value="Leader"].weapon-status ~ .weapon {
+    display: none;
 }
 
 
@@ -235,6 +269,17 @@ section {
 input[type="hidden"][value="Support"].move-status ~ .move {
     display: none;
 }
+input[type="hidden"][value="HQ"].move-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Leader"].move-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Offboard Artillery"].move-status ~ .move {
+    display: none;
+}
+
+
 
 .move {
   grid-area: move;
