@@ -1476,18 +1476,9 @@ log(weapons)
     }
     
     const AddRoads = () => {
-    
-    /*
         let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
             return el.get("stroke").toLowerCase() === "#ffffff";
         });
-    */
-        let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
-            return el.get("stroke").toLowerCase() === "#980000";
-        });
-
-log(roads)
-        
         _.each(roads,road => {
             let vertices = translatePoly(road);
             for (let i=0;i<(vertices.length-1);i++) {
