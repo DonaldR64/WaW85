@@ -11,6 +11,9 @@ const WaW85 = (() => {
     let ScenarioInfo = {};
     let MapInfo = {};
     let UnitIDList = []; //used in create formation
+    let Scenario = {};
+
+
 
     let playerInfo = [];
 
@@ -1429,6 +1432,9 @@ log(weapons)
         AddTerrain();    
         AddTokens();        
         DefineMap();
+        if (state.WaW85.scenario !== "") {
+            Scenario = ScenarioData[state.WaW85.scenario]
+        }
         let elapsed = Date.now()-startTime;
         log("Hex Map Built in " + elapsed/1000 + " seconds");
     };
@@ -1520,7 +1526,6 @@ log(weapons)
                 interCubes.push(cube2);
                 _.each(interCubes, cube => {
                     let label = cube.label();
-log(label)
                     if (label && HexMap[label]) {
                         HexMap[label].road = true;
                     }
@@ -1656,7 +1661,7 @@ log(label)
     
         state.WaW85 = {
             turn: 0,
-            phase: "Game Start",
+            phase: "Initiative",
             cards: [],
             endOps: 0,
             scenario: "",
@@ -2000,7 +2005,7 @@ log(hex)
             unit.formationID = formNum;
             state.WaW85.unitInfo[unitID] = formNum;
         })
-        let formation = ScenarioData[state.WaW85.scenario].formations[formNum]
+        let formation = Scenario.formations[formNum]
 
         state.WaW85.formationInfo[formNum] = {
             name: formation.name,
@@ -2047,7 +2052,7 @@ log(hex)
         })
         SetupCard("Formation Creation","","Neutral");
         outputCard.body.push("Pick their Formation");
-        _.each(ScenarioData[state.WaW85.scenario].formations,formation => {
+        _.each(Scenario.formations,formation => {
             ButtonInfo(formation.name,"!CreateFormation2;" + formation.id);
         })
         PrintCard();
@@ -2072,6 +2077,7 @@ log(hex)
         let Tag = msg.content.split(";");
         state.WaW85.scenario = "Scenario " + Tag[1];
         sendChat("",state.WaW85.scenario + " Selected");
+        Scenario = ScenarioData[state.WaW85.scenario];
     }
 
 
@@ -2724,38 +2730,42 @@ log(cards)
     }
 
     const NextPhase = () => {
-        let turn = state.WaW85.turn;
-        if (state.WaW85.phase = "Game Start") {
-log("Load Scenarion Date for " + pageInfo.name)
-            ScenarioData(pageInfo.name);
-        }
-        if (turn === 0) {
-            if (state.WaW85.phase === "Operations") {
-                CreateOpsDeck();
-                state.WaW85.turn = 1;
-            }
-        } 
         SetupCard(state.WaW85.phase + " Phase","Turn " + state.WaW85.turn,"Neutral");
-        if (state.WaW85.phase === "Operations") {
-            OperationsPhase();
-        } else if (state.WaW85.phase === "Initiative") {
-            InitiativePhase();
+        if (state.WaW85.turn > Scenario.maxTurns) {
+            outputCard.body.push("Game Over");
+
+
         } else {
-            EndPhase();
+            if (state.WaW85.turn === 0) {
+                InitiativePhase();
+            } else {
+                if (state.WaW85.phase === "Operations") {
+                    OperationsPhase();
+                } else {
+                    EndPhase();
+                }
+            }
         }
         PrintCard();
     }
 
     const InitiativePhase = () => {
-        outputCard.body.push("[U]Initiative Phase[/u]");
-        outputCard.body.push(state.WaW85.initiative + " has Initiative");
-        let formInfo = Object.values(state.WaW85.formationInfo).find(formation => formation.name = state.WaW85.initiative);
-        outputCard.nation = formInfo.nation;
-        outputCard.body.push("Place HQ For Formation with a Unit");
-        outputCard.body.push("Transfer any Leaders");
-        outputCard.body.push("Select Activate Formation when Done")
-        ButtonInfo("Activate Formation","!ActivateFormation;" + formInfo.id);
-        state.WaW85.phase = "Operations";
+        if (Scenario.initiativeFormation > 0) {
+            let formation = Scenario.formations[Scenario.initiativeFormation];
+            outputCard.body.push("[U]Initiative Phase[/u]");
+            outputCard.body.push(formation.name + " has Initiative");
+            outputCard.nation = formation.nation;
+            outputCard.body.push("Place HQ For Formation with a Unit");
+            outputCard.body.push("Transfer any Leaders");
+            outputCard.body.push("Select Activate Formation when Done")
+            ButtonInfo("Activate Formation","!ActivateFormation;" + formation.id);
+            state.WaW85.phase = "Operations";
+            state.WaW85.turn = 1;
+        } else {
+            CreateOpsDeck();
+            state.WaW85.phase = "Operations";
+            state.WaW85.turn = 1;
+        }
     }
 
 
