@@ -216,7 +216,9 @@ input[type="hidden"][value="Soft"].armournum-status ~ .armournum {
 input[type="hidden"][value="Light"].armournum-status ~ .armournum {
     display: none;
 }
-
+input[type="hidden"][value="Soft"].armoursave-status ~ .armoursave {
+    display: none;
+}
 
 
 .special {
