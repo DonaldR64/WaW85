@@ -2872,8 +2872,9 @@ log(cards)
 
     const BattlefieldFriction = () => {
         let roll = randomInteger(6) + randomInteger(6);
+        let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
         if (roll === 2) {
-            
+
 
 
 

@@ -12,6 +12,8 @@ const ScenarioData = {
         },
         eventCard: true,
         thirdEndOps: false,
+        Red: "Soviet",
+        Blue: "US Army",
         formations: {
             1: {
                 id: 1,
