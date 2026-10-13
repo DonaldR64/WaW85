@@ -873,22 +873,7 @@ log(weapons)
 
             }
         }
-        Reduce() {
-            this.health = "Reduced";
-            //change token image to #2
-            outputCard.body.push(this.name + " is Reduced");
-//if passengers, roll d6 -> 1-3 nothing, 4-6 passengers reduced + possibly leaders/hq
 
-        }
-        Disrupt() {
-            this.token.set("tint_color","#ff0000");
-            outputCard.body.push(this.name + " is Disrupted");
-//disrupt passengers
-        }
-        Rally() {
-            this.token.set("tint_color","transparent");
-            //rally any passengers
-        }
         Eliminate() {
             this.token.set("status_dead");
 //move to map, will clear later from map, units and formations
@@ -905,22 +890,52 @@ log(weapons)
             
             
         }
-        Status() {
-            //returns true if undisrupted
-            if (this.token.get("tint_color") === "transparent") {
-                return true;
+        Disrupted() {
+            //returns true if disrupted
+            let disrupted = (this.token.get("tint_color") === "transparent") ? true:false;
+            return disrupted;
+        }
+        SetDisrupt(stat) {
+            let tint = stat === true ? "#ff0000":"transparent";
+            this.token.set("tint_color",tint);
+        }
+        Reduced(){
+            //returns true if reduced or 1 step
+            let steps = this.token.get("sides").length;
+            let currentSide = this.token.get("currentSide");
+            let reduced = false;
+            if (steps === 1) {
+                reduced = true;
             } else {
-                return false;
+                if (currentSide === 1) {
+                    reduced = true;
+                }
             }
+            return reduced;
+        }
+        SetReduced(stat) {
+            let steps = this.token.get("sides").length;
+            let newSide = (stat === true && steps === 2) ? 1:0; 
+            this.token.set("currentSide",newSide);
         }
 
+
+
+
+
+
+
+
+
         Active() {
-            if (this.token.get("aura1_color") === "#00ff00") {
-                return true;
-            } else {
-                return false;
-            }
+            let active = (this.token.get("aura1_color") === "#00ff00") ? true:false;
+            return active;
         }
+        SetActive(active) {
+            let aura = active === true ? "#00ff00":"#000000";
+            this.token.set("aura1_color",aura);
+        }
+
 
 
 
@@ -3060,6 +3075,76 @@ log("BFF Roll: " + roll)
     }
 
 
+    const Mods = (msg) => {
+        //a function to modify things like OPS complete, disruption etc
+        let Tag = msg.content.split(";");
+        let tokenID = Tag[1];
+        let mod = Tag[2];
+        let unit = Units[tokenID];
+        if (!unit) {
+            unit = new Unit(tokenID);
+        }
+        let formationInfo = state.WaW85.formationInfo[unit.formationID];
+
+        if (mod === "Toggle Unit OPS Complete") {
+            let setAct = unit.Active() === true ? false:true;
+            unit.SetActive(setAct);
+        }
+        if (mod === "Toggle Unit Disruption") {
+            let setStatus = unit.Disrupted() === true ? false:true;
+            unit.SetDisrupt(setStatus);
+        }
+        if (mod === "Toggle Unit Reduction") {
+            let setReduced = unit.Reduced() === true ? false:true;
+            unit.SetReduced(setReduced);
+        }
+        if (mod === "Toggle Missile Ammo Out") {
+
+
+
+        }
+        if (mod === "Make Formation OPS Complete" || mod === "Make Formation Active") {
+            let unitIDs = formationInfo.unitIDs;
+            let active = (mod.includes("Active")) ? true:false;
+            _.each(unitIDs,unitID => {
+                let unit2 = Units[unitID];
+                unit2.SetActive(active);
+            })
+        }
+        if (mod === "Add to Formation") {
+            SetupCard("Add to Formation","",unit.nation);
+            outputCard.body.push("Pick their Formation");
+            _.each(Scenario.formations,formation => {
+                ButtonInfo(formation.name,"!AddToFormation;" + formation.id + ";" + tokenID);
+            })
+        }
+
+
+
+
+
+    }
+
+    const AddToFormation = (msg) => {
+        let Tag = msg.content.split(";");
+        let formationID = Tag[1];
+        let unitID = Tag[2];
+        let unit = Units[unitID];
+        let name = unit.charName;
+        let nations = ["US ","Soviet "];
+        _.each(nations,nation => {
+            name = name.replace(nation,"");
+        })
+        unit.token.set("name",name);
+        unit.name = name;
+        state.WaW85.formationInfo[formationID].unitIDs.push(unitID);
+        unit.formationID = formationID;
+        state.WaW85.unitInfo[unitID] = formationID;
+        sendChat("","Added to " + state.WaW85.formationInfo[formationID].name);
+    }
+
+
+
 
 
         
@@ -3551,6 +3636,14 @@ log("BFF Roll: " + roll)
             case '!PickScenario':
                 PickScenario(msg);
                 break;
+            case '!ModUnit':
+                Mods(msg);
+                break;
+            case '!AddToFormation':
+                AddToFormation(msg);
+                break;
+
+
         }
     };
 
