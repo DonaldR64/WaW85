@@ -2904,6 +2904,7 @@ log("BFF Roll: " + roll)
             outputCard.body.push("[B]The Order is Published![/b]");
             outputCard.body.push("One of the " + side + " commanders is struggling to get your orders out. When the next " + side + " formation card is drawn, all units in that formation should be marked Ops Complete and no their impulse is done");
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 3) {
             outputCard.body.push("[B]They're Everywhere![/b]");
@@ -2913,6 +2914,7 @@ log("BFF Roll: " + roll)
             } 
             outputCard.body.push("The unit will be marked Ops Complete");
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 4) {
             outputCard.body.push("[B]No Mercy![/b]");
@@ -2931,17 +2933,20 @@ log("BFF Roll: " + roll)
                 outputCard.body.push("The Opponent places a FFE Marker and executes a Artillery HE Strike of Strength 3-4");
             }
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 6 && roll2 > 4) {
             outputCard.body.push("[B]Bad Navigation[/b]");
             outputCard.body.push("One of your formations is lost. When the next " + side + " formation card is drawn, the formation should be marked Ops Complete")
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 8) {
             outputCard.body.push("[B]Survivors Regroup[/b]");
             outputCard.body.push("The " + side + " Force may return a previously destroyed unit within 2 hexes of any other friendly unit, no matter their formation. They may not be placed within 2 hexes of any enemy unit or in an objective hex controlled by the enemy.");
             ButtonInfo("Add New Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Add To Formation");
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 9) {
             outputCard.body.push("[B]Rapid Repairs[/b]");
@@ -2949,12 +2954,14 @@ log("BFF Roll: " + roll)
             ButtonInfo("Pick Reduced Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Unit Reduction");
             ButtonInfo("OR Remove Disruption","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Unit Disruption");
             none = false;
+            outputCard.nation = side;
         }
         if (roll === 10 && roll2 > 3) {
             outputCard.body.push("[B]Working as Intended![/b]");
             outputCard.body.push("The " + side + " Player chooses an enemy unit and reduces that unit");
             none = false;
             ButtonInfo("Pick Unit to Reduce","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Unit Reduction");
+            outputCard.nation = side;
         }
         if (roll === 11) {
             outputCard.body.push("[B]Coordination Effort[/b]");
@@ -2967,6 +2974,7 @@ log("BFF Roll: " + roll)
             outputCard.body.push("The " + side + " Player chooses an enemy missile-armed unit. That unit has been supplied with the wrong kind of missiles, immediatley mark if Missile Ammo Out");
             none = false;
             ButtonInfo("Pick Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Missile Ammo Out");
+            outputCard.nation = side;
         }
         if (none === true) {
             outputCard.body.push("No Effect/Changes");
