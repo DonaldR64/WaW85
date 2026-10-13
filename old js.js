@@ -2852,6 +2852,7 @@ roll === 5
         }
         if (roll === 5) {
             outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
+            ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};Cautious Approach");
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
@@ -2861,9 +2862,11 @@ roll === 5
         }
         if (roll === 8) {
             outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
+            ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};High Rate of Fire");
         }
         if (roll === 9) {
             outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
+            ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};High Speed Approach");
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
@@ -3047,13 +3050,13 @@ log("BFF Roll: " + roll)
         outputCard.body.push("Place HQ For Formation with a Unit");
         outputCard.body.push("Transfer any Leaders");
         outputCard.body.push("Select Activate Formation when Done")
-        ButtonInfo("Activate Formation","!ActivateFormation;" + card.id);
+        ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};Normal");
     }
 
 
-
+////////
     const ActivateFormation = (msg) => {
-        
+
 
 
 
@@ -3061,6 +3064,7 @@ log("BFF Roll: " + roll)
 
 
     const Mods = (msg) => {
+        //!ModUnit;@{selected|token_id};?{Mod|Toggle Unit OPS Complete|Toggle Unit Disruption|Toggle Unit Reduction|Toggle Missile Ammo Out|Make Formation OPS Complete|Make Formation Active|Resupply Formation|Add to Formation}
         //a function to modify things like OPS complete, disruption etc
         let Tag = msg.content.split(";");
         let tokenID = Tag[1];
