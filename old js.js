@@ -2900,7 +2900,8 @@ log(card)
             outputCard.nation = side;
         }
         if (roll === 11) {
-            outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
+            let squall = state.WaW85.season === "Summer" ? "Rain Squall":"Snow Squall";
+            outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized " + squall + " crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
             state.WaW85.squall = true;
         }
         if (roll === 12) {
