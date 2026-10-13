@@ -11,6 +11,7 @@ const ScenarioData = {
             turns: [2,3],
         },
         thirdEndOps: false,
+        night: false,
         Red: "Soviet",
         Blue: "US Army",
         formations: {
