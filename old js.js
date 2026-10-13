@@ -12,7 +12,6 @@ const WaW85 = (() => {
     let MapInfo = {};
     let UnitIDList = []; //used in create formation
     let Scenario = {};
-    let ActivationFlag = "";//used for events
 
 
     let playerInfo = [];
@@ -2853,7 +2852,6 @@ roll === 5
         }
         if (roll === 5) {
             outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
-            ActivationFlag = "Cautious Approach";
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
@@ -2863,11 +2861,9 @@ roll === 5
         }
         if (roll === 8) {
             outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
-            ActivationFlag = "High Rate of Fire";
         }
         if (roll === 9) {
             outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
-            ActivationFlag = "High Speed Approach";
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
@@ -3057,7 +3053,7 @@ log("BFF Roll: " + roll)
 
 
     const ActivateFormation = (msg) => {
-
+        
 
 
 
@@ -3110,7 +3106,7 @@ log("BFF Roll: " + roll)
         }
         if (mod === "Resupply Formation") {
             let unitIDs = formationInfo.unitIDs;
-            
+
 
         }
 
