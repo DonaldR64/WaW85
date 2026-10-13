@@ -12,7 +12,7 @@ const WaW85 = (() => {
     let MapInfo = {};
     let UnitIDList = []; //used in create formation
     let Scenario = {};
-
+    let ActivationFlag = "";//used for events
 
 
     let playerInfo = [];
@@ -892,7 +892,7 @@ log(weapons)
         }
         Disrupted() {
             //returns true if disrupted
-            let disrupted = (this.token.get("tint_color") === "transparent") ? true:false;
+            let disrupted = (this.token.get("tint_color") === "transparent") ? false:true;
             return disrupted;
         }
         SetDisrupt(stat) {
@@ -900,33 +900,22 @@ log(weapons)
             this.token.set("tint_color",tint);
         }
         Reduced(){
+log(this.token.get("sides"))
+log(this.token.get("currentSide"))
             //returns true if reduced or 1 step
-            let steps = this.token.get("sides").length;
+            let steps = this.token.get("sides").split("|").length;
             let currentSide = this.token.get("currentSide");
             let reduced = false;
-            if (steps === 1) {
+            if (steps === 1 || currentSide === 1) {
                 reduced = true;
-            } else {
-                if (currentSide === 1) {
-                    reduced = true;
-                }
-            }
+            } 
             return reduced;
         }
         SetReduced(stat) {
-            let steps = this.token.get("sides").length;
+            let steps = this.token.get("sides").split("|").length;
             let newSide = (stat === true && steps === 2) ? 1:0; 
             this.token.set("currentSide",newSide);
         }
-
-
-
-
-
-
-
-
-
         Active() {
             let active = (this.token.get("aura1_color") === "#00ff00") ? true:false;
             return active;
@@ -934,6 +923,7 @@ log(weapons)
         SetActive(active) {
             let aura = active === true ? "#00ff00":"#000000";
             this.token.set("aura1_color",aura);
+            this.token.set("aura1_radius",20);
         }
 
 
@@ -2853,7 +2843,8 @@ log(card)
     const BattleFieldEvent = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
-log("BFE Roll: " + roll)
+roll === 5
+
         if (roll < 4) {
             outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip on of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
         }
@@ -2861,35 +2852,33 @@ log("BFE Roll: " + roll)
             WeatherChange();
         }
         if (roll === 5) {
-            outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.")
-///flag
+            outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
+            ActivationFlag = "Cautious Approach";
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
-//flag
         }
         if (roll === 7) {
             BattlefieldFriction();
         }
         if (roll === 8) {
             outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
-//flag
+            ActivationFlag = "High Rate of Fire";
         }
         if (roll === 9) {
             outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
-//flag
+            ActivationFlag = "High Speed Approach";
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
-//flag
+            outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation");
         }
         if (roll === 11) {
             outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
             state.WaW85.squall = true;
         }
         if (roll === 12) {
-            outputCard.body.push("[B]Missile Re-Supply[/b]<br>Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles");
-//flag
+            outputCard.body.push("[B]Missile Re-Supply[/b]<br>Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles. Remove all Missile Ammo Out");
         }
 
     }
@@ -3087,16 +3076,16 @@ log("BFF Roll: " + roll)
         let formationInfo = state.WaW85.formationInfo[unit.formationID];
 
         if (mod === "Toggle Unit OPS Complete") {
-            let setAct = unit.Active() === true ? false:true;
-            unit.SetActive(setAct);
+            let newStatus = unit.Active() === true ? false:true;
+            unit.SetActive(newStatus);
         }
         if (mod === "Toggle Unit Disruption") {
-            let setStatus = unit.Disrupted() === true ? false:true;
-            unit.SetDisrupt(setStatus);
+            let newStatus = unit.Disrupted() === true ? false:true;
+            unit.SetDisrupt(newStatus);
         }
         if (mod === "Toggle Unit Reduction") {
-            let setReduced = unit.Reduced() === true ? false:true;
-            unit.SetReduced(setReduced);
+            let newStatus = unit.Reduced() === true ? false:true;
+            unit.SetReduced(newStatus);
         }
         if (mod === "Toggle Missile Ammo Out") {
 
@@ -3117,8 +3106,13 @@ log("BFF Roll: " + roll)
             _.each(Scenario.formations,formation => {
                 ButtonInfo(formation.name,"!AddToFormation;" + formation.id + ";" + tokenID);
             })
+            PrintCard();
         }
+        if (mod === "Resupply Formation") {
+            let unitIDs = formationInfo.unitIDs;
+            
 
+        }
 
 
 
