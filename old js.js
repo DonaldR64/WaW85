@@ -1821,7 +1821,7 @@ log(this.token.get("currentSide"))
             }
         } else {
             outputCard.body.push("No LOS To Target");
-            outputCard.body.push("Blocked at " + losResult.losBlocked);
+            outputCard.body.push("Blocked: " + losResult.losBlocked);
         }
 
 
@@ -1838,6 +1838,24 @@ log(this.token.get("currentSide"))
         let distance = shooter.Distance(target);
         let shooterHeight = shooter.Height();
         let targetHeight = target.Height();
+
+        let maxLOS = 70;
+        if (state.WaW85.weatherLevel === 3) {
+            maxLOS = 7;
+        }
+        if (state.WaW85.weatherLevel === 4) {
+            maxLOS + 3;
+        }
+
+        if (distance > maxLOS) {
+            let result = {
+                distance: distance,
+                los: false,
+                losBlocked: "Maximum LOS Is " + maxLOS,
+                obscured: false,
+            }
+            return result;
+        }
 
         let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
@@ -3204,6 +3222,10 @@ log("BFF Roll: " + roll)
 
 
     const Activate = (msg) => { 
+
+//reset MP, factoring choice and things like Mud
+
+
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
@@ -3444,11 +3466,12 @@ log("BFF Roll: " + roll)
 
     const MoveHex = (unit,startHex,endHex) => {
         let distance = startHex.Distance(endHex);
-        let totalMove = parseInt(unit.movement);
+        //set below in activation
+        let totalMove = parseInt(unit.token.get("bar3_max"));
         let remainingMove = parseInt(unit.token.get("bar3_value"));
         let usedMove = totalMove - remainingMove;
         let moveType = unit.MoveType();
-
+        let minMove = state.WaW85.weatherLevel === 4 ? true:false;
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
 
     //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
@@ -3516,12 +3539,13 @@ log("BFF Roll: " + roll)
                     }
                 }
 
-                if (cost <= remainingMove) {
+                if ((cost <= remainingMove) || (usedMove === 0 && minMove === true && cost < 100)) {
+                    //2nd condition above is if hasnt moved yet in severe weather, can move 1 hex regardless of cost
                     //place a move marker
                     totalCost = cost + usedMove;
                     let mmID = CreateMoveMarker(startHex,endHex,totalCost);
                     //update remaining movement
-                    let newMove = remainingMove - cost;
+                    let newMove = Math.max(0,remainingMove - cost);
                     unit.token.set("bar3_value",newMove);
                     unit.lastHexInfo = {
                         label: startHex.label,
