@@ -1669,6 +1669,7 @@ log(weapons)
             scenario: "",
             squall: false,
             season: "Summer",
+            flags: [],
             weatherLevel: 0,
             moveMarkers: [],
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
@@ -2890,6 +2891,8 @@ log(cards)
         if (roll === 4) {
             lines.push("[B]No Mercy![/b]");
             lines.push("Assaults in the next impulse for each player sees hits doubled.");
+            state.WaW85.flags.push("No Mercy Red");
+            state.WaW85.flags.push("No Mercy Blue");
         }
         if (roll === 5 && roll2 > 3) {
             lines.push("[B]Friendly Fire[/b]");
