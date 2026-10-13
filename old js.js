@@ -2842,10 +2842,11 @@ log(card)
     const BattleFieldEvent = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
-roll === 5
+roll === 4
 
         if (roll < 4) {
-            outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip on of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
+            outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip one of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
+            ButtonInfo("Pick HQ","!Mods;@{selected|token_id};Higher Command HQ");
         }
         if (roll === 4) {
             WeatherChange();
@@ -2856,6 +2857,7 @@ roll === 5
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
+            ButtonInfo("Pick a Unit","!Mods;@{selected|token_id};Make Formation Active");
         }
         if (roll === 7) {
             BattlefieldFriction();
@@ -2870,7 +2872,9 @@ roll === 5
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
-            outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation");
+            outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation (drag unit from Journal to location on Map");
+            ButtonInfo("Pick Reduced Unit (do 2x)","!Mods;@{selected|token_id};Toggle Unit Reduction");
+            ButtonInfo("Add New Unit","!Mods;@{selected|token_id};Add To Formation");
         }
         if (roll === 11) {
             outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
@@ -2878,6 +2882,7 @@ roll === 5
         }
         if (roll === 12) {
             outputCard.body.push("[B]Missile Re-Supply[/b]<br>Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles. Remove all Missile Ammo Out");
+            ButtonInfo("Pick Unit","!Mods;@{selected|token_id};Resupply Formation");
         }
 
     }
@@ -3064,7 +3069,7 @@ log("BFF Roll: " + roll)
 
 
     const Mods = (msg) => {
-        //!ModUnit;@{selected|token_id};?{Mod|Toggle Unit OPS Complete|Toggle Unit Disruption|Toggle Unit Reduction|Toggle Missile Ammo Out|Make Formation OPS Complete|Make Formation Active|Resupply Formation|Add to Formation}
+        //!Mods;@{selected|token_id};?{Mod|Toggle Unit OPS Complete|Toggle Unit Disruption|Toggle Unit Reduction|Toggle Missile Ammo Out|Make Formation OPS Complete|Make Formation Active|Resupply Formation|Add to Formation}
         //a function to modify things like OPS complete, disruption etc
         let Tag = msg.content.split(";");
         let tokenID = Tag[1];
@@ -3087,6 +3092,12 @@ log("BFF Roll: " + roll)
             let newStatus = unit.Reduced() === true ? false:true;
             unit.SetReduced(newStatus);
         }
+        if (mod === "Higher Command HQ") {
+            
+        }
+
+
+
         if (mod === "Toggle Missile Ammo Out") {
 
 
@@ -3630,7 +3641,7 @@ log("BFF Roll: " + roll)
             case '!PickScenario':
                 PickScenario(msg);
                 break;
-            case '!ModUnit':
+            case '!Mods':
                 Mods(msg);
                 break;
             case '!AddToFormation':
