@@ -10,7 +10,6 @@ const ScenarioData = {
             formationID: 1,
             turns: [2,3],
         },
-        eventCard: true,
         thirdEndOps: false,
         Red: "Soviet",
         Blue: "US Army",

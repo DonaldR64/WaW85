@@ -1666,6 +1666,7 @@ log(weapons)
             played: [],
             missed: [],
             endOps: 0,
+            eventCard: false,
             scenario: "",
             squall: false,
             season: "Summer",
@@ -2082,8 +2083,12 @@ log(hex)
     const PickScenario = (msg) => {
         let Tag = msg.content.split(";");
         state.WaW85.scenario = "Scenario " + Tag[1];
-        sendChat("",state.WaW85.scenario + " Selected");
         Scenario = ScenarioData[state.WaW85.scenario];
+        state.WaW85.eventCard = Tag[2] === "Yes" ? true:false;
+        let line = (Tag[2] === "Yes") ? "":"No ";
+        line += "Event Card Added";
+        sendChat("",state.WaW85.scenario + " Selected");
+        sendChat("",line)
     }
 
 
@@ -2740,7 +2745,7 @@ log(hex)
             }
         }
         state.WaW85.played = [];
-        if (Scenario.eventCard === true) {
+        if (state.WaW85.eventCard === true) {
             cards.push({name: "Battlefield Event/Friction"});
         }
 
@@ -2774,7 +2779,7 @@ log(cards)
         if (Scenario.initiativeFormation > 0) {
             let formation = Scenario.formations[Scenario.initiativeFormation];
             outputCard.body.push("[U]Initiative Phase[/u]");
-            outputCard.body.push(formation.name + " has Initiative");
+            outputCard.body.push("[B]" + formation.name + " has Initiative[/b]");
             outputCard.nation = formation.nation;
             outputCard.body.push("Place HQ For Formation with a Unit");
             outputCard.body.push("Transfer any Leaders");
@@ -2817,6 +2822,8 @@ log(cards)
             }
         }
         outputCard.body.push("[B]" + card.name + "[/b]");
+        outputCard.body.push("[hr]");
+log(card)
         if (state.WaW85.endOps > 1) {
             EndOpsEvent();
         } else if (card.name !== "End Operations") {
@@ -2831,41 +2838,42 @@ log(cards)
     const BattleFieldEvent = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
+log("BFE Roll: " + roll)
         if (roll < 4) {
-            outputCard.body.push("[B]Higher Command HQ:[/b] A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip on of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
+            outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip on of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
         }
         if (roll === 4) {
             WeatherChange();
         }
         if (roll === 5) {
-            outputCard.body.push("[B]Cautious Approach:[/b] Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.")
+            outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.")
 ///flag
         }
         if (roll === 6) {
-            outputCard.body.push("[B]Overwatch Set:[/b] " + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
+            outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
 //flag
         }
         if (roll === 7) {
             BattlefieldFriction();
         }
         if (roll === 8) {
-            outputCard.body.push("[B]High Rate of Fire:[/b] " + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
+            outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
 //flag
         }
         if (roll === 9) {
-            outputCard.body.push("[B]High Speed Approach:[/b] " + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
+            outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
 //flag
         }
         if (roll === 10) {
-            outputCard.body.push("[B]Forward Reserves:[/b] Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
+            outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
 //flag
         }
         if (roll === 11) {
-            outputCard.body.push("[B]Squall Weather:[/b] An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
+            outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
             state.WaW85.squall = true;
         }
         if (roll === 12) {
-            outputCard.body.push("[B]Missile Re-Supply:[/b] Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles");
+            outputCard.body.push("[B]Missile Re-Supply[/b]<br>Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles");
 //flag
         }
 
@@ -2874,6 +2882,7 @@ log(cards)
     const BattlefieldFriction = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let roll2 = randomInteger(6);
+log("BFF Roll: " + roll)
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
         let lines = [];
         if (roll === 2) {
