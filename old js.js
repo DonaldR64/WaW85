@@ -1840,11 +1840,11 @@ log(this.token.get("currentSide"))
         let targetHeight = target.Height();
 
         let maxLOS = 70;
-        if (state.WaW85.weatherLevel === 3) {
+        if (state.WaW85.weatherLevel === 3 && Scenario.night === true) {
             maxLOS = 7;
         }
         if (state.WaW85.weatherLevel === 4) {
-            maxLOS + 3;
+            maxLOS = 3;
         }
 
         if (distance > maxLOS) {
@@ -2731,6 +2731,46 @@ log(hex)
 
 
     }
+
+
+    const UnitInfo = (msg) => {
+        let id = msg.selected[0]._id;
+        let unit = Units[id];
+        SetupCard(unit.name,"",unit.nation);
+        if (unit.Disrupted()) {
+            outputCard.body.push("Unit is Disrupted");
+        }
+        if (unit.Reduced()) {
+            outputCard.body.push("Unit is Reduced");
+        }
+        if (unit.Active()) {
+            outputCard.body.push("Unit is Active");
+        }
+        if (unit.type === "Helicopter") {
+            let status = unit.HeloStatus();
+            if (status === "Helo NOE") {outputCard.body.push("Helicopter is Flying NOE")};
+
+
+
+        }
+        let hex = HexMap[unit.hexLabel];
+        if (hex.offboard === true) {
+            outputCard.body.push("Offboard");
+        } else {
+            outputCard.body.push("Terrain: " + hex.terrain);
+        }
+        outputCard.body.push("[hr]")
+        let formation = state.WaW85.formationInfo[unit.formationID];
+        outputCard.body.push("Formation: " + formation.name);
+        outputCard.body.push("Morale/Training: " + formation.morale);
+        if (unit.type === "HQ") {
+            outputCard.body.push("Command Range (Full): " + formation.commandRange[0]);
+            outputCard.body.push("Command Range (Reduced): " + formation.commandRange[1]);
+        }
+        PrintCard();
+    }
+
+
 
     const OnboardIndirect = (msg) => {
         let Tag = msg.content.split(";");
@@ -3657,6 +3697,9 @@ log("BFF Roll: " + roll)
                 break;
             case '!HexData':
                 HexData(msg);
+                break;
+            case '!UnitInfo':
+                UnitInfo(msg);
                 break;
             case '!SizeTokens':
                 SizeTokens(msg);
