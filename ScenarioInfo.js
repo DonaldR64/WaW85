@@ -10,6 +10,8 @@ const ScenarioData = {
             formationID: 1,
             turns: [2,3],
         },
+        eventCard: true,
+        thirdEndOps: false,
         formations: {
             1: {
                 id: 1,
@@ -17,6 +19,8 @@ const ScenarioData = {
                 morale: 6,
                 command: [4,3],
                 nation: "Soviet",
+                cards: 1,
+                type: "Formation",
             },
             2: {
                 id: 2,
@@ -24,6 +28,8 @@ const ScenarioData = {
                 morale: 7,
                 command: [5,4],
                 nation: "US Army",
+                cards: 1,
+                type: "Formation",
             }
         }
     }

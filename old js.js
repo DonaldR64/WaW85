@@ -1663,8 +1663,13 @@ log(weapons)
             turn: 0,
             phase: "Initiative",
             cards: [],
+            played: [],
+            missed: [],
             endOps: 0,
             scenario: "",
+            squall: false,
+            season: "Summer",
+            weatherLevel: 0,
             moveMarkers: [],
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
@@ -2714,16 +2719,32 @@ log(hex)
     }
 
 
-    const CreateOpsDeck = () => {
+    const CreateOpsDeck = (phase = "Start") => {
         let formations = Scenario.formations;
         let cards = [];
         _.each(formations,formation => {
-            cards.push(formation);
+            for (let i=0;i<formation.cards;i++) {
+                cards.push(formation);
+            }
+            if (phase === "End" && state.WaW85.played.includes(formation.name) === false) {
+                state.WaW85.missed.push(formation.name);
+                outputCard.body.push(formation.name + " is Guaranteed to Activate");
+            }
         })
         cards.push({name: "End Operations"});
-        cards.push({name: "End Operations"});
-//3rd based on scenario
-//others based on scenario
+        if (state.WaW85.missed.length === 0) {
+            cards.push({name: "End Operations"});
+            if (Scenario.thirdEndOps === true) {
+                cards.push({name: "End Operations"});
+            }
+        }
+        state.WaW85.played = [];
+        if (Scenario.eventCard === true) {
+            cards.push({name: "Battlefield Event/Friction"});
+        }
+
+
+        //others based on scenario
 
         state.WaW85.cards = cards;
 log(cards)
@@ -2733,8 +2754,6 @@ log(cards)
         SetupCard(state.WaW85.phase + " Phase","Turn " + state.WaW85.turn,"Neutral");
         if (state.WaW85.turn > Scenario.maxTurns) {
             outputCard.body.push("Game Over");
-
-
         } else {
             if (state.WaW85.turn === 0) {
                 InitiativePhase();
@@ -2778,22 +2797,198 @@ log(cards)
         let card = state.WaW85.cards.splice(index,1)[0];
         if (card.name === "End Operations") {
             state.WaW85.endOps++;
+        } else {
+            if (!state.WaW85.played.includes(card.name)) {
+                state.WaW85.played.push(card.name);
+            }
+            let index = state.WaW85.missed.indexOf(card.name);
+            if (index > -1) {
+                state.WaW85.missed.splice(index,1);
+                if (state.WaW85.missed.length === 0) {
+                    outputCard.body.push("All Guaranteed Units have Gone");
+                    outputCard.body.push("End Ops Added back in");
+                    outputCard.body.push("[hr]");
+                    state.WaW85.cards.push({name: "End Operations"});
+                    if (Scenario.thirdEndOps === true) {
+                        state.WaW85.cards.push({name: "End Operations"});
+                    }
+                }
+            }
         }
         outputCard.body.push("[B]" + card.name + "[/b]");
         if (state.WaW85.endOps > 1) {
-            outputCard.body.push("2nd End Operations Card");
-            outputCard.body.push("Turn is Over");
-            outputCard.body.push("Click End Phase to Run End Phase");
-            ButtonInfo("Start End Phase","!NextPhase");
-            state.WaW85.phase = "End";
+            EndOpsEvent();
         } else if (card.name !== "End Operations") {
-            outputCard.nation = card.nation;
-            outputCard.body.push("Place HQ For Formation with a Unit");
-            outputCard.body.push("Transfer any Leaders");
-            outputCard.body.push("Select Activate Formation when Done")
-            ButtonInfo("Activate Formation","!ActivateFormation;" + card.id);
+            if (card.name === "Battlefield Event/Friction") {
+                BattleFieldEvent();
+            } else if (card.type && card.type === "Formation") {
+                FormationEvent(card);
+            }
         }
     }
+
+    const BattleFieldEvent = () => {
+        let roll = randomInteger(6) + randomInteger(6);
+        let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
+        if (roll < 4) {
+            outputCard.body.push("[B]Higher Command HQ:[/b] A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip on of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
+        }
+        if (roll === 4) {
+            WeatherChange();
+        }
+        if (roll === 5) {
+            outputCard.body.push("[B]Cautious Approach:[/b] Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.")
+///flag
+        }
+        if (roll === 6) {
+            outputCard.body.push("[B]Overwatch Set:[/b] " + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
+//flag
+        }
+        if (roll === 7) {
+            BattlefieldFriction();
+        }
+        if (roll === 8) {
+            outputCard.body.push("[B]High Rate of Fire:[/b] " + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
+//flag
+        }
+        if (roll === 9) {
+            outputCard.body.push("[B]High Speed Approach:[/b] " + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
+//flag
+        }
+        if (roll === 10) {
+            outputCard.body.push("[B]Forward Reserves:[/b] Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
+//flag
+        }
+        if (roll === 11) {
+            outputCard.body.push("[B]Squall Weather:[/b] An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
+            state.WaW85.squall = true;
+        }
+        if (roll === 12) {
+            outputCard.body.push("[B]Missile Re-Supply:[/b] Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles");
+//flag
+        }
+
+    }
+
+    const BattlefieldFriction = () => {
+        let roll = randomInteger(6) + randomInteger(6);
+        if (roll === 2) {
+            
+
+
+
+        }
+
+
+
+
+    }
+
+    const WeatherChange = () => {
+        let roll = randomInteger(6) + randomInteger(6);
+        let lines = [];
+        let season = state.WaW85.season;
+        let AirGone = false;
+        if ((roll === 2 || roll === 12) && state.WaW85.weatherLevel !== 4) {
+            if (season === "Summer") {
+                lines.push("Severe Thunderstorms roll in");
+                lines.push("The Ground becomes Muddy");
+            } else {
+                lines.push("A Blizzard hits the Battlefield");
+                lines.push("The Ground becomes covered in Deep Snow");
+            }
+            lines.push("LOS Is reduced, MP is reduced, Direct and Indirect Fire is reduced");
+            lines.push("Units may receive a Defensive Bonus");
+            lines.push("Helicopters and Close Air Support leave the Battlefield");
+            AirGone = true;
+            state.WaW85.weatherLevel = 4;
+            state.WaW85.mud = true;
+        }
+        if ((roll === 3 || roll === 11) && state.WaW85.weatherLevel !== 3) {
+            if (season === "Summer") {
+                lines.push("Torrential Rain strikes the Battlefield");
+                lines.push("The Ground becomes Muddy");
+            } else {
+                lines.push("Heavy Snow begins to fall");
+                lines.push("The Ground becomes covered in Deep Snow");
+            }
+            lines.push("LOS Is reduced");
+            lines.push("Units may receive a Defensive Bonus");
+            lines.push("Helicopters and Close Air Support leave the Battlefield");
+            AirGone = true;
+            state.WaW85.weatherLevel = 3;
+            state.WaW85.mud = true;
+        }
+        if ((roll === 4 || roll === 10) && state.WaW85.weatherLevel !== 2) {
+            if (season === "Summer") {
+                lines.push("Heavy Rain strikes the Battlefield");
+                lines.push("The Ground becomes Muddy");
+            } else {
+                lines.push("Heavy Snow begins to fall");
+                lines.push("The Ground becomes covered in Deep Snow");
+            }
+            lines.push("Units may receive a Defensive Bonus");
+            lines.push("Helicopters and Close Air Support leave the Battlefield");
+            AirGone = true;
+            state.WaW85.weatherLevel = 2;
+            state.WaW85.mud = true;
+        }
+        if ((roll === 5 || roll === 9) && state.WaW85.weatherLevel !== 1) {
+            if (season === "Summer") {
+                lines.push("Rain begins to fall");
+            } else {
+                lines.push("Snow begins to fall");
+            }
+            lines.push("Long Range Fire will be less accurate");
+            state.WaW85.weatherLevel = 1;
+        } 
+        if ((roll > 5 && roll < 9) && state.WaW85.weatherLevel !== 0) {
+            lines.push("The Weather Clears");
+            if (state.WaW85.mud === true) {
+                if (season === "Summer") {
+                    lines.push("The ground remains Muddy");
+                } else {
+                    lines.push("The ground remains covered in Heavy Snow");
+                }
+            }
+            state.WaW85.weatherLevel = 0;
+        }
+        if (lines.length === 0) {
+            outputCard.body.push("No Effect");
+        } else {
+            outputCard.body.push("[B]Weather Change[/b]");
+            _.each(lines,line => {
+                outputCard.body.push(line);
+            })
+        }
+
+        if (AirGone === true) {
+//remove Helos and CAS
+
+
+
+        }
+    }
+
+
+    const EndOpsEvent = () => {
+        outputCard.body.push("2nd End Operations Card");
+        outputCard.body.push("Turn is Over");
+        outputCard.body.push("Click End Phase to Run End Phase");
+        ButtonInfo("Start End Phase","!NextPhase");
+        state.WaW85.phase = "End";
+    }
+
+
+    const FormationEvent = (card) => {
+        outputCard.nation = card.nation;
+        outputCard.body.push("Place HQ For Formation with a Unit");
+        outputCard.body.push("Transfer any Leaders");
+        outputCard.body.push("Select Activate Formation when Done")
+        ButtonInfo("Activate Formation","!ActivateFormation;" + card.id);
+    }
+
+
 
     const ActivateFormation = (msg) => {
 
@@ -2807,17 +3002,19 @@ log(cards)
 
         
     const EndPhase = () => {
-
-
-
-
-
         //make up new deck if going to next turn
 //this bit will have to be done after end phase done / 'printed'
-        CreateOpsDeck();
+
+
+
+
+
+
+        CreateOpsDeck("End");
         state.WaW85.phase = "Operations";
         state.WaW85.endOps = 0;
         state.WaW85.turn++;
+        state.WaW85.squall = false;
     }
 
 
