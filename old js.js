@@ -2847,6 +2847,7 @@ roll === 4
         if (roll < 4) {
             outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip one of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
             ButtonInfo("Pick HQ","!Mods;@{selected|token_id};Higher Command HQ");
+            outputCard.nation = side;
         }
         if (roll === 4) {
             WeatherChange();
@@ -2854,10 +2855,12 @@ roll === 4
         if (roll === 5) {
             outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
             ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};Cautious Approach");
+            outputCard.nation = side;
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
             ButtonInfo("Pick a Unit","!Mods;@{selected|token_id};Make Formation Active");
+            outputCard.nation = side;
         }
         if (roll === 7) {
             BattlefieldFriction();
@@ -2865,16 +2868,19 @@ roll === 4
         if (roll === 8) {
             outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
             ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};High Rate of Fire");
+            outputCard.nation = side;
         }
         if (roll === 9) {
             outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
             ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};High Speed Approach");
+            outputCard.nation = side;
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
             outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation (drag unit from Journal to location on Map");
             ButtonInfo("Pick Reduced Unit (do 2x)","!Mods;@{selected|token_id};Toggle Unit Reduction");
-            ButtonInfo("Add New Unit","!Mods;@{selected|token_id};Add To Formation");
+            ButtonInfo("OR Add New Unit","!Mods;@{selected|token_id};Add To Formation");
+            outputCard.nation = side;
         }
         if (roll === 11) {
             outputCard.body.push("[B]Squall Weather[/b]<br>An intense but localized Squall crosses the Battlefield. For the remainder of this Operations Phase, Long Range Fire has a higher penalty and units may gain a Defensive Bonus");
@@ -2883,6 +2889,7 @@ roll === 4
         if (roll === 12) {
             outputCard.body.push("[B]Missile Re-Supply[/b]<br>Logistical Transport has arrived. One " + side + " Formation can resupply its Missiles. Remove all Missile Ammo Out");
             ButtonInfo("Pick Unit","!Mods;@{selected|token_id};Resupply Formation");
+            outputCard.nation = side;
         }
 
     }
@@ -2892,64 +2899,77 @@ roll === 4
         let roll2 = randomInteger(6);
 log("BFF Roll: " + roll)
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
-        let lines = [];
+        let none = true;
+
         if (roll === 2) {
-            lines.push("[B]The Order is Published![/b]");
-            lines.push("One of the " + side + " commanders is struggling to get your orders out. When the next " + side + " formation card is drawn, all units in that formation are marked Ops Complete and no their impulse is done");
+            outputCard.body.push("[B]The Order is Published![/b]");
+            outputCard.body.push("One of the " + side + " commanders is struggling to get your orders out. When the next " + side + " formation card is drawn, all units in that formation should be marked Ops Complete and no their impulse is done");
+            none = false;
         }
         if (roll === 3) {
-            lines.push("[B]They're Everywhere![/b]");
-            lines.push("One of the " + side + " units panics and begins firing in a frenzy. The other player chooses a unit capable of direct fire.");
+            outputCard.body.push("[B]They're Everywhere![/b]");
+            outputCard.body.push("One of the " + side + " units panics and begins firing in a frenzy. The other player chooses a unit capable of direct fire.");
             if (roll2 === 6) {
-                lines.push("Friendly Fire happens, the other player also chooses the target");
+                outputCard.body.push("Friendly Fire happens, the other player also chooses the target");
             } 
-            lines.push("The unit is marked Ops Complete");
+            outputCard.body.push("The unit will be marked Ops Complete");
+            none = false;
         }
         if (roll === 4) {
-            lines.push("[B]No Mercy![/b]");
-            lines.push("Assaults in the next impulse for each player sees hits doubled.");
+            outputCard.body.push("[B]No Mercy![/b]");
+            outputCard.body.push("Assaults in the next impulse for each player sees hits doubled.");
             state.WaW85.flags.push("No Mercy Red");
             state.WaW85.flags.push("No Mercy Blue");
+            none = false;
         }
         if (roll === 5 && roll2 > 3) {
-            lines.push("[B]Friendly Fire[/b]");
-            lines.push("Poor training and lax coordination on the " + side + " combine for deadly results. Offboard Artillery Fire is directed onto Friendly Positions");
+            outputCard.body.push("[B]Friendly Fire![/b]");
+            outputCard.body.push("Poor training and lax coordination on the " + side + " combine for deadly results. Offboard Artillery Fire is directed onto Friendly Positions");
             if (roll2 === 6) {
-                lines.push("The Opponent places a FFE Marker and executes a MRLS Strike of Strength 3-3");
+                outputCard.body.push("The Opponent places a FFE Marker and executes a MRLS Strike of Strength 3-3");
             }
             if (roll2 === 4 || roll2 === 5) {
-                lines.push("The Opponent places a FFE Marker and executes a Artillery HE Strike of Strength 3-4");
+                outputCard.body.push("The Opponent places a FFE Marker and executes a Artillery HE Strike of Strength 3-4");
             }
+            none = false;
         }
         if (roll === 6 && roll2 > 4) {
-            lines.push("[B]Bad Navigation[/b]");
-            lines.push("One of your formations is lost. When the next " + side + " formation card is drawn, the formation is marked Ops Complete")
+            outputCard.body.push("[B]Bad Navigation[/b]");
+            outputCard.body.push("One of your formations is lost. When the next " + side + " formation card is drawn, the formation should be marked Ops Complete")
+            none = false;
         }
         if (roll === 8) {
-            lines.push("[B]Survivors Regroup[/b]");
-            lines.push("The " + side + " Force may return a previously destroyed unit within 2 hexes of any other friendly unit, no matter their formation. They may not be placed within 2 hexes of any enemy unit or in an objective hex controlled by the enemy.");
+            outputCard.body.push("[B]Survivors Regroup[/b]");
+            outputCard.body.push("The " + side + " Force may return a previously destroyed unit within 2 hexes of any other friendly unit, no matter their formation. They may not be placed within 2 hexes of any enemy unit or in an objective hex controlled by the enemy.");
+            ButtonInfo("Add New Unit","!Mods;@{selected|token_id};Add To Formation");
+            none = false;
         }
         if (roll === 9) {
-            lines.push("[B]Rapid Repairs[/b]");
-            lines.push("The " + side + " Force may immediately restore a reduced unit to full strength or remove a Disrupted Marker on one unit");
+            outputCard.body.push("[B]Rapid Repairs[/b]");
+            outputCard.body.push("The " + side + " Force may immediately restore a reduced unit to full strength or remove a Disrupted Marker on one unit");
+            ButtonInfo("Pick Reduced Unit","!Mods;@{selected|token_id};Toggle Unit Reduction");
+            ButtonInfo("OR Remove Disruption","!Mods;@{selected|token_id};Toggle Unit Disruption");
+            none = false;
         }
         if (roll === 10 && roll2 > 3) {
-            lines.push("[B]Working as Intended![/b]");
-            lines.push("The " + side + " Player chooses an enemy unit and reduces that unit");
+            outputCard.body.push("[B]Working as Intended![/b]");
+            outputCard.body.push("The " + side + " Player chooses an enemy unit and reduces that unit");
+            none = false;
+            ButtonInfo("Pick Unit to Reduce","!Mods;@{selected|token_id};Toggle Unit Reduction");
         }
         if (roll === 11) {
-            lines.push("[B]Coordination Effort[/b]");
-            lines.push("Each player rolls a D6 and can remove as many Disrupted Markers as they rolled");
+            outputCard.body.push("[B]Coordination Effort[/b]");
+            outputCard.body.push("Each player rolls a D6 and can remove as many Disrupted Markers as they rolled");
+            none = false;
+            ButtonInfo("Pick Unit","!Mods;@{selected|token_id};Toggle Unit Disruption");
         }
         if (roll === 12 && roll2 > 3) {
-            lines.push("[B]Wrong Missile Supply[/b]");
-            lines.push("The " + side + " Player chooses an enemy missile-armed unit. That unit has been supplied with the wrong kind of missiles, immediatley mark if Missile Ammo Out");
+            outputCard.body.push("[B]Wrong Missile Supply[/b]");
+            outputCard.body.push("The " + side + " Player chooses an enemy missile-armed unit. That unit has been supplied with the wrong kind of missiles, immediatley mark if Missile Ammo Out");
+            none = false;
+            ButtonInfo("Pick Unit","!Mods;@{selected|token_id};Toggle Missile Ammo Out");
         }
-        if (lines.length > 0) {
-            _.each(lines,line => {
-                outputCard.body.push(line);
-            })
-        } else {
+        if (none === true) {
             outputCard.body.push("No Effect/Changes");
         }
     }
