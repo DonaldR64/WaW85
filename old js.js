@@ -2842,11 +2842,11 @@ log(card)
     const BattleFieldEvent = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
-roll === 4
+roll = 2
 
         if (roll < 4) {
             outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip one of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
-            ButtonInfo("Pick HQ","!Mods;@{selected|token_id};Higher Command HQ");
+            ButtonInfo("Select HQ and Click This","!Mods;&#64;&#123;selected&#124;token_id&#125;;Higher Command HQ");
             outputCard.nation = side;
         }
         if (roll === 4) {
@@ -2854,7 +2854,7 @@ roll === 4
         }
         if (roll === 5) {
             outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
-            ButtonInfo("Activate Formation","!ActivateFormation;@{selected|token_id};Cautious Approach");
+            ButtonInfo("Pick Unit in Formation and Click This","!ActivateFormation;@{selected|token_id};Cautious Approach");
             outputCard.nation = side;
         }
         if (roll === 6) {
@@ -3093,9 +3093,13 @@ log("BFF Roll: " + roll)
         //a function to modify things like OPS complete, disruption etc
         let Tag = msg.content.split(";");
         let tokenID = Tag[1];
+        if (!tokenID) {
+            sendChat("","Select a Token");
+            return;
+        }
         let mod = Tag[2];
         let unit = Units[tokenID];
-        if (!unit) {
+        if (!unit && tokenID) {
             unit = new Unit(tokenID);
         }
         let formationInfo = state.WaW85.formationInfo[unit.formationID];
