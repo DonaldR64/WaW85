@@ -3043,6 +3043,7 @@ log("BFF Roll: " + roll)
         let lines = [];
         let season = state.WaW85.season;
         let AirGone = false;
+        let FireOut = false;
         if ((roll === 2 || roll === 12) && state.WaW85.weatherLevel !== 4) {
             if (season === "Summer") {
                 lines.push("Severe Thunderstorms roll in");
@@ -3057,6 +3058,7 @@ log("BFF Roll: " + roll)
             AirGone = true;
             state.WaW85.weatherLevel = 4;
             state.WaW85.mud = true;
+            FireOut = true;
         }
         if ((roll === 3 || roll === 11) && state.WaW85.weatherLevel !== 3) {
             if (season === "Summer") {
@@ -3072,6 +3074,7 @@ log("BFF Roll: " + roll)
             AirGone = true;
             state.WaW85.weatherLevel = 3;
             state.WaW85.mud = true;
+            FireOut = true;
         }
         if ((roll === 4 || roll === 10) && state.WaW85.weatherLevel !== 2) {
             if (season === "Summer") {
@@ -3086,6 +3089,7 @@ log("BFF Roll: " + roll)
             AirGone = true;
             state.WaW85.weatherLevel = 2;
             state.WaW85.mud = true;
+            FireOut = true;
         }
         if ((roll === 5 || roll === 9) && state.WaW85.weatherLevel !== 1) {
             if (season === "Summer") {
@@ -3122,6 +3126,14 @@ log("BFF Roll: " + roll)
 
 
         }
+        if (FireOut === true) {
+            //put out fires
+
+
+        }
+
+
+
     }
 
 
