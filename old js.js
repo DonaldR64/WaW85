@@ -1019,19 +1019,11 @@ log(this.token.get("currentSide"))
 
 
     const DefineMap = () => {
-        let map = findObjs({_type: "graphic",_subtype: "token",layer: "map"}).filter((e) => e.get("name").includes("Map"))[0];
-        let w = map.get("width")/2;
-        let h = map.get("height")/2;
-        let x = map.get("left");
-        let y = map.get("top");
-        MapInfo.top = new Point(x-w,y-h);
-        MapInfo.bottom = new Point(x+w,y+h);
-        MapInfo.centre = new Point(x,y);
-
+        let path = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map", stroke: "#93c47d"})[0];
+        let vertices = translatePoly(path);
         _.each(HexMap,hex => {
-             if (hex.centre.x >= MapInfo.top.x && hex.centre.x <= MapInfo.bottom.x && hex.centre.y >= MapInfo.top.y && hex.centre.y <= MapInfo.bottom.y) {hex.offboard = false};
+             if (hex.centre.x >= vertices[0].x && hex.centre.x <= vertices[1].x && hex.centre.y >= vertices[0].y && hex.centre.y <= vertices[1].y) {hex.offboard = false};
         })
-
     }
 
 
