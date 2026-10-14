@@ -924,8 +924,14 @@ log(this.token.get("currentSide"))
             this.token.set("aura1_color",aura);
             this.token.set("aura1_radius",20);
         }
-
-
+        OOC() {
+            let ooc = (this.token.get("aura1_color" === "#ffff00")) ? true:false;
+            return ooc;
+        }
+        SetOOC() {
+            this.token.set("aura1_color","#ffff00");
+            this.token.set("aura1_radius",20);
+        }
 
 
         Distance(b) {
