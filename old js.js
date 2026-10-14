@@ -12,7 +12,7 @@ const WaW85 = (() => {
     let MapInfo = {};
     let UnitIDList = []; //used in create formation
     let Scenario = {};
-
+    let EventInfo = "";
 
     let playerInfo = [];
 
@@ -2027,12 +2027,18 @@ log(hex)
 
     const CreateFormation2 = (msg) => {
         let formNum = msg.content.split(";")[1];
+        let leaderIDs = [];
+
         _.each(UnitIDList,unitID => {
             let unit = Units[unitID];
             unit.formationID = formNum;
             state.WaW85.unitInfo[unitID] = formNum;
+            if (unit.type === "Leader") {
+                leaderIDs.push(unit.id);
+            }
         })
         let formation = Scenario.formations[formNum]
+
 
         state.WaW85.formationInfo[formNum] = {
             name: formation.name,
@@ -2041,6 +2047,7 @@ log(hex)
             nation: formation.nation,
             morale: formation.morale,
             commandRange: formation.command,
+            leaderIDs: leaderIDs,
         }
         sendChat("",formation.name + " Entered");
 
@@ -2146,7 +2153,7 @@ log(hex)
             errorMsg.push("Unit has already Fired");
         }
         if (shooter.token.get("aura1_color") === "#000000" && shooter.id !== activeUnitID) {
-            errorMsg.push("Unit has already activated");
+            errorMsg.push("Unit is Ops Complete");
         }
         if (shooter.Status() === false) {
             errorMsg.push("Unit is Disrupted and cannot Fire");
@@ -2843,8 +2850,7 @@ log(cards)
             outputCard.nation = formation.nation;
             outputCard.body.push("Place HQ For Formation with a Unit");
             outputCard.body.push("Transfer any Leaders");
-            outputCard.body.push("Select Activate Formation when Done")
-            ButtonInfo("Activate Formation","!ActivateFormation;" + formation.id);
+            outputCard.body.push("Activate Formation from the HQ when Done")
             state.WaW85.phase = "Operations";
             state.WaW85.turn = 1;
         } else {
@@ -2867,23 +2873,9 @@ log(cards)
             if (!state.WaW85.played.includes(card.name)) {
                 state.WaW85.played.push(card.name);
             }
-            let index = state.WaW85.missed.indexOf(card.name);
-            if (index > -1) {
-                state.WaW85.missed.splice(index,1);
-                if (state.WaW85.missed.length === 0) {
-                    outputCard.body.push("All Guaranteed Units have Gone");
-                    outputCard.body.push("End Ops Added back in");
-                    outputCard.body.push("[hr]");
-                    state.WaW85.cards.push({name: "End Operations"});
-                    if (Scenario.thirdEndOps === true) {
-                        state.WaW85.cards.push({name: "End Operations"});
-                    }
-                }
-            }
         }
         outputCard.body.push("[B]" + card.name + "[/b]");
         outputCard.body.push("[hr]");
-log(card)
         if (state.WaW85.endOps > 1) {
             EndOpsEvent();
         } else if (card.name !== "End Operations") {
@@ -2909,8 +2901,8 @@ log(card)
         }
         if (roll === 5) {
             outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
-            ButtonInfo("Pick Unit in Formation and Click This","!ActivateFormation;&#64;&#123;selected&#124;token_id&#125;;Cautious Approach");
             outputCard.nation = side;
+            EventInfo = "Cautious Approach";
         }
         if (roll === 6) {
             outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
@@ -2922,13 +2914,13 @@ log(card)
         }
         if (roll === 8) {
             outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
-            ButtonInfo("Activate Formation","!ActivateFormation;&#64;&#123;selected&#124;token_id&#125;;High Rate of Fire");
             outputCard.nation = side;
+            EventInfo = "High Rate of Fire";
         }
         if (roll === 9) {
             outputCard.body.push("[B]High Speed Approach[/b]<br>" + side + " Troops make good time to the Objective. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Movement or Move & Fire Actions");
-            ButtonInfo("Activate Formation","!ActivateFormation;&#64;&#123;selected&#124;token_id&#125;;High Speed Approach");
             outputCard.nation = side;
+            EventInfo = "High Speed Approach";
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
@@ -3150,17 +3142,76 @@ log("BFF Roll: " + roll)
         outputCard.nation = card.nation;
         outputCard.body.push("Place HQ For Formation with a Unit");
         outputCard.body.push("Transfer any Leaders");
-        outputCard.body.push("Select Activate Formation when Done")
-        ButtonInfo("Activate Formation","!ActivateFormation;&#64;&#123;selected&#124;token_id&#125;;Normal");
+        outputCard.body.push("Activate Formation from the HQ when Done")
     }
 
 
-////////
+//////// below is a macro on HQs
     const ActivateFormation = (msg) => {
+        let id = msg.selected[0]._id;
+        let hq = Units[id];
+        let formation = hq.formationID;
+        SetupCard(formation.name,"Activation",formation.nation);
+        //check for OOC
+        let hqLevel = parseInt(hq.token.get("currentSide"));
+        let morale = parseInt(formation.morale);
+        let commandRange = parseInt(formation.commandRange[hqLevel]);
+        let leaderHexLabels = [];
+        _.each(formation.leaderIDs,leaderID => {
+            let leader = Units[leaderID];
+            leaderHexLabels.push(leader.hexLabel);
+        })
+        let passedHexLabels = [];
+        _.each(formation.unitIDs,unitID => {
+            let unit = Units[unitID];
+            let distance = unit.Distance(hq);
+            let ic = true;
+            if (unit.special.includes("Recon")) {ic = true};
+            if (unit.type === "Helicopter") {ic = true};
+            if (unit.type === 'Leader') {ic = true};
+            if (leaderHexLabels.includes(unit.hexLabel)) {ic = true};
+            if (HexMap[unit.hexLabel].offboard === true) {ic = true};
+            if (passedHexLabels.includes(unit.hexLabel)) {ic = true};
+
+            if (distance > commandRange && ic === false) {
+                let moraleRoll = randomInteger(6) + randomInteger(6);
+                if (moraleRoll > morale) {
+                    ic = false;
+                } 
+            }
+            if (ic === true) {
+                unit.SetActive(true);
+            } else {
+                unit.SetOOC();
+                outputCard.body.push(unit.name + " is OOC this turn");
+            }
+        })
 
 
 
+    //test for morale/disruption
+    //test for missile reloads
 
+
+
+        outputCard.body.push("[hr]");
+        outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
+
+        let index = state.WaW85.missed.indexOf(formation.name);
+        if (index > -1) {
+            state.WaW85.missed.splice(index,1);
+            if (state.WaW85.missed.length === 0) {
+                outputCard.body.push("hr]");
+                outputCard.body.push("All Guaranteed Units have Gone");
+                outputCard.body.push("End Ops Added back in");
+                outputCard.body.push("[hr]");
+                state.WaW85.cards.push({name: "End Operations"});
+                if (Scenario.thirdEndOps === true) {
+                    state.WaW85.cards.push({name: "End Operations"});
+                }
+            }
+        }
+        PrintCard();
     }
 
 
