@@ -3186,10 +3186,13 @@ log("BFF Roll: " + roll)
                 outputCard.body.push(unit.name + " is OOC this turn");
             }
         })
+        //test for morale/disruption
+        
 
 
 
-    //test for morale/disruption
+
+
     //test for missile reloads
 
 
