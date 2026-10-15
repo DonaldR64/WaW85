@@ -316,7 +316,7 @@
             let charName = values.character_name;
             let nations = ["US ","Soviet "];
             _.each(nations, nat => {
-                nations.replace(nat,"");
+                charName.replace(nat,"");
             })
             charName = charName.split("//")[0].trim();
 
