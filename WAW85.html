@@ -322,7 +322,6 @@
 
 
             let type = values.type;
-            let mtype = values.movementtype;
 
             if (type === "Infantry") {
                 movetext0 = "Clear, Cultivated, City, Woods = 1 MP";
@@ -333,8 +332,8 @@
                 movetext0 = "Clear = 1 MP";
                 movetext1 = "Cultivated, City, Woods = 2 MP";
                 movetext2 = "Rough = 3 MP";
-                if (mtype === "Amphibious") {
-                    ///
+                if (specials.includes("Amphibious")) {
+                    movetext3 = "Water = All MP",
                 }
             }
 
