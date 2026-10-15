@@ -30,28 +30,22 @@ const WaW85 = (() => {
         b3: 2/3,
     }
 
-    const playerCodes = {
-        "Don": "2520699",
-        "DonAlt": "5097409",
-        "Ted": "6951960",
-        "Vic": "4892",
-        "Ian": "4219310",
+    let SurnameList = {
+        Germany: ["Schmidt","Schneider","Fischer","Weber","Meyer","Wagner","Becker","Schulz","Hoffmann","Bauer","Richter","Klein","Wolf","Schroder","Neumann","Schwarz","Braun","Hofmann","Werner","Krause","Konig","Lang","Vogel","Frank","Beck"],
+        Soviet: ["Ivanov","Smirnov","Petrov","Sidorov","Popov","Vassiliev","Sokolov","Novikov","Volkov","Alekseev","Lebedev","Pavlov","Kozlov","Orlov","Makarov","Nikitin","Zaitsev","Golubev","Tarasov","Ilyin","Gusev","Titov","Kuzmin","Kiselyov","Belov"],
+        "US Army": ["Smith","Johnson","Williams","Brown","Jones","Wright","Miller","Davis","Wilson","Anderson","Thomas","Taylor","Moore","Jackson","Martin","Lee","Thompson","White","Harris","Clark","Lewis","Robinson","Walker","Young","Allen"],
+        UK: ["Smith","Jones","Williams","Taylor","Davies","Brown","Wilson","Evans","Thomas","Johnson","Roberts","Walker","Wright","Robinson","Thompson","White","Hughes","Edwards","Green","Lewis","Wood","Harris","Martin","Jackson","Clarke"],
     }
 
-    const PlayerIDs = () => {
-        let players = Object.keys(playerCodes);
-        for (let i=0;i<players.length;i++) {
-            let roll20ID = playerCodes[players[i]];
-            let playerObj = findObjs({_type:'player',_d20userid: roll20ID})[0];
-            if (playerObj) {
-                let info = {
-                    name: players[i],
-                    playerID: playerObj.get("id"),
-                }
-                playerInfo.push(info);
-            }
-        }
+    let FirstNameList = {
+        Germany: ["Hans","Peter","Klaus","Wolfgang","Jürgen","Dieter","Manfred","Uwe","Günter","Horst","Bernd","Karl","Werner","Heinz","Rolf","Rainer","Gerhard","Helmut","Michael","Gerd"],
+        Soviet: ["Aleksandr","Mikhail","Artem","Maksim", "Ivan","Dmitrt","Daniil","Matvey","Timofey","Aleksey","Sergey","Andrey","Roman","Mark","Vladimir","Nik","Kirill","Ilya","Egor","Nikolai"],
+        "US Army": ["Jim","Bob","John","Bill","Dick","David","Chuck","Tom","Mike","Ron","Larry","Don","Joe","Gary","George","Ken","Paul","Ed","Jerry","Dennis"],
+        UK: ["James","Robert","John","William","Richard","David","Charles","Thomas","Michael","Ronald","Donald","George","Edward","Arthur","Kenneth","Brian","Peter","Alan","Dennis","Raymond"],
+
+
     }
+
 
     const DefineHexInfo = () => {
         HexSize = (70 * pageInfo.scale)/M.f0;
@@ -183,7 +177,7 @@ const WaW85 = (() => {
             "borderColour": "#006400",
             "borderStyle": "5px double",
             "dice": "US-Army",
-            
+
         },
 
         "Neutral": {
@@ -1780,6 +1774,48 @@ log(this.token.get("currentSide"))
     }
 
 
+    const Naming = (unit) => {
+        let name;
+        let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"]
+        let bits = ["US ","Soviet "];
+        let init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
+        let surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
+
+
+
+        if (platoons.includes(unit.type)) {
+            name = "Lt. " + init + surname;
+        }
+        if (unit.type === "HQ") {
+            if (RedFor.includes(unit.nation)) {
+                name = "Polkóvnik " + init + surname;
+            } else {
+                name = "Captain " + init + surname;
+            }
+        }
+        if (unit.type === "Leader") {
+            name = unit.charName;
+        }
+        if (unit.type === "Support" || unit.type === "Offboard Artillery") {
+            name = unit.charName;
+            _.each(bits,bit => {
+                name.replace(bit,"");
+            })
+        }
+        unit.name = name;
+        unit.token.set("name",name);
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
     const TokenInfo = (msg) => {
@@ -2062,26 +2098,10 @@ log(hex)
             return;
         }
         UnitIDList= [];
-        let unitNames = {};
-        let platName = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th"];
-        let nations = ["US ","Soviet "];
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
-            let name = unit.charName;
-            _.each(nations,nation => {
-                name = name.replace(nation,"");
-            })
-            if (unit.type === "Infantry" || unit.type === "Vehicle" || unit.type === "Helicopter") {
-                if (unitNames[name] !== undefined) {
-                    unitNames[name] = unitNames[name] + 1;
-                } else {
-                    unitNames[name] = 0;
-                }
-                name = name + " " + platName[unitNames[name]] + " Plt";
-            } 
-            unit.token.set("name",name);
-            unit.name = name;
+            Naming(unit);
             UnitIDList.push(id);
         })
         SetupCard("Formation Creation","","Neutral");
@@ -3187,7 +3207,7 @@ log("BFF Roll: " + roll)
             }
         })
         //test for morale/disruption
-        
+
 
 
 
