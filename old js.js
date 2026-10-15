@@ -33,7 +33,7 @@ const WaW85 = (() => {
     let SurnameList = {
         Germany: ["Schmidt","Schneider","Fischer","Weber","Meyer","Wagner","Becker","Schulz","Hoffmann","Bauer","Richter","Klein","Wolf","Schroder","Neumann","Schwarz","Braun","Hofmann","Werner","Krause","Konig","Lang","Vogel","Frank","Beck"],
         Soviet: ["Ivanov","Smirnov","Petrov","Sidorov","Popov","Vassiliev","Sokolov","Novikov","Volkov","Alekseev","Lebedev","Pavlov","Kozlov","Orlov","Makarov","Nikitin","Zaitsev","Golubev","Tarasov","Ilyin","Gusev","Titov","Kuzmin","Kiselyov","Belov"],
-        "US Army": ["Smith","Johnson","Williams","Brown","Jones","Wright","Miller","Davis","Wilson","Anderson","Thomas","Taylor","Moore","Jackson","Martin","Lee","Thompson","White","Harris","Clark","Lewis","Robinson","Walker","Young","Allen"],
+        "US Army": ["Smith","Johnson","Williams","Brown","Jones","Wright","Miller","Davis","Wilson","Anderson","Thomas","Taylor","Moore","Jackson","Martin","Lee","Thompson","White","Harris","Clark","Lewis","Robinson","Walker","Young","Allen","Garcia","Martinez"],
         UK: ["Smith","Jones","Williams","Taylor","Davies","Brown","Wilson","Evans","Thomas","Johnson","Roberts","Walker","Wright","Robinson","Thompson","White","Hughes","Edwards","Green","Lewis","Wood","Harris","Martin","Jackson","Clarke"],
     }
 
@@ -771,7 +771,15 @@ log(weapons)
             }
 
             this.name = token.get("name");
-            this.charName = char.get("name");
+            let charName = char.get("name");
+            charName = charName.split("//")[0];
+            let bits = ["US ","Soviet "];
+            _.each(bits,bit => {
+                charName.replace(bit,"");
+            })
+            charName.trim();
+
+            this.charName = charName;
             this.charID = charID;
             this.token = token;
             this.type = type;
@@ -1780,13 +1788,13 @@ log(this.token.get("currentSide"))
         let bits = ["US ","Soviet "];
         let init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
         let surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
-
-
+        let tooltip = unit.charName;
 
         if (platoons.includes(unit.type)) {
             name = "Lt. " + init + surname;
         }
         if (unit.type === "HQ") {
+            tooltip = "";
             if (RedFor.includes(unit.nation)) {
                 name = "Polkóvnik " + init + surname;
             } else {
@@ -1794,16 +1802,20 @@ log(this.token.get("currentSide"))
             }
         }
         if (unit.type === "Leader") {
+            tooltip = "";
             name = unit.charName;
         }
         if (unit.type === "Support" || unit.type === "Offboard Artillery") {
             name = unit.charName;
-            _.each(bits,bit => {
-                name.replace(bit,"");
-            })
+            tooltip = "";
         }
         unit.name = name;
-        unit.token.set("name",name);
+        unit.token.set({
+            name: name,
+            //tooltip: tooltip,
+            //show_tooltip: true,
+        })
+
     }
 
 
