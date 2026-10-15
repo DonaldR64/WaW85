@@ -810,7 +810,7 @@ log(weapons)
             this.movementType = movementType;
             this.action = "";
 
-            this.special = special;
+            this.special = special || " ";
 
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
@@ -1785,13 +1785,16 @@ log(this.token.get("currentSide"))
     const Naming = (unit) => {
         let name;
         let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"]
-        let bits = ["US ","Soviet "];
         let init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
         let surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
         let tooltip = unit.charName;
 
         if (platoons.includes(unit.type)) {
-            name = "Lt. " + init + surname;
+            if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
+                name = "Sgt. " + init + surname;
+            } else {
+                name = "Lt. " + init + surname;
+            }
         }
         if (unit.type === "HQ") {
             tooltip = "";
