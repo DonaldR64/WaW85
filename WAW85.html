@@ -293,8 +293,12 @@
     on("change:attrs sheet:opened", function() { 
         getAttrs(["nation","movementtype","type","special","character_name"], function(values) {
             let nation = values.nation;
+            let charName = values.character_name;
+            charName = charName.split("//")[0].trim();
+
             if (nation === "Soviet") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
+                charName = charName.replace("Soviet ","");
             }
            
             if (nation === "UK") {
@@ -302,9 +306,11 @@
             }
             if (nation === "US Army") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/327591694/wOEPfGDaGsOwSNTlLvC5VA/thumb.png?1676164120";
+                charName = charName.replace("US ","");
             }
             if (nation === "US Marine Corps") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/327770708/SxnQ76mw9gYbJZg1SJVAxw/thumb.png?1676241515";
+
             }
             if (nation === "West Germany") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028";
@@ -312,13 +318,6 @@
 
             let specialatt = values.special;
             let specials = specialatt.split(",").map((e) => e.trim());
-
-            let charName = values.character_name;
-            let nations = ["US ","Soviet "];
-            _.each(nations, nat => {
-                charName.replace(nat,"");
-            })
-            charName = charName.split("//")[0].trim();
 
 
 
