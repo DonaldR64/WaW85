@@ -109,6 +109,7 @@ const WaW85 = (() => {
         reload: "status_blue",
         landed: "status_green",
         noe: "status_brown",
+        EW: "status_brown", //change
     }; 
 
 
@@ -759,7 +760,7 @@ const WaW85 = (() => {
                 weapons.push(weapon);
             }
 
-log(weapons)
+//log(weapons)
             let special = attributes.special;
 //things to special
 
@@ -3186,61 +3187,111 @@ log("BFF Roll: " + roll)
         let id = msg.selected[0]._id;
         let hq = Units[id];
         let formation = hq.formationID;
+
+
+
         SetupCard(formation.name,"Activation",formation.nation);
         //check for OOC
         let hqLevel = parseInt(hq.token.get("currentSide"));
         let morale = parseInt(formation.morale);
         let commandRange = parseInt(formation.commandRange[hqLevel]);
+        //electronic warfare
+        if (hq.token.get(SM.EW)) {
+            commandRange = 0;
+        }
+
         let leaderHexLabels = [];
         _.each(formation.leaderIDs,leaderID => {
             let leader = Units[leaderID];
             leaderHexLabels.push(leader.hexLabel);
         })
-        let passedHexLabels = [];
+
+        let tested = {};
         _.each(formation.unitIDs,unitID => {
             let unit = Units[unitID];
             let distance = unit.Distance(hq);
-            let ic = true;
-            if (unit.special.includes("Recon")) {ic = true};
-            if (unit.type === "Helicopter") {ic = true};
-            if (unit.type === 'Leader') {ic = true};
-            if (leaderHexLabels.includes(unit.hexLabel)) {ic = true};
-            if (HexMap[unit.hexLabel].offboard === true) {ic = true};
-            if (passedHexLabels.includes(unit.hexLabel)) {ic = true};
-
-            if (distance > commandRange && ic === false) {
-                let moraleRoll = randomInteger(6) + randomInteger(6);
-                if (moraleRoll > morale) {
-                    ic = false;
-                } 
+            let inCommand = false;
+            if (unit.special.includes("Recon")) {inCommand = true;};
+            if (unit.type === "Helicopter") {inCommand = true}; //// ? 
+            if (unit.type === 'Leader') {inCommand = true};
+            if (leaderHexLabels.includes(unit.hexLabel)) {inCommand = true};
+            if (HexMap[unit.hexLabel].offboard === true) {inCommand = true};
+            if (distance === 0) {inCommand = true};
+            if (tested[unit.hexLabel]) {
+                if (tested[unit.hexLabel] === true) {
+                    inCommand = true;
+                } else if (tested[unit.hexLabel === false]) {
+                    unit.SetOOC();
+                    outputCard.body.push(unit.name + " is OOC this turn");
+                    return;
+                }
             }
-            if (ic === true) {
+            if (inCommand === true) {
                 unit.SetActive(true);
             } else {
-                unit.SetOOC();
-                outputCard.body.push(unit.name + " is OOC this turn");
+                if (distance > commandRange) {
+                    let moraleRoll = randomInteger(6) + randomInteger(6);
+                    if (moraleRoll > morale) {
+                        tested[unit.hexLabel] = false;
+                        unit.SetOOC();
+                        outputCard.body.push(unit.name + " is OOC this turn");
+                    } else {
+                        tested[unit.hexLabel] = true;
+                        unit.SetActive(true);
+                    }
+                }
             }
         })
+
         //test for morale/disruption
+        _.each(formation.unitIDs, unitID => {
+            let unit = Units[unitID];
+            if (unit.Disrupted()) {
+                if (unit.type === "Helicopter" && unit.Active()) {
+                    unit.SetDisrupt(false);
+                } else {
+                    let moraleRoll = randomInteger(6) + randomInteger(6);
+                    if (unit.OOC()) {moraleRoll++};
+                    if (moraleRoll <= morale) {
+                        unit.SetDisrupt(false);
+                    } else {
+                        outputCard.body.push(unit.name + " remains Disrupted");
+                    }
+                }
+            }
+        })
+
+        //test for missile reloads
+        _.each(formation.unitIDs, unitID => {
+            let unit = Units[unitID];
+            if (unit.token.get(SM.reload) && unit.Disrupted() === false) {
+                let moraleRoll = randomInteger(6) + randomInteger(6);
+                if (moraleRoll <= morale) {
+                    unit.token.set(SM.reload,false);
+                    outputCard.body.push(unit.name + " reloads");
+                } else {
+                    
 
 
 
-
-
-
-    //test for missile reloads
-
+                }
+            }
+        })
 
 
         outputCard.body.push("[hr]");
-        outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
+        if (hq.token.get(SM.EW)) {
+            outputCard.body.push("Offboard Artillery cannot be called due to the effects of Electronic Warfare");
+        } else {
+            outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
+        }
 
         let index = state.WaW85.missed.indexOf(formation.name);
         if (index > -1) {
             state.WaW85.missed.splice(index,1);
             if (state.WaW85.missed.length === 0) {
                 outputCard.body.push("hr]");
-                outputCard.body.push("All Guaranteed Units have Gone");
+                outputCard.body.push("All Guaranteed Formations have Gone");
                 outputCard.body.push("End Ops Added back in");
                 outputCard.body.push("[hr]");
                 state.WaW85.cards.push({name: "End Operations"});
