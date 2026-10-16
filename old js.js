@@ -918,13 +918,10 @@ const WaW85 = (() => {
             this.token.set("tint_color",tint);
         }
         Reduced(){
-log(this.token.get("sides"))
-log(this.token.get("currentSide"))
             //returns true if reduced or 1 step
-            let steps = this.token.get("sides").split("|").length;
             let currentSide = this.token.get("currentSide");
             let reduced = false;
-            if (steps === 1 || currentSide === 1) {
+            if (currentSide === 1) {
                 reduced = true;
             } 
             return reduced;
@@ -2960,7 +2957,7 @@ log(cards)
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
 
         if (roll < 4) {
-            outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. If possible, immediately flip one of the " + side + " HQs back to its unreduced side or Unsuppress a Suppressed HQ and move it a unit of its Formation");
+            outputCard.body.push("[B]Higher Command HQ[/b]<br> A higher HQ on the " + side + " side has sent staff officers forward to assist on the battlefield. Select a " + side + "HQ. It will be restored to full strength and Unsuppressed. Then move it a unit of its Formation");
             ButtonInfo("Select HQ and Click This","!Mods;&#64;&#123;selected&#124;token_id&#125;;Higher Command HQ");
             outputCard.nation = side;
         }
@@ -2992,7 +2989,7 @@ log(cards)
         }
         if (roll === 10) {
             outputCard.body.push("[B]Forward Reserves[/b]<br>Forward reserves are attempting to deploy to the battlefield. If possible, immediately flip one or 2 platoons of the " + side + " side back to unreduced");
-            outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation (drag unit from Journal to location on Map");
+            outputCard.body.push("Alternately return 1 Destroyed Unit to the Map, at Full Status and stacked with or adjacent to a Unit from its Formation (drag unit from Journal to location on Map before clicking button");
             ButtonInfo("Pick Reduced Unit (do 2x)","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Unit Reduction");
             ButtonInfo("OR Add New Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Add To Formation");
             outputCard.nation = side;
@@ -3060,7 +3057,7 @@ log("BFF Roll: " + roll)
         }
         if (roll === 8) {
             outputCard.body.push("[B]Survivors Regroup[/b]");
-            outputCard.body.push("The " + side + " Force may return a previously destroyed unit within 2 hexes of any other friendly unit, no matter their formation. They may not be placed within 2 hexes of any enemy unit or in an objective hex controlled by the enemy.");
+            outputCard.body.push("The " + side + " Force may return a previously destroyed 2 step unit as a Reduced Unit within 2 hexes of any other friendly unit, no matter their formation. They may not be placed within 2 hexes of any enemy unit or in an objective hex controlled by the enemy. Place token, then click button and then reduce the unit.");
             ButtonInfo("Add New Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Add To Formation");
             none = false;
             outputCard.nation = side;
@@ -3088,7 +3085,7 @@ log("BFF Roll: " + roll)
         }
         if (roll === 12 && roll2 > 3) {
             outputCard.body.push("[B]Wrong Missile Supply[/b]");
-            outputCard.body.push("The " + side + " Player chooses an enemy missile-armed unit. That unit has been supplied with the wrong kind of missiles, immediatley mark if Missile Ammo Out");
+            outputCard.body.push("The " + side + " Player chooses an enemy missile-armed unit. That unit has been supplied with the wrong kind of missiles, immediately mark it Missile Ammo Out");
             none = false;
             ButtonInfo("Pick Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Toggle Missile Ammo Out");
             outputCard.nation = side;
@@ -3112,7 +3109,7 @@ log("BFF Roll: " + roll)
                 lines.push("A Blizzard hits the Battlefield");
                 lines.push("The Ground becomes covered in Deep Snow");
             }
-            lines.push("LOS Is reduced, MP is reduced, Direct and Indirect Fire is reduced");
+            lines.push("LOS Is reduced, Movement is reduced, Direct and Indirect Fire is reduced");
             lines.push("Units may receive a Defensive Bonus");
             lines.push("Helicopters and Close Air Support leave the Battlefield");
             AirGone = true;
@@ -3232,6 +3229,25 @@ log("BFF Roll: " + roll)
         } else {
             outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
         }
+
+        if (EventInfo !== "") {
+            outputCard.body.push("[hr]");
+            outputCard.body.push("[B]" + EventInfo + "[/b]");
+            if (EventInfo === "Cautious Approach") {
+                 outputCard.body.push("Units may only execute Move or Move & Fire Actions, with only 1/2 their MPs");
+            }
+            if (EventInfo === "High Rate of Fire") {
+                outputCard.body.push("Units may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes")
+            }
+            if (EventInfo === "High Speed Approach") {
+                outputCard.boyd.push("Unit may only execute Move or Move and Fire Actions");
+            }
+        }
+
+        //set up unit MPs 
+
+
+
 
         let index = state.WaW85.missed.indexOf(formation.name);
         if (index > -1) {
@@ -3447,15 +3463,16 @@ log("BFF Roll: " + roll)
             unit.SetReduced(newStatus);
         }
         if (mod === "Higher Command HQ") {
-            
+            if (unit.type !== "HQ") {
+                sendChat("","Not an HQ");
+            } else {
+                unit.SetDisrupt(false);
+                unit.SetReduced(false);
+            }
         }
 
-
-
         if (mod === "Toggle Missile Ammo Out") {
-
-
-
+            unit.token.set(SM.oom,true);
         }
         if (mod === "Make Formation OPS Complete" || mod === "Make Formation Active") {
             let unitIDs = formationInfo.unitIDs;
@@ -3475,7 +3492,10 @@ log("BFF Roll: " + roll)
         }
         if (mod === "Resupply Formation") {
             let unitIDs = formationInfo.unitIDs;
-
+            _.each(unitIDs,unitID => {
+                unit.token.set(SM.oom,false);
+                unit.token.set(SM.low,false);
+            })
 
         }
 
