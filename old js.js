@@ -111,6 +111,7 @@ const WaW85 = (() => {
         landed: "status_green",
         noe: "status_brown",
         EW: "status_brown", //change
+        EWReducing: "status_pink", //change
     }; 
 
 
@@ -814,6 +815,20 @@ const WaW85 = (() => {
 
             this.special = special || " ";
 
+            if (this.type === "HQ") {
+                let command = parseInt(special.split(",").find(e => e.includes("Command")).replace(/[^\d]/g,""));
+                this.command = command;
+            }
+            if (this.type === "Leader") {
+                let command = parseInt(special.split(",").find(e => e.includes("Command")).replace(/[^\d]/g,""));
+                this.command = command;
+                let leaderMorale = parseInt(special.split(",").find(e => e.includes("Morale")).replace(/[^\d]/g,""));
+                this.leaderMorale = leaderMorale;
+            }
+
+
+
+
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
 
@@ -929,7 +944,7 @@ log(this.token.get("currentSide"))
             this.token.set("aura1_radius",20);
         }
         OOC() {
-            let ooc = (this.token.get("aura1_color" === "#ffff00")) ? true:false;
+            let ooc = (this.token.get("aura1_color") === "#ffff00") ? true:false;
             return ooc;
         }
         SetOOC() {
@@ -2093,7 +2108,7 @@ log(hex)
             unit.formationID = formNum;
             state.WaW85.unitInfo[unitID] = formNum;
             if (unit.type === "Leader") {
-                leaderIDs.push(unit.id);
+                leaderIDs.push(unitID);
             }
         })
         let formation = Scenario.formations[formNum]
@@ -2109,7 +2124,7 @@ log(hex)
             leaderIDs: leaderIDs,
         }
         sendChat("",formation.name + " Entered");
-
+log(leaderIDs)
     }
 
 
@@ -2814,7 +2829,13 @@ log(hex)
         outputCard.body.push("[hr]")
         let formation = state.WaW85.formationInfo[unit.formationID];
         outputCard.body.push("Formation: " + formation.name);
-        outputCard.body.push("Morale/Training: " + formation.morale);
+        if (unit.type === "Leader") {
+            outputCard.body.push("Leader Morale: " + unit.leaderMorale);
+        } else if (unit.type === "HQ") {
+            outputCard.body.push("Command Bonus: " + unit.command);
+        } else {
+            outputCard.body.push("Morale/Training: " + formation.morale);
+        }
         if (unit.type === "HQ") {
             let hqLevel = parseInt(unit.token.get("currentSide"));
             outputCard.body.push("Command Range: " + formation.commandRange[hqLevel]);
@@ -3193,124 +3214,21 @@ log("BFF Roll: " + roll)
     }
 
 
-//////// below is a macro on HQs
     const ActivateFormation = (msg) => {
         let id = msg.selected[0]._id;
         let hq = Units[id];
         let formation = state.WaW85.formationInfo[hq.formationID];
         activeFormationID = formation.id;
-
+        let ew = (hq.token.get(SM.EW) || hq.token.get(SM.EWReducing)) ? true:false;
 
         SetupCard(formation.name,"Activation",formation.nation);
-        //check for OOC
-        let hqLevel = parseInt(hq.token.get("currentSide"));
-        let morale = parseInt(formation.morale);
-        let commandRange = parseInt(formation.commandRange[hqLevel]);
-        //electronic warfare
-        if (hq.token.get(SM.EW)) {
-            commandRange = 0;
-        }
-
-        let leaderHexLabels = [];
-        _.each(formation.leaderIDs,leaderID => {
-            let leader = Units[leaderID];
-            leaderHexLabels.push(leader.hexLabel);
-        })
-
-        let tested = {};
-        _.each(formation.unitIDs,unitID => {
-            let unit = Units[unitID];
-            let distance = unit.Distance(hq);
-            let inCommand = false;
-            if (unit.special.includes("Recon")) {inCommand = true;};
-            if (unit.type === "Helicopter") {inCommand = true}; //// ? 
-            if (unit.type === 'Leader') {inCommand = true};
-            if (leaderHexLabels.includes(unit.hexLabel)) {inCommand = true};
-            if (HexMap[unit.hexLabel].offboard === true) {inCommand = true};
-            if (distance === 0) {inCommand = true};
-            if (tested[unit.hexLabel]) {
-                if (tested[unit.hexLabel] === true) {
-                    inCommand = true;
-                } else if (tested[unit.hexLabel === false]) {
-                    unit.SetOOC();
-                    outputCard.body.push(unit.name + " is OOC this turn");
-                    return;
-                }
-            }
-            if (inCommand === true) {
-                unit.SetActive(true);
-            } else {
-                if (distance > commandRange) {
-                    let moraleRoll = randomInteger(6) + randomInteger(6);
-                    if (moraleRoll > morale) {
-                        tested[unit.hexLabel] = false;
-                        unit.SetOOC();
-                        outputCard.body.push(unit.name + " is OOC this turn");
-                    } else {
-                        tested[unit.hexLabel] = true;
-                        unit.SetActive(true);
-                    }
-                }
-            }
-        })
-
-        //test for morale/disruption
-        _.each(formation.unitIDs, unitID => {
-            let unit = Units[unitID];
-            if (unit.Disrupted()) {
-                if (unit.type === "Helicopter" && unit.Active()) {
-                    unit.SetDisrupt(false);
-                } else {
-                    let moraleRoll = randomInteger(6) + randomInteger(6);
-                    if (unit.OOC()) {moraleRoll++};
-                    if (moraleRoll <= morale) {
-                        unit.SetDisrupt(false);
-                    } else {
-                        outputCard.body.push(unit.name + " remains Disrupted");
-                    }
-                }
-            }
-        })
-
-        //test for missile reloads
-        _.each(formation.unitIDs, unitID => {
-            let unit = Units[unitID];
-            if (unit.token.get(SM.reload) && unit.Disrupted() === false) {
-                let moraleRoll = randomInteger(6) + randomInteger(6);
-                if (moraleRoll <= morale) {
-                    unit.token.set(SM.reload,false);
-                    outputCard.body.push(unit.name + ": Missiles Reloaded");
-                } else {
-                    //fails, what happens based on unit
-                    if (unit.type === "Support" && unit.special.includes("Alternative")) {
-                        unit.token.set(SM.reload,false);
-                        unit.token.set(SM.oom,true);
-                        outputCard.body.push(unit.name + ": Missiles Out");
-                    }
-                    if (unit.type === "Vehicle") {
-                        if (unit.special.includes("Transport")) {
-                            unit.token.set(SM.reload,false);
-                            unit.token.set(SM.oom,true);
-                            outputCard.body.push(unit.name + ": Missiles Out");
-                        } else {
-                            unit.token.set(SM.reload,false);
-                            unit.token.set(SM.low,true);
-                            outputCard.body.push(unit.name + ": Missiles Low");
-                        }
-                    }
-                    if (unit.type === "Helicopter") {
-                        unit.token.set(SM.reload,false);
-                        unit.token.set(SM.low,true);
-                        outputCard.body.push(unit.name + ": Missiles Low");
-                    }
-                }
-            }
-        })
-
-
+        InCommand(formation,hq,ew);
+        Disruption(formation,hq,ew)
+        Reloads(formation,hq);
         outputCard.body.push("[hr]");
-        if (hq.token.get(SM.EW)) {
-            outputCard.body.push("Offboard Artillery cannot be called due to the effects of Electronic Warfare");
+        if (ew === true) {
+            outputCard.body.push("Artillery cannot be called due to the effects of Electronic Warfare");
+            let moraleRoll = randomInteger(6) + randomInteger(6);
         } else {
             outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
         }
@@ -3319,7 +3237,7 @@ log("BFF Roll: " + roll)
         if (index > -1) {
             state.WaW85.missed.splice(index,1);
             if (state.WaW85.missed.length === 0) {
-                outputCard.body.push("hr]");
+                outputCard.body.push("[hr]");
                 outputCard.body.push("All Guaranteed Formations have Gone");
                 outputCard.body.push("End Ops Added back in");
                 outputCard.body.push("[hr]");
@@ -3331,6 +3249,173 @@ log("BFF Roll: " + roll)
         }
         PrintCard();
     }
+
+    const InCommand = (formation,hq,ew) => {
+        let hqLevel = parseInt(hq.token.get("currentSide"));
+        let morale = parseInt(formation.morale);
+        let commandRange = parseInt(formation.commandRange[hqLevel]);
+        let hqHex = HexMap[hq.hexLabel];
+        //electronic warfare
+        if (ew === true) {
+            commandRange = 0;
+            outputCard.body.push("[B]Electronic Warfare is Active[/b]");
+            outputCard.body.push("[hr]");
+        }
+        let hexes = {};
+        let leaderHexLabels = [];
+        _.each(formation.leaderIDs,leaderID => {
+            let leader = Units[leaderID];
+            if (leader) {
+                leaderHexLabels.push(leader.hexLabel);
+            }
+        })
+        _.each(formation.unitIDs,unitID => {
+            let hexLabel = Units[unitID].hexLabel;
+            if (hexes[hexLabel]) {
+                hexes[hexLabel].push(unitID);
+            } else {
+                hexes[hexLabel] = [unitID];
+            }
+        })
+        let hexLabels = Object.keys(hexes);
+        _.each(hexLabels,hexLabel => {
+            let distance = HexMap[hexLabel].Distance(hqHex);
+            let unitIDs = hexes[hexLabel];
+            if (distance <= commandRange || leaderHexLabels.includes(hexLabel) || HexMap[hexLabel].offboard === true) {
+                _.each(unitIDs,unitID => {
+                    Units[unitID].SetActive(true);
+                })
+            } else {
+                let moraleRoll = randomInteger(6) + randomInteger(6);
+                let tip = "Morale Roll: " + moraleRoll + " vs. " + morale;
+                tip = '[OOC](#" class="showtip" title="' + tip + ')';
+
+                _.each(unitIDs,unitID => {
+                    let unit = Units[unitID];
+                    if (moraleRoll <= morale) {
+                        unit.SetActive(true);
+                    } else {
+                        let ic = false
+                        if (unit.special.includes("Recon")) {
+                            ic = true;
+                        }
+                        if (unit.special.includes("Helicopter")) {
+                            ic = true;
+                        }
+                        if (ic === true) {
+                            unit.SetActive(true);
+                        } else {
+                            unit.SetOOC();
+                            outputCard.body.push(unit.name + " is " + tip + " this turn");
+                        }
+                    }
+                })
+            }
+        })
+    }
+
+    const Disruption = (formation,hq,ew) => {
+        _.each(formation.unitIDs, unitID => {
+            let unit = Units[unitID];
+            if (unit.Disrupted()) {
+                if (unit.type === "Helicopter" && unit.Active()) {
+                    unit.SetDisrupt(false);
+                } else {
+                    let morale = parseInt(formation.morale);
+                    _.each(formation.leaderIDs,leaderID => {
+                        let leader = Units[leaderID];
+                        if (leader && leader.hexLabel === unit.hexLabel) {
+                            morale = leader.leaderMorale;
+                        }
+                    })
+                    let moraleRoll = randomInteger(6) + randomInteger(6);
+                    let tip = "";
+                    if (hq.hexLabel === unit.hexLabel) {
+                        moraleRoll -= hq.command;
+                        tip += "<br>HQ Command -" + hq.command + " to Roll";
+                    }
+                    if (unit.OOC()) {
+                        moraleRoll++
+                        tip += "<br>+1 to Roll due to OOC";
+                    };
+                    if (ew === true) {
+                        moraleRoll++
+                        tip += "<br>+1 to Roll due to EW"
+                    };
+                    
+                    tip = "Morale Roll: " + moraleRoll + " vs. " + morale + tip;
+
+                    if (moraleRoll <= morale) {
+                        tip = '[Rallies](#" class="showtip" title="' + tip + ')';
+                        unit.SetDisrupt(false);
+                    } else {
+                        tip = '[Remains Disrupted](#" class="showtip" title="' + tip + ')';
+                    }
+                    outputCard.body.push(unit.name + ": " + tip);
+                }
+            }
+        })
+    }
+
+    const Reloads = (formation,hq) => {
+        _.each(formation.unitIDs, unitID => {
+            let unit = Units[unitID];
+            if (unit.token.get(SM.reload) && unit.Disrupted() === false) {
+                let morale = parseInt(formation.morale);
+                _.each(formation.leaderIDs,leaderID => {
+                    let leader = Units[leaderID];
+                    if (leader && leader.hexLabel === unit.hexLabel) {
+                        morale = leader.leaderMorale;
+                    }
+                })
+                let moraleRoll = randomInteger(6) + randomInteger(6);
+                let tip = "";
+                if (hq.hexLabel === unit.hexLabel) {
+                    moraleRoll -= hq.command;
+                    tip += "<br>HQ Command -" + hq.command + " to Roll";
+                }
+                tip = "Morale Roll: " + moraleRoll + " vs. " + morale + tip;
+
+                let tipWord;
+                if (moraleRoll <= morale) {
+                    unit.token.set(SM.reload,false);
+                    tipWord = "Reloaded"
+                } else {
+                    //fails, what happens based on unit
+                    if (unit.type === "Support") {
+                        if (unit.special.includes("Alternative")) {
+                            unit.token.set(SM.reload,false);
+                            unit.token.set(SM.oom,true);
+                            tipWord = "Out";
+                        } else {
+                            tipWord = "Reloading Still";
+                        }
+                    }
+                    if (unit.type === "Vehicle") {
+                        if (unit.special.includes("Transport")) {
+                            unit.token.set(SM.reload,false);
+                            unit.token.set(SM.oom,true);
+                            tipWord = "Out";
+                        } else {
+                            unit.token.set(SM.reload,false);
+                            unit.token.set(SM.low,true);
+                            tipWord = "Low";
+                        }
+                    }
+                    if (unit.type === "Helicopter") {
+                        unit.token.set(SM.reload,false);
+                        unit.token.set(SM.low,true);
+                        tipWord = "Low";
+                    }
+                    tip = '[' + tipWord + '](#" class="showtip" title="' + tip + ')';
+                    outputCard.body.push(unit.name + ": Missiles " + tip);
+                }
+            }
+        })
+    }
+
+
+
 
 
     const Mods = (msg) => {
