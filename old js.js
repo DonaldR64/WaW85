@@ -13,6 +13,7 @@ const WaW85 = (() => {
     let UnitIDList = []; //used in create formation
     let Scenario = {};
     let EventInfo = "";
+    let activeFormationID;
 
     let playerInfo = [];
 
@@ -1030,6 +1031,10 @@ log(this.token.get("currentSide"))
     const DefineMap = () => {
         let path = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map", stroke: "#93c47d"})[0];
         let vertices = translatePoly(path);
+log(vertices[0].label())
+log(vertices[1].label())
+
+
         _.each(HexMap,hex => {
              if (hex.centre.x >= vertices[0].x && hex.centre.x <= vertices[1].x && hex.centre.y >= vertices[0].y && hex.centre.y <= vertices[1].y) {hex.offboard = false};
         })
@@ -1819,7 +1824,9 @@ log(this.token.get("currentSide"))
             //tooltip: tooltip,
             //show_tooltip: true,
         })
-
+        if (unit.type === "Leader" || unit.type === "HQ") {
+            toFront(unit.token);
+        }
     }
 
 
@@ -2118,7 +2125,11 @@ log(hex)
             let id = selected._id;
             let unit = new Unit(id);
             Naming(unit);
+            AddAbilities(unit);
             UnitIDList.push(id);
+            unit.SetActive(true);
+            unit.SetDisrupt(false);
+            unit.SetReduced(false);
         })
         SetupCard("Formation Creation","","Neutral");
         outputCard.body.push("Pick their Formation");
@@ -2805,8 +2816,8 @@ log(hex)
         outputCard.body.push("Formation: " + formation.name);
         outputCard.body.push("Morale/Training: " + formation.morale);
         if (unit.type === "HQ") {
-            outputCard.body.push("Command Range (Full): " + formation.commandRange[0]);
-            outputCard.body.push("Command Range (Reduced): " + formation.commandRange[1]);
+            let hqLevel = parseInt(unit.token.get("currentSide"));
+            outputCard.body.push("Command Range: " + formation.commandRange[hqLevel]);
         }
         PrintCard();
     }
@@ -3186,8 +3197,8 @@ log("BFF Roll: " + roll)
     const ActivateFormation = (msg) => {
         let id = msg.selected[0]._id;
         let hq = Units[id];
-        let formation = hq.formationID;
-
+        let formation = state.WaW85.formationInfo[hq.formationID];
+        activeFormationID = formation.id;
 
 
         SetupCard(formation.name,"Activation",formation.nation);
@@ -3548,21 +3559,22 @@ log("BFF Roll: " + roll)
     }    
 
 
-    const AddAbilities = (msg) => {
-        if (!msg.selected) {
-            sendChat("","No Token Selected");
-            return;
-        };
-        let id = msg.selected[0]._id;
-        let unit = Formations[id];
-        if (!unit) {return};
+    const AddAbilities = (unit) => {
         let abilityName,action;
-        let abilArray = findObjs({_type: "ability", _characterid: team.characterID});
+        let abilArray = findObjs({_type: "ability", _characterid: unit.charID});
 
         //clear old abilities
         for(let a=0;a<abilArray.length;a++) {
             abilArray[a].remove();
         } 
+
+
+        if (unit.type === "HQ") {
+            AddAbility("Activate Formation","!ActivateFormation",unit.charID);
+        }
+
+
+
 
 
 
@@ -3879,7 +3891,9 @@ log("BFF Roll: " + roll)
             case '!CreateFormation2':
                 CreateFormation2(msg);
                 break;
-
+            case '!ActivateFormation':
+                ActivateFormation(msg);
+                break;
 
             case '!ClearMarkers':
                 RemoveMoveMarkers();
