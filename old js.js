@@ -3268,12 +3268,30 @@ log("BFF Roll: " + roll)
                 let moraleRoll = randomInteger(6) + randomInteger(6);
                 if (moraleRoll <= morale) {
                     unit.token.set(SM.reload,false);
-                    outputCard.body.push(unit.name + " reloads");
+                    outputCard.body.push(unit.name + ": Missiles Reloaded");
                 } else {
-                    
-
-
-
+                    //fails, what happens based on unit
+                    if (unit.type === "Support" && unit.special.includes("Alternative")) {
+                        unit.token.set(SM.reload,false);
+                        unit.token.set(SM.oom,true);
+                        outputCard.body.push(unit.name + ": Missiles Out");
+                    }
+                    if (unit.type === "Vehicle") {
+                        if (unit.special.includes("Transport")) {
+                            unit.token.set(SM.reload,false);
+                            unit.token.set(SM.oom,true);
+                            outputCard.body.push(unit.name + ": Missiles Out");
+                        } else {
+                            unit.token.set(SM.reload,false);
+                            unit.token.set(SM.low,true);
+                            outputCard.body.push(unit.name + ": Missiles Low");
+                        }
+                    }
+                    if (unit.type === "Helicopter") {
+                        unit.token.set(SM.reload,false);
+                        unit.token.set(SM.low,true);
+                        outputCard.body.push(unit.name + ": Missiles Low");
+                    }
                 }
             }
         })
