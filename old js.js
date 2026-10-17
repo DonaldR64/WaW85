@@ -2202,6 +2202,37 @@ log(hex)
         sendChat("",line)
     }
 
+    const CallArtillery1 = (msg) => {
+        let Tag = msg.content.split(";");
+        let spotter = Units[Tag[1]];
+        let target = Units[Tag[2]];
+
+        SetupCard(spotter.name,"Spot",unit.nation);
+        let errorMsg = [];
+        if (unit.Active() === false) {
+            errorMsg.push("Unit is OPS Complete");
+        }
+
+        if (target.special) {
+
+        }
+
+
+
+        let available = false;
+        let formation = state.WaW85.formationInfo[unit.formationID];
+
+
+
+
+
+
+
+
+
+    }
+
+
 
 
     const DirectFire = (msg) => {
@@ -2787,7 +2818,7 @@ log(hex)
         return true;
     }
     
-    const Spot = (spotterUnit) => {
+    const SpotOld = (spotterUnit) => {
         //make buttons for available artillery
         let available = false;
         let formation = Formations[spotterUnit.formationID];
@@ -3284,7 +3315,7 @@ log("BFF Roll: " + roll)
                 outputCard.body.push("Units may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes")
             }
             if (EventInfo === "High Speed Approach") {
-                outputCard.body.push("Unit may only execute Move or Move and Fire Actions");
+                outputCard.body.push("Units may only execute Move or Move and Fire Actions");
             }
         }
 
@@ -3719,6 +3750,11 @@ log("BFF Roll: " + roll)
 
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
+
+            AddAbility("Call Artillery","!CallArtillery1;@{selected|token_id};@{target|token_id}");
+
+
+
         }
 
 
