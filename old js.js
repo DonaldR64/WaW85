@@ -741,8 +741,20 @@ const WaW85 = (() => {
                 let wname = attributes["weapon" + i + "name"];
                 if (equip === "Off" || wname === "" || wname === undefined) {continue};
                 let wtype = attributes["weapon" + i + "type"] || "AP";
-                let wrange = parseInt(attributes["weapon" + i + "range"]);
+                let wrange = attributes["weapon" + i + "range"];
+                let wminrange = 0;
+                if (wrange && wrange.includes("-")) {
+                    wrange = wrange.split('-');
+                    wminrange = parseInt(wrange[0]);
+                    wrange = parseInt(wrange[1]);
+                } else {
+                    wrange = parseInt(wrange);
+                }
+
+
     
+
+
                 let wfp = Stats(attributes["weapon" + i + "fp"]);
                 let wtoHit = Stats(attributes["weapon" + i + "tohit"]);
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
@@ -753,6 +765,7 @@ const WaW85 = (() => {
                 let weapon = {
                     name: wname,
                     type: wtype,
+                    minRange: wminrange,
                     range: wrange,
                     fp: wfp, //array
                     toHit: wtoHit, //array
@@ -762,7 +775,7 @@ const WaW85 = (() => {
                 weapons.push(weapon);
             }
 
-//log(weapons)
+log(weapons)
             let special = attributes.special;
 //things to special
 
