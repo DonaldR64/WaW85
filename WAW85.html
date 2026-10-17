@@ -294,8 +294,9 @@
         getAttrs(["nation","movementtype","type","special","character_name"], function(values) {
             let nation = values.nation || "Neutral";
             let charName = values.character_name || " ";
-            charName = charName.split("//")[0].trim();
+            charName = charName.split("//")[0];
             charName = charName.replace(" Token","");
+            charName = charName.trim();
 
             if (nation === "Soviet") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
@@ -317,10 +318,12 @@
                 flag = "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028";
             }
 
-            let specialatt = values.special;
-            let specials = specialatt.split(",").map((e) => e.trim());
-
-
+            let special = values.special || " ";
+            special = special.split(",");
+            let specials = ["","","",""];
+            for (let i=0;i<special.length;i++) {
+                specials[i] = special[i].trim();
+            }
 
             let type = values.type;
             let movetext0,movetext1,movetext2,movetext3;
