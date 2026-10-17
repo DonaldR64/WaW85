@@ -2248,7 +2248,7 @@ log(hex)
             let formation = state.WaW85.formationInfo[spotter.formationID];
             _.each(formation.unitIDs, unitID => {
                 let unit = Units[unitID];
-                if (unit.artUnit && unit.Active()) {
+                if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
                     //check range  (min and max range)
                     //if in range, have a dropdown for types as option
 
