@@ -9,11 +9,12 @@ const WaW85 = (() => {
     let HexMap = {}; 
     let activeUnitID;
     let ScenarioInfo = {};
-    let MapInfo = {};
     let UnitIDList = []; //used in create formation
     let Scenario = {};
     let EventInfo = "";
     let activeFormationID;
+
+
 
     let playerInfo = [];
 
@@ -2209,27 +2210,64 @@ log(hex)
 
         SetupCard(spotter.name,"Spot",unit.nation);
         let errorMsg = [];
-        if (unit.Active() === false) {
-            errorMsg.push("Unit is OPS Complete");
+        if (spotter.Active() === false) {
+            errorMsg.push("Spotter is OPS Complete");
         }
 
-        if (target.special) {
+        if (target.special.includes("Offboard") && spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
+            errorMsg.push("Only HQ and Recon Units can call Offboard Artillery");
+        }
 
+        let losResult = LOS(spotter,target);
+        if (losResult.los === false) {
+            errorMsg.push("No LOS To Target");
+        }
+
+        if (errorMsg.length > 0) {
+            _.each(errorMsg,msg => {
+                outputCard.body.push(msg);
+            });
+            PrintCard();
+            return;
+        }
+
+
+        if (target.special.includes("Offboard")) {
+            let choice;
+            if (target.name.includes("HE")) {
+                choice = "HE";
+            } else if (target.name.includes("Smoke")) {
+                choice = "Smoke";
+            }
+
+
+
+            ButtonInfo("FFE","!CallArtillery2;" + target.id + ";" + choice);
+        } else {
+            let available = false;
+            let formation = state.WaW85.formationInfo[spotter.formationID];
+            _.each(formation.unitIDs, unitID => {
+                let unit = Units[unitID];
+                if (unit.artUnit && unit.Active()) {
+                    //check range and type
+                    //if in range, have a dropdown for types as option
+
+                } 
+
+
+            })
+            if (available === false) {
+                outputCard.body.push("No Available Artillery Units");
+            }
         }
 
 
 
-        let available = false;
-        let formation = state.WaW85.formationInfo[unit.formationID];
 
 
 
 
-
-
-
-
-
+        PrintCard();
     }
 
 
