@@ -1814,7 +1814,9 @@ log(vertices[1].label())
         }
 
         if (platoons.includes(unit.type)) {
-            if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
+            if (unit.special.includes("Offboard")) {
+                name = unit.charName;
+            } else if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
                 name = "Sgt. " + init + surname;
             } else {
                 name = "Lt. " + init + surname;
@@ -2941,6 +2943,7 @@ log(cards)
 
     const OperationsPhase = () => {
         //draw card randomly
+log(state.WaW85.cards)
         let index = randomInteger(state.WaW85.cards.length) - 1;
         let card = state.WaW85.cards.splice(index,1)[0];
         if (!card) {
