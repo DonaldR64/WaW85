@@ -2898,7 +2898,6 @@ log(hex)
         //others based on scenario
 
         state.WaW85.cards = cards;
-log(cards)
     }
 
     const NextPhase = () => {
@@ -2943,17 +2942,12 @@ log(cards)
 
     const OperationsPhase = () => {
         //draw card randomly
-log(state.WaW85.cards)
         let index = randomInteger(state.WaW85.cards.length) - 1;
         let card = state.WaW85.cards.splice(index,1)[0];
         if (!card) {
-            log(index)
-            log(state.WaW85.cards)
-            sendChat("","No Card")
-            return;
+            //2nd missed ops/missing unit issue
+            card = {name: "End Operations"};
         }
-
-
         if (card.name === "End Operations") {
             state.WaW85.endOps++;
         } else {
