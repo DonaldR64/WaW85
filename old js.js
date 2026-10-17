@@ -1554,6 +1554,7 @@ log(vertices[1].label())
         let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
             return el.get("stroke").toLowerCase() === "#ffffff";
         });
+log(roads)
         _.each(roads,road => {
             let vertices = translatePoly(road);
             for (let i=0;i<(vertices.length-1);i++) {
@@ -2844,6 +2845,9 @@ log(hex)
             outputCard.body.push("Offboard");
         } else {
             outputCard.body.push("Terrain: " + hex.terrain);
+            if (hex.road === true) {
+                outputCard.body.push("Road Present");
+            }
         }
         outputCard.body.push("[hr]")
         let formation = state.WaW85.formationInfo[unit.formationID];
@@ -3917,12 +3921,7 @@ log("BFF Roll: " + roll)
                 }
             }
         }
-    //adapt this later to fit 2 or more tokens
 
-        unit.token.set({
-            left: endHex.centre.x,
-            top: endHex.centre.y,
-        })
         unit.hexLabel = endHex.label;
         let index = startHex.tokenIDs.indexOf(unit.id);
         if (index > -1) {
