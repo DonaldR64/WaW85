@@ -1806,10 +1806,12 @@ log(vertices[1].label())
 
 
     const Naming = (unit) => {
-        let name;
-        let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"]
-        let init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
-        let surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
+        let name = "N/A",init,surname;
+        let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"];
+        if (unit.nation) {
+            init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
+            surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
+        }
 
         if (platoons.includes(unit.type)) {
             if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
@@ -1828,14 +1830,17 @@ log(vertices[1].label())
         if (unit.type === "Leader") {
             name = unit.charName;
         }
-        if (unit.type === "Support" || unit.type === "Offboard Artillery") {
+        if (!unit.type || unit.type === "Support" || unit.type === "Artillery Token") {
             name = unit.charName;
         }
         unit.name = name;
-        unit.token.set({
-            name: name,
-        })
-        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Offboard Artillery") {
+        if (name) {
+            unit.name = name;
+            unit.token.set({
+                name: name,
+            })
+        }
+        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token") {
             toFront(unit.token);
         }
     }
@@ -2108,20 +2113,13 @@ log(hex)
             }
         })
 
-        let formation = Scenario.formations[formNum]
-        state.WaW85.formationInfo[formNum] = {
-            name: formation.name,
-            unitIDs: UnitIDList,
-            id: formNum,
-            nation: formation.nation,
-            morale: formation.morale,
-            commandRange: formation.command,
-            leaderIDs: leaderIDs,
-            core: formation.core,
-        }
+        let formation = DeepCopy(Scenario.formations[formNum]);
+        formation.unitIDs = UnitIDList;
+        formation.leaderIDs = leaderIDs;
+
+        state.WaW85.formationInfo[formNum] = formation;
 
         sendChat("",formation.name + " Entered");
-log(leaderIDs)
     }
 
 
@@ -2139,7 +2137,7 @@ log(leaderIDs)
             Naming(unit);
             AddAbilities(unit);
             UnitIDList.push(id);
-            if (unit.type !== "Offboard Artillery") {
+            if (unit.type !== "Artillery Token") {
                 unit.SetActive(true);
                 unit.SetDisrupt(false);
                 unit.SetReduced(false);
@@ -2872,7 +2870,7 @@ log(leaderIDs)
         let formations = Scenario.formations;
         let cards = [];
         _.each(formations,formation => {
-            if (formation.cards > 0) {
+            if (formation.core === true) {
                 for (let i=0;i<formation.cards;i++) {
                     cards.push(formation);
                 }

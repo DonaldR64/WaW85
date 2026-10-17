@@ -292,9 +292,10 @@
 
     on("change:attrs sheet:opened", function() { 
         getAttrs(["nation","movementtype","type","special","character_name"], function(values) {
-            let nation = values.nation;
-            let charName = values.character_name;
+            let nation = values.nation || "Neutral";
+            let charName = values.character_name || " ";
             charName = charName.split("//")[0].trim();
+            charName = charName.replace("Token","");
 
             if (nation === "Soviet") {
                 flag = "https://s3.amazonaws.com/files.d20.io/images/324272729/H0Ea79FLkZIn-3riEhuOrA/thumb.png?1674441877";
@@ -354,7 +355,7 @@
                 "specials2": specials[1],
                 "specials3": specials[2],
                 "specials4": specials[3],
-                "displayname": charName,
+                "displayname": charName.trim(),
             });
         });    
     });  
