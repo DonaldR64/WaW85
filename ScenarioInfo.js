@@ -23,16 +23,32 @@ const ScenarioData = {
                 nation: "Soviet",
                 cards: 1,
                 type: "Formation",
+                offboard: false,
             },
             2: {
                 id: 2,
+                name: "Soviet 247th GMR Regimental Artillery",
+                morale: 6,
+                command: [4,3],
+                nation: "Soviet",
+                cards: 0,
+                type: "Formation",
+                offboard: true,
+            },
+            3: {
+                id: 3,
                 name: "US 1/11th ACR",
                 morale: 7,
                 command: [5,4],
                 nation: "US Army",
                 cards: 1,
                 type: "Formation",
-            }
+                offboard: false,
+            },
+
+
+
+
         }
     }
 

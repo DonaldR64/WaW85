@@ -774,15 +774,7 @@ const WaW85 = (() => {
             }
 
             this.name = token.get("name");
-            let charName = char.get("name");
-            charName = charName.split("//")[0];
-            let bits = ["US ","Soviet "];
-            _.each(bits,bit => {
-                charName.replace(bit,"");
-            })
-            charName.trim();
-
-            this.charName = charName;
+            this.charName = attributes.displayname;
             this.charID = charID;
             this.token = token;
             this.type = type;
@@ -1805,7 +1797,6 @@ log(vertices[1].label())
         let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"]
         let init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
         let surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
-        let tooltip = unit.charName;
 
         if (platoons.includes(unit.type)) {
             if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
@@ -1815,7 +1806,6 @@ log(vertices[1].label())
             }
         }
         if (unit.type === "HQ") {
-            tooltip = "";
             if (RedFor.includes(unit.nation)) {
                 name = "Polkóvnik " + init + surname;
             } else {
@@ -1823,18 +1813,14 @@ log(vertices[1].label())
             }
         }
         if (unit.type === "Leader") {
-            tooltip = "";
             name = unit.charName;
         }
         if (unit.type === "Support" || unit.type === "Offboard Artillery") {
             name = unit.charName;
-            tooltip = "";
         }
         unit.name = name;
         unit.token.set({
             name: name,
-            //tooltip: tooltip,
-            //show_tooltip: true,
         })
         if (unit.type === "Leader" || unit.type === "HQ") {
             toFront(unit.token);
@@ -2108,9 +2094,8 @@ log(hex)
                 leaderIDs.push(unitID);
             }
         })
+
         let formation = Scenario.formations[formNum]
-
-
         state.WaW85.formationInfo[formNum] = {
             name: formation.name,
             unitIDs: UnitIDList,
@@ -2119,7 +2104,9 @@ log(hex)
             morale: formation.morale,
             commandRange: formation.command,
             leaderIDs: leaderIDs,
+            offboardSupport: formation.offboard,
         }
+
         sendChat("",formation.name + " Entered");
 log(leaderIDs)
     }
@@ -2150,6 +2137,15 @@ log(leaderIDs)
         })
         PrintCard();
     }
+
+
+
+
+
+
+
+
+
 
     const PlaceHQ = (msg) => {
         if (!msg.selected) {sendChat("","Pick a Unit");return};
@@ -2861,12 +2857,14 @@ log(leaderIDs)
         let formations = Scenario.formations;
         let cards = [];
         _.each(formations,formation => {
-            for (let i=0;i<formation.cards;i++) {
-                cards.push(formation);
-            }
-            if (phase === "End" && state.WaW85.played.includes(formation.name) === false) {
-                state.WaW85.missed.push(formation.name);
-                outputCard.body.push(formation.name + " is Guaranteed to Activate");
+            if (formation.cards > 0) {
+                for (let i=0;i<formation.cards;i++) {
+                    cards.push(formation);
+                }
+                if (phase === "End" && state.WaW85.played.includes(formation.name) === false) {
+                    state.WaW85.missed.push(formation.name);
+                    outputCard.body.push(formation.name + " is Guaranteed to Activate");
+                }
             }
         })
         cards.push({name: "End Operations"});
@@ -2932,6 +2930,14 @@ log(cards)
         //draw card randomly
         let index = randomInteger(state.WaW85.cards.length) - 1;
         let card = state.WaW85.cards.splice(index,1)[0];
+        if (!card) {
+            log(index)
+            log(state.WaW85.cards)
+            sendChat("","No Card")
+            return;
+        }
+
+
         if (card.name === "End Operations") {
             state.WaW85.endOps++;
         } else {
