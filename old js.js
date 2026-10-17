@@ -2249,7 +2249,7 @@ log(hex)
             _.each(formation.unitIDs, unitID => {
                 let unit = Units[unitID];
                 if (unit.artUnit && unit.Active()) {
-                    //check range and type
+                    //check range  (min and max range)
                     //if in range, have a dropdown for types as option
 
                 } 
