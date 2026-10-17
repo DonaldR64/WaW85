@@ -23,7 +23,7 @@ const ScenarioData = {
                 nation: "Soviet",
                 cards: 1,
                 type: "Formation",
-                offboard: false,
+                core: true,
             },
             2: {
                 id: 2,
@@ -33,7 +33,11 @@ const ScenarioData = {
                 nation: "Soviet",
                 cards: 0,
                 type: "Formation",
-                offboard: true,
+                core: false,
+                artilleryMissions: {
+                    he: {missions: 2, dice: 3, toHit: 4},
+                    smoke: {missions: 2},
+                },
             },
             3: {
                 id: 3,
@@ -43,7 +47,7 @@ const ScenarioData = {
                 nation: "US Army",
                 cards: 1,
                 type: "Formation",
-                offboard: false,
+                core: true,
             },
 
 

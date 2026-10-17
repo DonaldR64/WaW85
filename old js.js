@@ -1835,7 +1835,7 @@ log(vertices[1].label())
         unit.token.set({
             name: name,
         })
-        if (unit.type === "Leader" || unit.type === "HQ") {
+        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Offboard Artillery") {
             toFront(unit.token);
         }
     }
@@ -2117,7 +2117,7 @@ log(hex)
             morale: formation.morale,
             commandRange: formation.command,
             leaderIDs: leaderIDs,
-            offboardSupport: formation.offboard,
+            core: formation.core,
         }
 
         sendChat("",formation.name + " Entered");
@@ -2139,9 +2139,11 @@ log(leaderIDs)
             Naming(unit);
             AddAbilities(unit);
             UnitIDList.push(id);
-            unit.SetActive(true);
-            unit.SetDisrupt(false);
-            unit.SetReduced(false);
+            if (unit.type !== "Offboard Artillery") {
+                unit.SetActive(true);
+                unit.SetDisrupt(false);
+                unit.SetReduced(false);
+            }
         })
         SetupCard("Formation Creation","","Neutral");
         outputCard.body.push("Pick their Formation");
@@ -3691,7 +3693,9 @@ log("BFF Roll: " + roll)
         for(let a=0;a<abilArray.length;a++) {
             abilArray[a].remove();
         } 
-
+        if (unit.type === "Offboard Artillery") {
+            return;
+        }
 
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
@@ -3702,7 +3706,6 @@ log("BFF Roll: " + roll)
 
 
 
-        sendChat("","Abilities Added")
     }
 
     const CreateMarker = (hex,type,cost) => {
