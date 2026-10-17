@@ -3256,13 +3256,9 @@ log("BFF Roll: " + roll)
                 outputCard.body.push("Units may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes")
             }
             if (EventInfo === "High Speed Approach") {
-                outputCard.boyd.push("Unit may only execute Move or Move and Fire Actions");
+                outputCard.body.push("Unit may only execute Move or Move and Fire Actions");
             }
         }
-
-        //set up unit MPs 
-
-
 
 
         let index = state.WaW85.missed.indexOf(formation.name);
