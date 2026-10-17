@@ -940,11 +940,22 @@ log(weapons)
             let active = (this.token.get("aura1_color") === "#00ff00") ? true:false;
             return active;
         }
-        SetActive(active) {
-            let aura = active === true ? "#00ff00":"#000000";
+        SetActive() {
+            this.token.set("aura1_color","#00ff00");
+            this.token.set("aura1_radius",20);
+        }
+        Ready() {
+            let ready = (this.token.get("aura1_color") === "#00ff00" || this.token.get("aura1_color") === "#ff00ff") ? true:false;
+            return ready;
+        }
+        SetReady(ready) {
+            let aura = (ready === true) ? "#ff00ff":"#000000";
             this.token.set("aura1_color",aura);
             this.token.set("aura1_radius",20);
         }
+
+
+
         OOC() {
             let ooc = (this.token.get("aura1_color") === "#ffff00") ? true:false;
             return ooc;
@@ -2140,7 +2151,7 @@ log(hex)
             AddAbilities(unit);
             UnitIDList.push(id);
             if (unit.type !== "Artillery Token") {
-                unit.SetActive(true);
+                unit.SetReady(true);
                 unit.SetDisrupt(false);
                 unit.SetReduced(false);
             }
@@ -2908,6 +2919,7 @@ log(hex)
             if (state.WaW85.turn === 0) {
                 InitiativePhase();
             } else {
+                LastFormation();
                 if (state.WaW85.phase === "Operations") {
                     OperationsPhase();
                 } else {
@@ -2986,8 +2998,8 @@ log(hex)
             EventInfo = "Cautious Approach";
         }
         if (roll === 6) {
-            outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are no longer Ops Complete");
-            ButtonInfo("Pick a Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Make Formation Active");
+            outputCard.body.push("[B]Overwatch Set[/b]<br>" + side + " troops have time to re-ammo and re-position themselves. Pick one " + side + " Formation and its units are marked Ready");
+            ButtonInfo("Pick a Unit","!Mods;&#64;&#123;selected&#124;token_id&#125;;Make Formation Ready");
             outputCard.nation = side;
         }
         if (roll === 7) {
@@ -3226,8 +3238,20 @@ log("BFF Roll: " + roll)
         outputCard.body.push("Activate Formation from the HQ when Done")
     }
 
+    const LastFormation = () => {
+        if (activeFormationID) {
+            let prevFormation = state.WaW85.formationInfo[activeFormationID];
+             if (prevFormation) {
+                _.each(prevFormation.unitIDs,unitID => {
+                    let unit = Units[unitID];
+                    unit.SetReady(unit.Ready());
+                })
+            }
+        }
+    }
 
     const ActivateFormation = (msg) => {
+        LastFormation();
         let id = msg.selected[0]._id;
         let hq = Units[id];
         let formation = state.WaW85.formationInfo[hq.formationID];
@@ -3463,8 +3487,8 @@ log("BFF Roll: " + roll)
         let formationInfo = state.WaW85.formationInfo[unit.formationID];
 
         if (mod === "Toggle Unit OPS Complete") {
-            let newStatus = unit.Active() === true ? false:true;
-            unit.SetActive(newStatus);
+            let newStatus = unit.Ready() === true ? false:true;
+            unit.SetReady(newStatus);
         }
         if (mod === "Toggle Unit Disruption") {
             let newStatus = unit.Disrupted() === true ? false:true;
@@ -3486,12 +3510,12 @@ log("BFF Roll: " + roll)
         if (mod === "Toggle Missile Ammo Out") {
             unit.token.set(SM.oom,true);
         }
-        if (mod === "Make Formation OPS Complete" || mod === "Make Formation Active") {
+        if (mod === "Make Formation OPS Complete" || mod === "Make Formation Ready") {
             let unitIDs = formationInfo.unitIDs;
-            let active = (mod.includes("Active")) ? true:false;
+            let ready = (mod.includes("Ready")) ? true:false;
             _.each(unitIDs,unitID => {
                 let unit2 = Units[unitID];
-                unit2.SetActive(active);
+                unit2.SetReady(ready);
             })
         }
         if (mod === "Add to Formation") {
@@ -3540,9 +3564,6 @@ log("BFF Roll: " + roll)
 
         
     const EndPhase = () => {
-        //make up new deck if going to next turn
-//this bit will have to be done after end phase done / 'printed'
-
 
 
 
