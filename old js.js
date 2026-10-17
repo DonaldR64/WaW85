@@ -2941,7 +2941,7 @@ log(hex)
             outputCard.body.push("[U]Initiative Phase[/u]");
             outputCard.body.push("[B]" + formation.name + " has Initiative[/b]");
             outputCard.nation = formation.nation;
-            outputCard.body.push("Place HQ For Formation with a Unit");
+            outputCard.body.push("The HQ may be Placed with a Unit");
             outputCard.body.push("Transfer any Leaders");
             outputCard.body.push("Activate Formation from the HQ when Done")
             state.WaW85.phase = "Operations";
@@ -3237,7 +3237,7 @@ log("BFF Roll: " + roll)
 
     const FormationEvent = (card) => {
         outputCard.nation = card.nation;
-        outputCard.body.push("Place HQ For Formation with a Unit");
+        outputCard.body.push("Place or move HQ");
         outputCard.body.push("Transfer any Leaders");
         outputCard.body.push("Activate Formation from the HQ when Done")
     }
