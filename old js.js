@@ -820,14 +820,16 @@ log(weapons)
 
             this.special = special || " ";
 
-            if (this.type === "HQ") {
-                let command = parseInt(special.split(",").find(e => e.includes("Command")).replace(/[^\d]/g,""));
+            if (this.type === "HQ" || this.type === "Leader") {
+                let command = special.split(",").find(e => e.includes("Command"));
+                command = command.replace("Command: ","");
+                command = command.split("(").map(e => e.replace(/[^\d]/g,""));
                 this.command = command;
             }
             if (this.type === "Leader") {
-                let command = parseInt(special.split(",").find(e => e.includes("Command")).replace(/[^\d]/g,""));
-                this.command = command;
-                let leaderMorale = parseInt(special.split(",").find(e => e.includes("Morale")).replace(/[^\d]/g,""));
+                let leaderMorale = special.split(",").find(e => e.includes("Morale"));
+                leaderMorale = leaderMorale.replace("Morale: ","");
+                leaderMorale = leaderMorale.split("(").map(e => e.replace(/[^\d]/g,""));
                 this.leaderMorale = leaderMorale;
             }
 
@@ -2823,6 +2825,7 @@ log(hex)
     const UnitInfo = (msg) => {
         let id = msg.selected[0]._id;
         let unit = Units[id];
+        let level = parseInt(unit.token.get("currentSide"));
         SetupCard(unit.name,"",unit.nation);
         if (unit.Disrupted()) {
             outputCard.body.push("Unit is Disrupted");
@@ -2853,15 +2856,12 @@ log(hex)
         let formation = state.WaW85.formationInfo[unit.formationID];
         outputCard.body.push("Formation: " + formation.name);
         if (unit.type === "Leader") {
-            outputCard.body.push("Leader Morale: " + unit.leaderMorale);
+            outputCard.body.push("Leader Morale: " + unit.leaderMorale[level]);
         } else if (unit.type === "HQ") {
-            outputCard.body.push("Command Bonus: " + unit.command);
+            outputCard.body.push("Command Bonus: " + unit.command[level]);
+            outputCard.body.push("Command Range: " + formation.commandRange[level]);
         } else {
             outputCard.body.push("Morale/Training: " + formation.morale);
-        }
-        if (unit.type === "HQ") {
-            let hqLevel = parseInt(unit.token.get("currentSide"));
-            outputCard.body.push("Command Range: " + formation.commandRange[hqLevel]);
         }
         PrintCard();
     }
@@ -3371,6 +3371,7 @@ log("BFF Roll: " + roll)
     }
 
     const Disruption = (formation,hq,ew) => {
+        let hqLevel = parseInt(hq.token.get("currentSide"));
         _.each(formation.unitIDs, unitID => {
             let unit = Units[unitID];
             if (unit.Disrupted()) {
@@ -3380,15 +3381,16 @@ log("BFF Roll: " + roll)
                     let morale = parseInt(formation.morale);
                     _.each(formation.leaderIDs,leaderID => {
                         let leader = Units[leaderID];
+                        let leaderLevel = parseInt(leader.token.get("currentSide"));
                         if (leader && leader.hexLabel === unit.hexLabel) {
-                            morale = leader.leaderMorale;
+                            morale = leader.leaderMorale[leaderLevel];
                         }
                     })
                     let moraleRoll = randomInteger(6) + randomInteger(6);
                     let tip = "";
                     if (hq.hexLabel === unit.hexLabel) {
-                        moraleRoll -= hq.command;
-                        tip += "<br>HQ Command -" + hq.command + " to Roll";
+                        moraleRoll -= hq.command[hqLevel];
+                        tip += "<br>HQ Command -" + hq.command[hqLevel] + " to Roll";
                     }
                     if (unit.OOC()) {
                         moraleRoll++
@@ -3414,21 +3416,23 @@ log("BFF Roll: " + roll)
     }
 
     const Reloads = (formation,hq) => {
+        let hqLevel = parseInt(hq.token.get("currentSide"));
         _.each(formation.unitIDs, unitID => {
             let unit = Units[unitID];
             if (unit.token.get(SM.reload) && unit.Disrupted() === false) {
                 let morale = parseInt(formation.morale);
                 _.each(formation.leaderIDs,leaderID => {
                     let leader = Units[leaderID];
+                    let leaderLevel = parseInt(leader.token.get("currentSide"));
                     if (leader && leader.hexLabel === unit.hexLabel) {
-                        morale = leader.leaderMorale;
+                        morale = leader.leaderMorale[leaderLevel];
                     }
                 })
                 let moraleRoll = randomInteger(6) + randomInteger(6);
                 let tip = "";
                 if (hq.hexLabel === unit.hexLabel) {
-                    moraleRoll -= hq.command;
-                    tip += "<br>HQ Command -" + hq.command + " to Roll";
+                    moraleRoll -= hq.command[hqLevel];
+                    tip += "<br>HQ Command -" + hq.command[hqLevel] + " to Roll";
                 }
                 tip = "Morale Roll: " + moraleRoll + " vs. " + morale + tip;
 
