@@ -23,7 +23,8 @@ const Spot = (msg) => {
     if (available.length === 0) {
         outputCard.body.push("No Available Artillery Units");
     } else {
-        //create target icon, use wildshape routine
+        //create target icon, use wildshape routine, place on spotter
+        //player moves, selects the artillery, then if calls FFE
         //place macro with !FFE and call HE or Smoke
 
 

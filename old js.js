@@ -2996,9 +2996,8 @@ log(hex)
         let artillery = Units[Tag[3]] //onboard or offboard
         let type = Tag[4]; //HE, Smoke etc
 
-        
+
     //? Minelets etc
-    //note for onboard, only have options of ready and in range (min/max) artillery units
 
         SetupCard(artillery.name,"FFE",spotter.nation);
         let losResult = LOS(spotter,target);
@@ -3012,6 +3011,13 @@ log(hex)
         if (target.special.includes("Offboard") && spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
             errorMsg.push("Only HQ and Recon Units can call Offboard Artillery");
         }
+
+//check for range as onboard may be < min or > max
+
+
+
+
+
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
                 outputCard.body.push(msg);
