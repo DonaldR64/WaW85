@@ -763,6 +763,8 @@ const WaW85 = (() => {
                     artUnit = true;
                 }
 
+
+
                 let weapon = {
                     name: wname,
                     type: wtype,
@@ -810,6 +812,7 @@ log(weapons)
             this.assaultCB = 0;
 
             this.artUnit = artUnit;
+
 
             this.attachedID = "";//id of unit THIS unit is attached to - HQ, leader etc
 
@@ -2228,7 +2231,7 @@ log(hex)
         sendChat("",line)
     }
 
-    const CallArtillery1 = (msg) => {
+    const Spot = (msg) => {
         let Tag = msg.content.split(";");
         let spotter = Units[Tag[1]];
         let target = Units[Tag[2]];
@@ -2985,12 +2988,15 @@ log(hex)
 
 
     const FFE = (msg) => {
-        //!FFE;spotterID;targetID;artilleryID - onboard or offboard
+        //!FFE;spotterID;targetID;artilleryID;type - onboard or offboard
 
         let Tag = msg.content.split(";");
         let spotter = Units[Tag[1]];
         let target = Units[Tag[2]];
         let artillery = Units[Tag[3]] //onboard or offboard
+        let type = Tag[4]; //HE, Smoke etc
+
+        
     //? Minelets etc
     //note for onboard, only have options of ready and in range (min/max) artillery units
 
@@ -3964,8 +3970,7 @@ log("BFF Roll: " + roll)
 
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
-
-            AddAbility("Call Artillery","!CallArtillery1;@{selected|token_id};@{target|token_id}");
+            AddAbility("Spot","!Spot");
 
 
 
@@ -4017,12 +4022,13 @@ log("BFF Roll: " + roll)
         }
         if (type === "Target") {
             img = "";
-            width = 60;
-            height = 60;
+            width = 50;
+            height = 50;
             deltaLeft = 0;
             deltaTop = 0;
             markerName = "Target";
             layer = "objects";
+            represents = "";
         }
 
 
