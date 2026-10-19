@@ -13,7 +13,7 @@ const WaW85 = (() => {
     let Scenario = {};
     let EventInfo = "";
     let activeFormationID;
-
+    let artilleryIDs = []; //used as temp for spotting
 
 
     let playerInfo = [];
@@ -153,6 +153,8 @@ const WaW85 = (() => {
             "borderColour": "#FFFF00",
             "borderStyle": "5px groove",
             "dice": "Soviet",
+            "targetID": "-P4Kcu3eDO9uQFam_cNn",   
+            "targetImg": "https://files.d20.io/images/319032004/qf3aHgIiFnJ0aYoPOFR-TA/thumb.png?1671325647",
         },
         "West German": {
             "image": "https://s3.amazonaws.com/files.d20.io/images/329415788/ypEgv2eFi-BKX3YK6q_uOQ/thumb.png?1677173028",
@@ -181,7 +183,8 @@ const WaW85 = (() => {
             "borderColour": "#006400",
             "borderStyle": "5px double",
             "dice": "US-Army",
-
+            "targetID": "-P4Kd3IXhoaTgaSKNXCs",
+            "targetImg": "https://files.d20.io/images/327891469/QfaYQvRbVs7tA_3jGFwQ9Q/thumb.png?1676321007",
         },
 
         "Neutral": {
@@ -192,7 +195,6 @@ const WaW85 = (() => {
             "fontColour": "#000000",
             "borderColour": "#00FF00",
             "borderStyle": "5px ridge",
-            "objectiveimage": "https://s3.amazonaws.com/files.d20.io/images/312111244/vPCrjmQ7ep4nvKWu8LOmFQ/thumb.png?1667256328",
         },
 
     };
@@ -789,6 +791,7 @@ log(weapons)
             }
 
             this.name = token.get("name");
+            this.id = id;
             this.charName = attributes.displayname;
             this.charID = charID;
             this.token = token;
@@ -1718,7 +1721,6 @@ log(roads)
                 aura1_radius: 0,
                 showplayers_aura1: true,
                 showname: true,
-                showplayers_aura1: true,
                 disableSnapping: true,
                 disableTokenMenu: true,
                 gmnotes: "",
@@ -2263,12 +2265,11 @@ log(hex)
         sendChat("",line)
     }
 
-//////
     const Spot = (msg) => {
         //for onboard only, for offboard, uses token itself
         //checks for available artillery - ready, in range etc
         let spotter = Units[msg.selected[0]._id];
-        SetupCard(spotter.name,"Spot",unit.nation);
+        SetupCard(spotter.name,"Spot",spotter.nation);
 
         if (spotter.Active() === false) {
             outputCard.body.push("Spotter is OPS Complete");
@@ -2276,35 +2277,64 @@ log(hex)
             return;
         }
 
-        let available = [];
+        artilleryIDs = [];
         let formation = state.WaW85.formationInfo[spotter.formationID];
 
         _.each(formation.unitIDs, unitID => {
             let unit = Units[unitID];
             if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
-                available.push(unitID);
+                artilleryIDs.push(unitID);
             } 
         })
 
-        if (available.length === 0) {
+        if (artilleryIDs.length === 0) {
             outputCard.body.push("No Available Artillery Units");
         } else {
-            //create target icon, use wildshape routine, place on spotter
-            //player moves, selects the artillery, then if calls FFE
-            //place macro with !FFE and call HE or Smoke
-
-
-
-
-
-
+            let targetID = CreateMarker(HexMap[spotter.hexLabel],"Target",0,Nations[spotter.nation].targetImg,Nations[spotter.nation].targetID);
+            let target = new Unit(targetID);
+            AddAbilities(target); //clears the old abilities
+            for (let i=0;i<artilleryIDs.length;i++) {
+                let artID = artilleryIDs[i];
+                AddAbility((i+1) + ": " + Units[artID].name,"!FFE;" + spotter.id + ";" + target.id + ";" + artID + ";?{Type|HE|Smoke};Onboard",target.charID);
+            }
+            outputCard.body.push("Place Target, Select Artillery Unit to Fire");
+            AddAbility("0: Check LOS/Distance","!ArtCheck;" + spotter.id + ";" + target.id,target.charID);
 
         }
+
         PrintCard();
     }
 
-
-
+    const ArtCheck = (msg) => {
+        let Tag = msg.content.split(";");
+        let spotter = Units[Tag[1]];
+        let target = Units[Tag[2]];
+        SetupCard(spotter.name,"LOS Check",spotter.nation);
+        let losResult = LOS(spotter,target);
+        if (losResult.los === false) {
+            outputCard.body.push("No LOS to Target");
+        } else {
+            outputCard.body.push("There is LOS to Target");
+            _.each(artilleryIDs, artID => {
+                let artillery = Units[artID];
+                let distance = artillery.Distance(target);
+                let weapon;
+                for (let i=0;i<artillery.weapons.length;i++) {
+                    if (artillery.weapons[i].notes.includes("Indirect")) {
+                        weapon = artillery.weapons[i];
+                        break;
+                    }
+                }
+                if (!weapon) {return}
+                if (weapon.minRange <= distance && distance <= (2 * weapon.range)) {
+                    outputCard.body.push(artillery.name + " is In Range");
+                } else {
+                    outputCard.body.push("[#FF0000]" + artillery.name + " is NOT In Range[/#]");
+                }
+            })
+        }
+        PrintCard();
+    }
 
 
 
@@ -2932,6 +2962,10 @@ log(hex)
     const UnitInfo = (msg) => {
         let id = msg.selected[0]._id;
         let unit = Units[id];
+        if (!unit) {
+            sendChat("","Not in Unit Array");
+            return;
+        }
         let level = parseInt(unit.token.get("currentSide"));
         SetupCard(unit.name,"",unit.nation);
         if (unit.Disrupted()) {
@@ -2961,14 +2995,15 @@ log(hex)
         }
         outputCard.body.push("[hr]")
         let formation = state.WaW85.formationInfo[unit.formationID];
-        outputCard.body.push("Formation: " + formation.name);
+        if (formation) {
+            outputCard.body.push("Formation: " + formation.name);
+            outputCard.body.push("Formation Morale/Training: " + formation.morale);
+        }
         if (unit.type === "Leader") {
             outputCard.body.push("Leader Morale: " + unit.leaderMorale[level]);
         } else if (unit.type === "HQ") {
             outputCard.body.push("Command Bonus: " + unit.command[level]);
             outputCard.body.push("Command Range: " + formation.commandRange[level]);
-        } else {
-            outputCard.body.push("Morale/Training: " + formation.morale);
         }
         PrintCard();
     }
@@ -3168,6 +3203,37 @@ log(hex)
     }
 
 
+    const SummonToken = (cID,hexLabel,size = 70) => {
+        size = size * pageInfo.scale;
+        let centre = HexMap[hexLabel].centre;
+        let character = getObj("character", cID);
+        character.get('defaulttoken',function(defaulttoken){
+            const dt = JSON.parse(defaulttoken);
+            let img = dt.imgsrc;
+            img = tokenImage(img);
+            if(dt && img){
+                dt.tint_color = "transparent";
+                dt.aura1_color = "transparent";
+                dt.aura1_radius = 0;
+                dt.showplayers_aura1 = false;
+                dt.showname =  false;
+                dt.disableSnapping = true;
+                dt.disableTokenMenu =true;
+                dt.imgsrc=img;
+                dt.left=centre.x;
+                dt.top=centre.y;
+                dt.pageid = pageInfo.page.get('id');
+                dt.layer = "objects";
+                dt.width = size;
+                dt.height = size;
+                let newToken = createObj("graphic", dt);
+                let newUnit = new Unit(newToken.get("id"));
+                return newUnit;
+            } else {
+                sendChat('','/w gm Cannot create token for <b>'+character.get('name')+'</b>');
+            }
+        });
+    }
 
 
 
@@ -4019,7 +4085,7 @@ log("BFF Roll: " + roll)
         for(let a=0;a<abilArray.length;a++) {
             abilArray[a].remove();
         } 
-        if (unit.type === "Offboard Artillery") {
+        if (unit.type === "Artillery Token") {
             return;
         }
 
@@ -4030,7 +4096,9 @@ log("BFF Roll: " + roll)
 
 
         }
-        //add spotting for 2 step inf/armour units
+        //add spotting for 2 step inf/armour units, leaders, hq, recon
+        //and the artillery units themselves as can spot for themselves
+
 
 
 
@@ -4040,9 +4108,9 @@ log("BFF Roll: " + roll)
 
     }
 
-    const CreateMarker = (hex,type,cost) => {
+    const CreateMarker = (hex,type,cost,img,charID) => {
         let c = hex.centre;
-        let img,width,height,deltaLeft,deltaTop,markerName;
+        let width,height,deltaLeft,deltaTop,markerName;
         let layer = "map";
         if (type === "Move") {
             cost = Math.round(cost);
@@ -4078,17 +4146,15 @@ log("BFF Roll: " + roll)
             markerName = "Dispersed Smoke";
         }
         if (type === "Target") {
-            img = "";
-            width = 50;
-            height = 50;
+            width = 70;
+            height = 70;
             deltaLeft = 0;
             deltaTop = 0;
             markerName = "Target";
             layer = "objects";
-            represents = "";
         }
 
-
+        img = getCleanImgSrc(img);
 
 
         let newToken = createObj("graphic", {
@@ -4100,6 +4166,7 @@ log("BFF Roll: " + roll)
             pageid: Campaign().get("playerpageid"),
             imgsrc: img,
             layer: layer,
+            represents: charID,
         })
 
         if (newToken) {
@@ -4370,7 +4437,15 @@ log("BFF Roll: " + roll)
             case '!AddToFormation':
                 AddToFormation(msg);
                 break;
-
+            case '!Spot':
+                Spot(msg);
+                break;
+            case '!FFE':
+                FFE(msg);
+                break;
+            case '!ArtCheck':
+                ArtCheck(msg);
+                break;
 
         }
     };
