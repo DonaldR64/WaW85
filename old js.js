@@ -3168,14 +3168,13 @@ outputCard.body.push("FFE Effects")
 
     //Sound, FX
         //remove or mark OPS Complete
-        if (artillery.special.includes("Offboard")) {
-            artillery.token.remove();
-            delete Units[artillery.id];
-        } else {
+        if (artillery.special.includes("Offboard") === false) {
             artillery.SetReady(false);
-            target.token.remove();
-            delete Units[target.id];
         }
+
+        target.token.remove();
+        delete Units[target.id];
+
         PrintCard();
     }
 
