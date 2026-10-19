@@ -23,21 +23,20 @@ const ScenarioData = {
                 nation: "Soviet",
                 cards: 1,
                 type: "Formation",
+                opsDeck: true,
                 core: true,
             },
             2: {
+                //one artillery piece per formation
                 id: 2,
                 name: "Soviet 247th GMR Regimental Artillery",
                 morale: 6,
                 commandRange: [4,3],
                 nation: "Soviet",
                 cards: 0,
-                type: "Formation",
-                core: false,
-                artilleryMissions: {
-                    he: {missions: 2, dice: 3, toHit: 4},
-                    smoke: {missions: 2},
-                },
+                type: "Offboard Artillery",
+                opsDeck: false,
+                artTypes: ["HE","Smoke"],
             },
             3: {
                 id: 3,
@@ -47,7 +46,7 @@ const ScenarioData = {
                 nation: "US Army",
                 cards: 1,
                 type: "Formation",
-                core: true,
+                opsDeck: false,
             },
 
 

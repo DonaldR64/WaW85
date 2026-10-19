@@ -777,7 +777,6 @@ const WaW85 = (() => {
                     
                 weapons.push(weapon);
             }
-
 log(weapons)
             let special = attributes.special;
 //things to special
@@ -2148,6 +2147,8 @@ log(hex)
     const CreateFormation2 = (msg) => {
         let formNum = msg.content.split(";")[1];
         let leaderIDs = [];
+        let formation = DeepCopy(Scenario.formations[formNum]);
+        let artilleryID;
 
         _.each(UnitIDList,unitID => {
             let unit = Units[unitID];
@@ -2156,9 +2157,40 @@ log(hex)
             if (unit.type === "Leader") {
                 leaderIDs.push(unitID);
             }
+            if (formation.type === "Offboard Artillery" && unit.type !== "Artillery Token") {
+                artilleryID = unit.id;
+            }
         })
 
-        let formation = DeepCopy(Scenario.formations[formNum]);
+
+        if (formation.type === "Offboard Artillery") {
+            if (!artilleryID) {
+                sendChat("","Error with Artillery ID")
+            }
+            _.each(UnitIDList,unitID => {
+                let unit = Units[unitID];
+
+                if (unit.type === "Artillery Token") {
+                    let abilArray = findObjs({_type: "ability", _characterid: unit.charID});
+                    //clear old abilities
+                    for(let a=0;a<abilArray.length;a++) {
+                        abilArray[a].remove();
+                    } 
+                    if (unit.name.includes("HE")) {
+                        AddAbility("FFE","!FFE;-;" + unit.id + ";" + artilleryID + ";HE;Offboard");
+                    }
+                    if (unit.name.includes("Smoke")) {
+                        AddAbility("FFE","!FFE;SpotterID;" + unit.id + ";" + artilleryID + ";Smoke;Offboard");
+                    }
+    //others
+
+
+                }
+            })
+        }
+
+
+
         formation.unitIDs = UnitIDList;
         formation.leaderIDs = leaderIDs;
 
@@ -2959,16 +2991,43 @@ log(hex)
 
 
     const FFE = (msg) => {
-        //!FFE;spotterID;targetID;artilleryID;type - onboard or offboard
-
+        //!FFE;spotterID;targetID;artilleryID;type;Offboard - last can be false for onboard
+        //for offboard tokens, spotterID  will be a placeholder
         let Tag = msg.content.split(";");
-        let spotter = Units[Tag[1]];
         let target = Units[Tag[2]];
-        let artillery = Units[Tag[3]] //onboard or offboard
+        let artillery = Units[Tag[3]]
+        let spotter;
         let type = Tag[4]; //HE, Smoke etc
+        let offboard = (Tag[5] === "Offboard") ? true:false;
 
+        let weapon;
+        for (let i=0;i<artillery.weapons.length;i++) {
+            if (artillery.weapons[i].notes.includes("Indirect")) {
+                weapon = artillery.weapons[i];
+                break;
+            }
+        }
 
-    //? Minelets etc
+        let activeFormation = state.WaW85.formationInfo[activeFormationID];
+        if (!activeFormation) {
+            sendChat("","No Active Formation");
+            return;
+        }
+
+        if (target.special.includes("Offboard")) {
+            //find a spotter
+            _.each(Units,unit => {
+                if (unit.nation === activeFormation.nation && (unit.type === "HQ" || unit.special.includes("Recon"))) {
+                    let spotterLOS = LOS(unit,target);
+                    if (spotterLOS.los === true) {
+                        spotter = unit;
+                    }
+                }
+            })
+        } else {
+            spotter = Units[Tag[1]];
+        }
+
 
         SetupCard(artillery.name,"FFE",spotter.nation);
         let losResult = LOS(spotter,target);
@@ -2976,18 +3035,20 @@ log(hex)
         if (losResult.los === false) {
             errorMsg.push("Spotter cannot see Target Point");  
         }
-        if (spotter.Active() === false) {
+        if (!spotter) {
+            errorMsg.push("No Spotter with LOS"); //will also have screened for HQ and Recon units
+        }
+        if (spotter && spotter.Active() === false) {
             errorMsg.push("Spotter is OPS Complete");
         }
-        if (target.special.includes("Offboard") && spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
-            errorMsg.push("Only HQ and Recon Units can call Offboard Artillery");
+
+        if (offboard === false) {
+            if (losResult.distance < weapon.minRange) {
+                errorMsg.push("Distance is < Min Range");
+            } else if (losResult.distance > (weapon.range * 2)) {
+                errorMsg.push("Distance is > Max Range");
+            }           
         }
-
-//check for range as onboard may be < min or > max
-
-
-
-
 
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
@@ -2996,6 +3057,8 @@ log(hex)
             PrintCard();
             return;
         }
+
+        outputCard.body.push(spotter.name + " is Spotting");
 
         //spot check
         if (spotter.type !== "HQ" && sptter.special.includes("Recon") === false) {
@@ -3034,6 +3097,8 @@ log(hex)
                     outputCard.body.push("The Offboard Artillery was retasked by Division HQ and is no longer available");
                     artillery.token.remove();
                     delete Units[artillery.id];
+                    PrintCard();
+                    return;
                 } else {
                     if (fubarRoll === 1) {
                         outputCard.body.push("The Fire is so Offtarget it is cancelled");
@@ -3046,11 +3111,17 @@ log(hex)
                 PrintCard();
                 return;
             } else {
-                Scatter(target);
-                if (scatterRoll2 > 4) {
-                    Scatter(target);
+                let newHex = Scatter(target);
+                if (scatterRoll2 > 4 && newHex) {
+                    newHex = Scatter(target);
                 }
-                outputCard.body.push("FFE Scatters");
+                if (newHex) {
+                    outputCard.body.push("FFE Scatters");
+                } else {
+                    outputCard.body.push("The Fire Scatters Off Map");
+                    PrintCard();
+                    return;
+                }
             }
         } 
         outputCard.body.push("[hr]");
@@ -3074,19 +3145,26 @@ log(hex)
         let directionRoll = randomInteger(6) - 1;
         let direction = DIRECTIONS[directionRoll];
         let startHex = HexMap[target.hexLabel];
-        let neighbourCube = HexMap[target.hexLabel].cube.neighbour(direction);
-        let newLabel = neighbourCube.label();
-        let newHex = HexMap[newLabel];
-        target.token.set({
-            left: newHex.centre.x,
-            top: newHex.centre.y,
-        })
-        target.hexLabel = newLabel;
         let index = startHex.tokenIDs.indexOf(target.id);
         if (index > -1) {
             startHex.tokenIDs.splice(target.id);
         }
-        newHex.tokenIDs.push(target.id);
+
+        let neighbourCube = HexMap[target.hexLabel].cube.neighbour(direction);
+        let newLabel = neighbourCube.label();
+        let newHex = HexMap[newLabel];
+        if (newHex) {
+            target.token.set({
+                left: newHex.centre.x,
+                top: newHex.centre.y,
+            })
+            target.hexLabel = newLabel;
+            newHex.tokenIDs.push(target.id);
+        } else {
+            target.token.remove();
+            delete Units[target];
+        }
+        return newHex;
     }
 
 
@@ -3115,7 +3193,7 @@ log(hex)
         let formations = Scenario.formations;
         let cards = [];
         _.each(formations,formation => {
-            if (formation.core === true) {
+            if (formation.opsDeck === true) {
                 for (let i=0;i<formation.cards;i++) {
                     cards.push(formation);
                 }
@@ -3952,6 +4030,8 @@ log("BFF Roll: " + roll)
 
 
         }
+        //add spotting for 2 step inf/armour units
+
 
 
 
