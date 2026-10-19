@@ -12,7 +12,6 @@ const WaW85 = (() => {
     let UnitIDList = []; //used in create formation
     let Scenario = {};
     let EventInfo = "";
-    let activeFormationID;
     let artilleryIDs = []; //used as temp for spotting
 
 
@@ -1744,6 +1743,7 @@ log(roads)
             flags: [],
             weatherLevel: 0,
             moveMarkers: [],
+            activeFormationID: "",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
         }
@@ -2179,10 +2179,10 @@ log(hex)
                         abilArray[a].remove();
                     } 
                     if (unit.name.includes("HE")) {
-                        AddAbility("FFE","!FFE;-;" + unit.id + ";" + artilleryID + ";HE;Offboard");
+                        AddAbility("FFE","!FFE;-;" + unit.id + ";" + artilleryID + ";HE;Offboard",unit.charID);
                     }
                     if (unit.name.includes("Smoke")) {
-                        AddAbility("FFE","!FFE;SpotterID;" + unit.id + ";" + artilleryID + ";Smoke;Offboard");
+                        AddAbility("FFE","!FFE;SpotterID;" + unit.id + ";" + artilleryID + ";Smoke;Offboard",unit.charID);
                     }
     //others
 
@@ -3043,7 +3043,7 @@ log(hex)
             }
         }
 
-        let activeFormation = state.WaW85.formationInfo[activeFormationID];
+        let activeFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
         if (!activeFormation) {
             sendChat("","No Active Formation");
             return;
@@ -3078,9 +3078,10 @@ log(hex)
         }
 
         if (offboard === false) {
-            if (losResult.distance < weapon.minRange) {
+            let distance = artillery.Distance(target);
+            if (distance < weapon.minRange) {
                 errorMsg.push("Distance is < Min Range");
-            } else if (losResult.distance > (weapon.range * 2)) {
+            } else if (distance > (weapon.range * 2)) {
                 errorMsg.push("Distance is > Max Range");
             }           
         }
@@ -3096,7 +3097,7 @@ log(hex)
         outputCard.body.push(spotter.name + " is Spotting");
 
         //spot check
-        if (spotter.type !== "HQ" && sptter.special.includes("Recon") === false) {
+        if (spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
             let bonus = spotter.Leader().command;
             let morale = state.WaW85.formationInfo[spotter.formationID].morale;
             let moraleRoll = randomInteger(6) + randomInteger(6) - bonus;
@@ -3162,7 +3163,7 @@ log(hex)
         outputCard.body.push("[hr]");
 
         //Resolve FFE
-
+outputCard.body.push("FFE Effects")
 
 
     //Sound, FX
@@ -3172,6 +3173,8 @@ log(hex)
             delete Units[artillery.id];
         } else {
             artillery.SetReady(false);
+            target.token.remove();
+            delete Units[target.id];
         }
         PrintCard();
     }
@@ -3615,8 +3618,8 @@ log("BFF Roll: " + roll)
     }
 
     const LastFormation = () => {
-        if (activeFormationID) {
-            let prevFormation = state.WaW85.formationInfo[activeFormationID];
+        if (state.WaW85.activeFormationID) {
+            let prevFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
              if (prevFormation) {
                 _.each(prevFormation.unitIDs,unitID => {
                     let unit = Units[unitID];
@@ -3631,7 +3634,7 @@ log("BFF Roll: " + roll)
         let id = msg.selected[0]._id;
         let hq = Units[id];
         let formation = state.WaW85.formationInfo[hq.formationID];
-        activeFormationID = formation.id;
+        state.WaW85.activeFormationID = formation.id;
         let ew = (hq.token.get(SM.EW) || hq.token.get(SM.EWReducing)) ? true:false;
 
         SetupCard(formation.name,"Activation",formation.nation);
