@@ -2231,74 +2231,45 @@ log(hex)
         sendChat("",line)
     }
 
+//////
     const Spot = (msg) => {
-        let Tag = msg.content.split(";");
-        let spotter = Units[Tag[1]];
-        let target = Units[Tag[2]];
-
+        //for onboard only, for offboard, uses token itself
+        //checks for available artillery - ready, in range etc
+        let spotter = Units[msg.selected[0]._id];
         SetupCard(spotter.name,"Spot",unit.nation);
-        let errorMsg = [];
+
         if (spotter.Active() === false) {
-            errorMsg.push("Spotter is OPS Complete");
-        }
-
-        if (target.special.includes("Offboard") && spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
-            errorMsg.push("Only HQ and Recon Units can call Offboard Artillery");
-        }
-
-        let losResult = LOS(spotter,target);
-        if (losResult.los === false) {
-            errorMsg.push("No LOS To Target");
-        }
-
-        if (errorMsg.length > 0) {
-            _.each(errorMsg,msg => {
-                outputCard.body.push(msg);
-            });
+            outputCard.body.push("Spotter is OPS Complete");
             PrintCard();
             return;
         }
 
+        let available = [];
+        let formation = state.WaW85.formationInfo[spotter.formationID];
 
-        if (target.special.includes("Offboard")) {
-            let choice;
-            if (target.name.includes("HE")) {
-                choice = "HE";
-            } else if (target.name.includes("Smoke")) {
-                choice = "Smoke";
-            }
+        _.each(formation.unitIDs, unitID => {
+            let unit = Units[unitID];
+            if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
+                available.push(unitID);
+            } 
+        })
 
-
-
-            ButtonInfo("FFE","!CallArtillery2;" + target.id + ";" + choice);
+        if (available.length === 0) {
+            outputCard.body.push("No Available Artillery Units");
         } else {
-            let available = false;
-            let formation = state.WaW85.formationInfo[spotter.formationID];
-            _.each(formation.unitIDs, unitID => {
-                let unit = Units[unitID];
-                if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
-                    //check range  (min and max range)
-                    //if in range, have a dropdown for types as option
-
-                } 
+            //create target icon, use wildshape routine, place on spotter
+            //player moves, selects the artillery, then if calls FFE
+            //place macro with !FFE and call HE or Smoke
 
 
-            })
-            if (available === false) {
-                outputCard.body.push("No Available Artillery Units");
-            }
+
+
+
+
+
         }
-
-
-
-
-
-
-
         PrintCard();
     }
-
-
 
 
 
