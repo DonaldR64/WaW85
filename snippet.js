@@ -70,22 +70,26 @@ const Activate = (msg) => {
             mp = Math.max(1,mp - 1);
         }
         if (unit.type === "Helicopter") {
+            let oldMode = unit.HeloStatus();
+            if (oldMode !== mode) {
+                outputCard.body.push("Changing Flying Mode allows Opp Fire");
+            }
             unit.SetHeloStatus(mode);
-            
-
-
+            if (mode === "Flying") {mp = 1000};
+            if (mode === "NOE") {mp = 12};
+            if (mode === "Landed" || mode === "Hovering") {
+                mp = 0;
+            }
         }
-
-
-
-
         if (EventInfo === "High Rate of Fire") {
             mp = 0;
         }
         unit.token.set("bar3_value",mp);
         unit.token.set("bar3_max",mp);
-
-
+        if (mp === 1000) {
+            mp = "Unlimited";
+        }
+        outputCard.body.push("The Unit has " + mp + " MP");
     } else if (action === "Indirect Fire") {
         //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
         unit.token.set("bar3_value",0);
