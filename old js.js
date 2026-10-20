@@ -105,11 +105,16 @@ const WaW85 = (() => {
     const SM = {
         moved: "status_Advantage-or-Up::2006462",
         fired: "status_Shell::5553215",
+
         oom: "status_interdiction",
         low: "status_yellow", //change to a graphic of missiles ?
         reload: "status_blue",
+
         landed: "status_green",
-        noe: "status_brown",
+        noe: "status_green",
+        hovering: "status_green",
+        flying: "status_green",
+
         EW: "status_brown", //change
         EWReducing: "status_pink", //change
     }; 
@@ -994,11 +999,31 @@ log(weapons)
         }
 
         HeloStatus() {
-            let status = "Helo NOE";
-            //change this based on ? SM ?
-
+            let modes = ["landed","hovering","flying"];
+            let status = "NOE";
+            _.each(modes,mode => {
+                if (this.token.get(SM[mode])) {
+                    status = mode;
+                }
+            })
+            status = status.charAt(0).toUpperCase() + status.slice(1);
             return status
         }
+        
+        SetHeloStatus(newMode) {
+            newMode = newMode.toLowerCase();
+            let modes = ["landed","noe","hovering","flying"];
+            _.each(modes,mode => {
+                if (mode === newMode) {
+                    this.token.set(SM[mode],true);
+                } else {
+                    this.token.set(SM[mode],false);
+                }
+            })
+        }
+
+
+
 
         MoveType() {
             let mt = "None";
@@ -1024,7 +1049,7 @@ log(weapons)
             }
             if (this.type === "Helicopter") {
                 let hs = this.HeloStatus();
-                if (hs === "Helo Flying" || hs === "Helo Hovering") {
+                if (hs === "Flying" || hs === "Hovering") {
                     st = true;
                 }
             }
@@ -2979,7 +3004,7 @@ log(hex)
         }
         if (unit.type === "Helicopter") {
             let status = unit.HeloStatus();
-            if (status === "Helo NOE") {outputCard.body.push("Helicopter is Flying NOE")};
+            if (status === "NOE") {outputCard.body.push("Helicopter is Flying NOE")};
 
 
 
@@ -3782,6 +3807,27 @@ log("BFF Roll: " + roll)
                         unit.SetDisrupt(false);
                     } else {
                         tip = '[Remains Disrupted](#" class="showtip" title="' + tip + ')';
+
+                        let adjacent = false;
+                        let keys = Object.keys(Units);
+                        for (let i=0;i<keys.length;i++) {
+                            let unit2 = Units[keys[i]];
+                            let status = "Ground";
+                            if (unit2.type === "Helicopter" && unit2.HeloStatus === "Flying") {
+                                status = "Flying";
+                            }
+                            if (unit2.nation !== unit.nation) {
+                                let distance = unit.Distance(unit2);
+                                if (distance === 1 && status === "Ground") {
+                                    adjacent = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (adjacent === true) {
+                            outputCard.body.push("It cannot Act due to adjacent Enemy");
+                        }
+                        unit.SetReady(false);
                     }
                     outputCard.body.push(unit.name + ": " + tip);
                 }
@@ -4254,10 +4300,6 @@ log("BFF Roll: " + roll)
         let moveType = unit.MoveType();
         let minMove = state.WaW85.weatherLevel === 4 ? true:false;
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
-
-    //skip movementmarkers and such if turn is 0 or if unit is aircraft or moving it offboard
-    //need to sort later how to bring on units, deploy transported units etc - maybe macros that place a marker or something?
-    //maybe transported units remain ? or move off/on with macro? ??
 
         if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true) {
             if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
