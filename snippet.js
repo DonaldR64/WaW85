@@ -6,6 +6,14 @@ const Activate = (msg) => {
     let unit = Units[id];
     let errorMsg = [];
 
+    let lastUnit = Units[state.WaW85.activeUnitID];
+    if (lastUnit && lastUnit.token) {
+        lastUnit.SetReady(false);
+    } 
+
+
+
+
     if (unit.Active() === false) {
         if (unit.OOC()) {
             errorMsg.push("Unit is Out of Command");
@@ -18,10 +26,6 @@ const Activate = (msg) => {
     if (unit.Disrupted() && action === "Indirect Fire") {
         errorMsg.push("Disrupted Units may not Fire");
     }
-
-
-
-
 
 
     state.WaW85.activeUnitID = unit.id;
@@ -69,6 +73,9 @@ const Activate = (msg) => {
         if (state.WaW85.mud && unit.movementType.includes("Ground")) {
             mp = Math.max(1,mp - 1);
         }
+        if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
+            mp = 100;
+        }
         if (unit.type === "Helicopter") {
             let oldMode = unit.HeloStatus();
             if (oldMode !== mode) {
@@ -84,12 +91,21 @@ const Activate = (msg) => {
         if (EventInfo === "High Rate of Fire") {
             mp = 0;
         }
+
+
+
+
         unit.token.set("bar3_value",mp);
         unit.token.set("bar3_max",mp);
         if (mp === 1000) {
-            mp = "Unlimited";
+            outputCard.body.push("The Unit may move anywhere on the Map");
+        } else if (mp === 100) {
+            outputCard.body.push("The Unit must move with its Parent Unit");
+        } else if (mp > 0) {
+            outputCard.body.push("The Unit has " + mp + " MP");
+        } else if (mp === 0) {
+            outputCard.body.push("The Unit is Stationary");
         }
-        outputCard.body.push("The Unit has " + mp + " MP");
     } else if (action === "Indirect Fire") {
         //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
         unit.token.set("bar3_value",0);
