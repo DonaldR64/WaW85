@@ -3946,16 +3946,47 @@ log("BFF Roll: " + roll)
 
         
     const EndPhase = () => {
+        //Marker Removal
+        _.each(Units,unit => {
+            //remove all OPS Complete, out of command
+            unit.SetReady(true);
+            if (unit.type === "HQ") {
+                //Suppressed HQs are unsuppressed
+                hq.SetDisrupt(false);
+                //remove EW Reducing, test for HQ with EW to see if EW Reducing
+                if (hq.token.get(SM.EWReducing)) {
+                    hq.token.set(SM.EWReducing,false);
+                    outputCard.body.push(hq.name + ": EW Removed");
+                }
+                if (hq.token.get(SM.EW)) {
+                    let morale = state.WaW85.formationInfo[hq.formationID];
+                    let roll = randomInteger(6) + randomInteger(6);
+                    if (roll <= morale) {
+                        hq.token.set(SM.EW,false);
+                        hq.token.set(SM.EWReducing,true);
+                        outputCard.body.push(hq.name + ": EW Reducing");
+                    }
+                }
+            }
+        })
+        //remove smoke thinning, then all smoke to smoke thinning
+        //Fire Markers
+        //remove squall marker
+        if (state.WaW85.squall === true) {
+            state.WaW85.squall === false;
+            let squall = state.WaW85.season === "Summer" ? "Rain Squall":"Snow Squall";
+            outputCard.body.push("The " + squall + " ends");
+        }        
+        //remove chemical strike markers
 
 
-
-
-
+        //Victory Determination
+        outputCard.body.push("Check Victory Conditions");
+        
         CreateOpsDeck("End");
         state.WaW85.phase = "Operations";
         state.WaW85.endOps = 0;
         state.WaW85.turn++;
-        state.WaW85.squall = false;
     }
 
 
