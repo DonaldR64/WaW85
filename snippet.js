@@ -1,38 +1,65 @@
-const Spot = (msg) => {
-    //for onboard only, for offboard, uses token itself
-    //checks for available artillery - ready, in range etc
-    let spotter = Units[msg.selected[0]._id];
-    SetupCard(spotter.name,"Spot",unit.nation);
+const Activate = (msg) => {
+    let Tag = msg.content.split(";");
+    let id = msg.selected[0]._id;
+    let action = Tag[1];
+    let unit = Units[id];
+    let errorMsg = [];
 
-    if (spotter.Active() === false) {
-        outputCard.body.push("Spotter is OPS Complete");
+    if (unit.Active() === false) {
+        if (unit.OOC()) {
+            errorMsg.push("Unit is Out of Command");
+        } else if (unit.formationID !== state.WaW85.activeFormationID) {
+            errorMsg.push("Unit is not part of the Active Formation");
+        } else {
+            errorMsg.push("Unit has Activated");
+        }
+    }
+
+    state.WaW85.activeUnitID = unit.id;
+    SetupCard(unit.name,action,unit.nation);
+    if (errorMsg.length > 0) {
+        _.each(errorMsg,msg => {
+            outputCard.body.push(msg);
+        })
         PrintCard();
         return;
     }
 
-    let available = [];
-    let formation = state.WaW85.formationInfo[spotter.formationID];
-
-    _.each(formation.unitIDs, unitID => {
-        let unit = Units[unitID];
-        if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
-            available.push(unitID);
-        } 
-    })
-
-    if (available.length === 0) {
-        outputCard.body.push("No Available Artillery Units");
-    } else {
-        //create target icon, use wildshape routine, place on spotter
-        //player moves, selects the artillery, then if calls FFE
-        //place macro with !FFE and call HE or Smoke
+    if (action === "Move/Fire") {
 
 
+
+
+
+    } else if (action === "Fire") {
+
+
+
+
+
+    } else if (action === "Move") {
 
 
 
 
 
     }
-    PrintCard();
+
+
+
+
+
+
+
+
+
+
 }
+
+
+
+
+///Change Mode for Helos
+//Load or Unload Passengers
+
+
