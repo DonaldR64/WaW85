@@ -106,17 +106,17 @@ const WaW85 = (() => {
         moved: "status_Advantage-or-Up::2006462",
         fired: "status_Shell::5553215",
 
-        oom: "status_interdiction",
-        low: "status_yellow", //change to a graphic of missiles ?
-        reload: "status_blue",
+        oom: "status_MissileOut::7901720",
+        low: "status_MissileLow::7901721", 
+        reload: "status_MissileReload::7901719",
 
-        landed: "status_green",
-        noe: "status_green",
-        hovering: "status_green",
-        flying: "status_green",
+        landed: "status_status_letters_and_numbers0262::5982382",
+        noe: "status_status_letters_and_numbers0264::5982384",
+        hovering: "status_letters_and_numbers0258::5982378",
+        flying: "status_letters_and_numbers0256::5982376",
 
-        EW: "status_brown", //change
-        EWReducing: "status_pink", //change
+        EW: "status_ew::7901717",
+        EWReducing: "status_ew2::7901718", 
     }; 
 
 
@@ -1009,7 +1009,7 @@ log(weapons)
             status = status.charAt(0).toUpperCase() + status.slice(1);
             return status
         }
-        
+
         SetHeloStatus(newMode) {
             newMode = newMode.toLowerCase();
             let modes = ["landed","noe","hovering","flying"];
