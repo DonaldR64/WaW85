@@ -91,10 +91,6 @@ const Activate = (msg) => {
         if (EventInfo === "High Rate of Fire") {
             mp = 0;
         }
-
-
-
-
         unit.token.set("bar3_value",mp);
         unit.token.set("bar3_max",mp);
         if (mp === 1000) {
@@ -106,6 +102,12 @@ const Activate = (msg) => {
         } else if (mp === 0) {
             outputCard.body.push("The Unit is Stationary");
         }
+
+        //firepower/stabilization notes here
+
+
+
+
     } else if (action === "Indirect Fire") {
         //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
         unit.token.set("bar3_value",0);
