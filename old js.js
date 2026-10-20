@@ -3936,8 +3936,10 @@ log("BFF Roll: " + roll)
         }
 
         if (mod === "Toggle Missile Ammo Out") {
-            unit.token.set(SM.oom,true);
+            let result = unit.token.get(SM.oom) ? false:true;
+            unit.token.set(SM.oom,result);
         }
+        
         if (mod === "Make Formation OPS Complete" || mod === "Make Formation Ready") {
             let unitIDs = formationInfo.unitIDs;
             let ready = (mod.includes("Ready")) ? true:false;
