@@ -790,7 +790,6 @@ const WaW85 = (() => {
                     
                 weapons.push(weapon);
             }
-log(weapons)
             let special = attributes.special;
 //things to special
 
@@ -1139,10 +1138,6 @@ log(weapons)
     const DefineMap = () => {
         let path = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map", stroke: "#93c47d"})[0];
         let vertices = translatePoly(path);
-log(vertices[0].label())
-log(vertices[1].label())
-
-
         _.each(HexMap,hex => {
              if (hex.centre.x >= vertices[0].x && hex.centre.x <= vertices[1].x && hex.centre.y >= vertices[0].y && hex.centre.y <= vertices[1].y) {hex.offboard = false};
         })
@@ -1634,7 +1629,6 @@ log(vertices[1].label())
         let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
             return el.get("stroke").toLowerCase() === "#ffffff";
         });
-log(roads)
         _.each(roads,road => {
             let vertices = translatePoly(road);
             for (let i=0;i<(vertices.length-1);i++) {
@@ -2028,10 +2022,10 @@ log(roads)
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
-log("S: " + shooterHeight)
-log("T: " + targetHeight)
+//log("S Height: " + shooterHeight)
+//log("T Height: " + targetHeight)
 
-log(interLabels)
+//log(interLabels)
         let finalBlockAt;
         let finalLOS = true;
         let finalObscured = 0;
@@ -2046,12 +2040,12 @@ log(interLabels)
             for (let side=0;side<2;side++) {
                 let label = interLabels[side][i];
                 let interHex = HexMap[label];
-log(side + " - " + label + ": " + interHex.terrain)
-log("H:" + interHex.height)
-log("LOS: " + interHex.los)
+//log(side + " - " + label + ": " + interHex.terrain)
+//log("H:" + interHex.height)
+//log("LOS: " + interHex.los)
                 //terrain
                 if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
-log("Smoke")
+//log("Smoke")
                     //1 smoke or fire hex, even if hexside, blocks LOS
                     blocked = 2;
                     blockLabel = label;
@@ -2059,7 +2053,7 @@ log("Smoke")
                 }
                 if (shooterHeight === targetHeight) {
                     if ((interHex.los === "Blocks" || interHex.rubble.length > 0) && interHex.height > shooterHeight) {
-log("Blocking Terrain")
+//log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2070,14 +2064,14 @@ log("Blocking Terrain")
                 } else {
                     //terrain height than both = LOS Blocked
                     if (interHex.height > shooterHeight && interHex.height > targetHeight) {
-log("Intervening Higher Terrain")
+//log("Intervening Higher Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
                     }
                     //terrain higher than one and equal to other = LOS Blocked
                     if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
-log("Higher than one, equal to other")
+//log("Higher than one, equal to other")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2085,7 +2079,7 @@ log("Higher than one, equal to other")
                     //Blind Spots for 1 height difference
                     if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
                         if (len < 2*i) {
-log("Blind Spot")
+//log("Blind Spot")
                             blocked++;
                             blockLabel = label;
                             continue;
@@ -2093,7 +2087,7 @@ log("Blind Spot")
                     }
                     if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
                         if (len > 2*i) {
-log("Blind Spot")
+//log("Blind Spot")
 
                             blocked++;
                             blockLabel = label;
@@ -2102,7 +2096,7 @@ log("Blind Spot")
                     }
                     //Blind spot for 2 height+ differrence is one hex
                     if ((shooterHeight - interHex.height > 1 && i === (len-1) && interHex.height > targetHeight) ||  (targetHeight - interHex.height > 1 && i === 0 && interHex.height > shooterHeight) ) {
-log("Blind Spot 2+")
+//log("Blind Spot 2+")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2115,7 +2109,7 @@ log("Blind Spot 2+")
             if (obscured === 2) {
                 finalObscured++;
                 if (finalObscured > 1) {
-log("2 Obscuring Hexes")
+//log("2 Obscuring Hexes")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
@@ -2127,13 +2121,13 @@ log("2 Obscuring Hexes")
             if (blocked === 1) {
                 edgeBlock++;
                 if (edgeBlock > 1) {
-log("2 Blocking Edges")
+//log("2 Blocking Edges")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
                 } 
             } else if (blocked === 2) {
-log("both hexes block")
+//log("both hexes block")
                 finalBlockAt = blockLabel;
                 finalLOS = false;
                 break;
@@ -2160,7 +2154,7 @@ log("both hexes block")
         let cube = point.toCube();
         let label = cube.label();
         let hex = HexMap[label];
-log(hex)
+//log(hex)
         SetupCard(label,"","Neutral");
         if (hex.offboard === true) {
             outputCard.body.push("Offboard");
@@ -3455,7 +3449,6 @@ outputCard.body.push("FFE Effects")
     const BattlefieldFriction = () => {
         let roll = randomInteger(6) + randomInteger(6);
         let roll2 = randomInteger(6);
-log("BFF Roll: " + roll)
         let side = (randomInteger(6) < 4) ? Scenario["Blue"]:Scenario["Red"];
         let none = true;
 
