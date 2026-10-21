@@ -3725,6 +3725,10 @@ log("BFF Roll: " + roll)
             }
         })
         _.each(formation.unitIDs,unitID => {
+            Units[unitID].token.set({
+                bar3_value: 0,
+                bar3_max: 0,
+            })
             let hexLabel = Units[unitID].hexLabel;
             if (hexes[hexLabel]) {
                 hexes[hexLabel].push(unitID);
@@ -4217,8 +4221,6 @@ log("BFF Roll: " + roll)
 
 
         }
-        //add spotting for 2 step inf/armour units, leaders, hq, recon
-        //and the artillery units themselves as can spot for themselves
 
 
 
