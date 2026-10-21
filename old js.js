@@ -740,10 +740,8 @@ const WaW85 = (() => {
             //for reduced units, FP or to hit may have brackets - sort these out into [0] and [1] using the Stats function
             let assaultFP = Stats(attributes.assaultfp);
             let assaultToHit = Stats(attributes.assaulttohit);
-            let artUnit = false;
-            let artMinRange;
-            let artMaxRange;
             let stabilizedWeapons = false;
+            let artWeapon = "";
 
             let weapons = [];
             for (let i=1;i<4;i++) {
@@ -768,15 +766,6 @@ const WaW85 = (() => {
                 let wfp = Stats(attributes["weapon" + i + "fp"]);
                 let wtoHit = Stats(attributes["weapon" + i + "tohit"]);
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
-                if (wnotes.includes("Indirect")) {
-                    artUnit = true;
-                    artMinRange = wminrange;
-                    artMaxRange = wrange * 2;
-                }
-                if (wnotes.includes("Stabilized")) {
-                    stabilizedWeapons = true;
-                }
-
 
                 let weapon = {
                     name: wname,
@@ -787,7 +776,15 @@ const WaW85 = (() => {
                     toHit: wtoHit, //array
                     notes: wnotes,
                 }
-                    
+                if (wnotes.includes("Indirect")) {
+                    artWeapon = weapon;
+                }
+                if (wnotes.includes("Stabilized")) {
+                    stabilizedWeapons = true;
+                } 
+
+
+
                 weapons.push(weapon);
             }
             let special = attributes.special;
@@ -823,9 +820,7 @@ const WaW85 = (() => {
             this.assaultDamage = 0;
             this.assaultCB = 0;
 
-            this.artUnit = artUnit;
-            this.artMinRange = artMinRange;
-            this.artMaxRange = artMaxRange;
+            this.artWeapon = artWeapon;
             this.stabilizedWeapons = stabilizedWeapons;
 
             this.attachedID = "";//id of unit THIS unit is attached to - HQ, leader etc
@@ -2314,26 +2309,38 @@ const WaW85 = (() => {
         let target = Units[Tag[2]];
         let artUnit = Units[Tag[3]];
         let onboard = Tag[1] === "Onboard" ? true:false;
+        SetupCard(artUnit.name,"LOS Check",artUnit.nation);
+        let results = SpotterCheck(target,artUnit,onboard);
+        if (results.spotter !== false) {
+            outputCard.body.push(results.spotter.name + " is Spotting");
+            outputCard.body.push("Artillery has Range to Target");
+            if (results.spotCheck === true) {
+                outputCard.body.push("A Spot Check will be Required");
+            }
+        }
+        PrintCard();
+    }
+
+    const SpotterCheck = (target,artUnit,onboard) => {
         let spotter;
         let spotCheck = true;
-        let activeFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
-        SetupCard(artUnit.name,"LOS Check",artUnit.nation);
-        errorMsg = [];
+        let errorMsg = [];
         if (onboard === true) {
             let distance = artUnit.Distance(target);
-            if (distance < artUnit.artMinRange) {
+            if (distance < artUnit.artWeapon.minRange) {
                 errorMsg.push("Target is under Artillery's Minimum Range");
             }
-            if (distance > artUnit.artMaxRange) {
+            if (distance > (artUnit.artWeapon.range * 2)) {
                 errorMsg.push("Target is over Artillery's Maximum Range");
             }
         }
+
         if (errorMsg.length === 0) {
             let keys = Object.keys(Units);
             for (let i=0;i<keys.length;i++) {
                 let unit = Units[keys[i]];
                 if (unit.Ready() === false || unit.OOC() || unit.Disrupted()) {continue};
-                if (unit.nation === activeFormation.nation) {
+                if (unit.nation === artUnit.nation) {
                     if (unit.type === "HQ" || unit.special.includes("Recon")) {
                         let spotterLOS = LOS(unit,target);
                         if (spotterLOS.los === true) {
@@ -2342,7 +2349,7 @@ const WaW85 = (() => {
                             break;
                         }
                     }
-                    if ((unit.type === "Infantry" || unit.type === "Vehicle") && unit.name.includes("Lt.") && onboard === true) {
+                    if ((unit.type === "Infantry" || unit.type === "Vehicle") && unit.name.includes("Lt.") && onboard === true && unit.formationID === artUnit.formationID) {
                         let spotterLOS = LOS(unit,target);
                         if (spotterLOS.los === true) {
                             spotter = unit;
@@ -2359,15 +2366,15 @@ const WaW85 = (() => {
             _.each(errorMsg,msg => {
                 outputCard.body.push("[#ff00ff]" + msg + "[/#]");
             })
-        } else {
-            outputCard.body.push(spotter.name + " has LOS");
-            outputCard.body.push("Artillery has Range to Target");
-            if (spotCheck === true) {
-                outputCard.body.push("A Spot Check will be Required");
-            }
+            return {spotter: false};
         }
-        PrintCard();
+
+
+        return {spotter: spotter, spotCheck: spotCheck};
     }
+
+
+
 
 
 
@@ -2957,40 +2964,6 @@ const WaW85 = (() => {
         return true;
     }
     
-    const SpotOld = (spotterUnit) => {
-        //make buttons for available artillery
-        let available = false;
-        let formation = Formations[spotterUnit.formationID];
-        _.each(formation.unitIDs,id => {
-            let unit = Units[id];
-            if (unit.artUnit === true && unit.token.get("aura1_color") !== "#000000" && unit.token.get("tint_color") !== "#FF0000") {
-                ButtonInfo(unit.name,"!CreateTarget;" + spotterUnit.id + ";" + unit.id);
-                available = true;
-            }
-        })
-        if (available === false) {
-            outputCard.body.push("No Available Artillery Units");
-        }
-        //goes back to Activate
-    }
-
-
-    const CreateTarget = (msg) => {
-        //create target icon, with buttons to fire and check los
-        let Tag = msg.content.split(";");
-        let spotterUnit = Units[Tag[1]];
-        let artUnit = Units[Tag[2]];
-        let targetTokenID = CreateMarker(HexMap[spotterUnit.hexLabel],"Target");
-        //assign to character
-        //create abilities - reference the 2 units in the ability to fire
-        //in check los need to reference the shooter for range also
-
-
-
-
-
-    }
-
 
     const UnitInfo = (msg) => {
         let id = msg.selected[0]._id;
@@ -3043,98 +3016,30 @@ const WaW85 = (() => {
 
 
 
-    const OnboardIndirect = (msg) => {
-        let Tag = msg.content.split(";");
-        let spotterUnit = Units[Tag[1]];
-        let artUnit = Units[Tag[2]];
-
-
-        //spotter check if needed
-
-
-
-        //mark the artillery unit fired/done, remove the target icon
-
-    }
-
-
     const FFE = (msg) => {
         //!FFE;spotterID;targetID;artilleryID;type;Offboard - last can be false for onboard
         //for offboard tokens, spotterID  will be a placeholder
         let Tag = msg.content.split(";");
         let target = Units[Tag[1]];
-        let artillery = Units[Tag[2]]
-        let spotter;
+        let artUnit = Units[Tag[2]]
         let type = Tag[3]; //HE, Smoke etc
-        let offboard = (Tag[4] === "Offboard") ? true:false;
+        let onboard = Tag[4] === "Onboard" ? true:false;
+        let weapon = artUnit.artWeapon;
+        SetupCard(artUnit.name,"FFE",artUnit.nation);
 
-        let weapon;
-        for (let i=0;i<artillery.weapons.length;i++) {
-            if (artillery.weapons[i].notes.includes("Indirect")) {
-                weapon = artillery.weapons[i];
-                break;
-            }
-        }
-
-        let activeFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
-        if (!activeFormation) {
-            sendChat("","No Active Formation");
-            return;
-        }
-
-        if (target.special.includes("Offboard")) {
-            //find a spotter
-            _.each(Units,unit => {
-                if (unit.nation === activeFormation.nation && (unit.type === "HQ" || unit.special.includes("Recon"))) {
-                    let spotterLOS = LOS(unit,target);
-                    if (spotterLOS.los === true) {
-                        spotter = unit;
-                    }
-                }
-            })
-        } else {
-            spotter = Units[Tag[1]];
-        }
-
-
-        SetupCard(artillery.name,"FFE",spotter.nation);
-        let losResult = LOS(spotter,target);
-        let errorMsg = [];
-        if (losResult.los === false) {
-            errorMsg.push("Spotter cannot see Target Point");  
-        }
-        if (!spotter) {
-            errorMsg.push("No Spotter with LOS"); //will also have screened for HQ and Recon units
-        }
-        if (spotter && spotter.Active() === false) {
-            errorMsg.push("Spotter is OPS Complete");
-        }
-
-        if (offboard === false) {
-            let distance = artillery.Distance(target);
-            if (distance < weapon.minRange) {
-                errorMsg.push("Distance is < Min Range");
-            } else if (distance > (weapon.range * 2)) {
-                errorMsg.push("Distance is > Max Range");
-            }           
-        }
-
-        if (errorMsg.length > 0) {
-            _.each(errorMsg,msg => {
-                outputCard.body.push(msg);
-            });
+        let results = SpotterCheck(target,artUnit,onboard);
+        let spotter = results.spotter;
+        if (spotter === false) {
             PrintCard();
             return;
         }
-
         outputCard.body.push(spotter.name + " is Spotting");
-
         //spot check
-        if (spotter.type !== "HQ" && spotter.special.includes("Recon") === false) {
+        if (results.spotCheck === true) {
             let bonus = spotter.Leader().command;
             let morale = state.WaW85.formationInfo[spotter.formationID].morale;
             let moraleRoll = randomInteger(6) + randomInteger(6) - bonus;
-            let tip = "Roll: " + moraleRoll + " vs. " + moraleRoll;
+            let tip = "Roll: " + moraleRoll + " vs. " + morale;
             if (bonus !== 0) {
                 tip += "<br>Leader Bonus: " + bonus;
             }
@@ -3200,11 +3105,9 @@ outputCard.body.push("FFE Effects")
 
 
     //Sound, FX
-        //remove or mark OPS Complete
-        if (artillery.special.includes("Offboard") === false) {
-            artillery.SetReady(false);
+        if (artUnit.special.includes("Offboard") === false) {
+            artUnit.SetReady(false);
         }
-
         target.token.remove();
         delete Units[target.id];
 
@@ -3658,6 +3561,8 @@ outputCard.body.push("FFE Effects")
                 })
             }
         }
+        state.WaW85.activeFormationID = "";
+        state.WaW85.activeUnitID = "";
     }
 
     const ActivateFormation = (msg) => {
@@ -4007,23 +3912,25 @@ outputCard.body.push("FFE Effects")
             unit.SetReady(true);
             if (unit.type === "HQ") {
                 //Suppressed HQs are unsuppressed
-                hq.SetDisrupt(false);
+                unit.SetDisrupt(false);
                 //remove EW Reducing, test for HQ with EW to see if EW Reducing
-                if (hq.token.get(SM.EWReducing)) {
-                    hq.token.set(SM.EWReducing,false);
-                    outputCard.body.push(hq.name + ": EW Removed");
+                if (unit.token.get(SM.EWReducing)) {
+                    unit.token.set(SM.EWReducing,false);
+                    outputCard.body.push(v.name + ": EW Removed");
                 }
-                if (hq.token.get(SM.EW)) {
+                if (unit.token.get(SM.EW)) {
                     let morale = state.WaW85.formationInfo[hq.formationID];
                     let roll = randomInteger(6) + randomInteger(6);
                     if (roll <= morale) {
-                        hq.token.set(SM.EW,false);
-                        hq.token.set(SM.EWReducing,true);
-                        outputCard.body.push(hq.name + ": EW Reducing");
+                        unit.token.set(SM.EW,false);
+                        unit.token.set(SM.EWReducing,true);
+                        outputCard.body.push(unit.name + ": EW Reducing");
                     }
                 }
             }
         })
+        state.WaW85.activeFormationID = "";
+        state.WaW85.activeUnitID = "";
         //remove smoke thinning, then all smoke to smoke thinning
         //Fire Markers
         //remove squall marker
@@ -4053,7 +3960,7 @@ outputCard.body.push("FFE Effects")
         let errorMsg = [];
 
         let lastUnit = Units[state.WaW85.activeUnitID];
-        if (lastUnit && lastUnit.token) {
+        if (lastUnit && lastUnit.token && lastUnit.id !== id) {
             lastUnit.SetReady(false);
         } 
 
@@ -4220,7 +4127,6 @@ log(unit.Active());
 
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
-            AddAbility("Spot","!Spot");
         }
 
         if (unit.type !== "HQ" && unit.type !== "Leader") {
@@ -4228,13 +4134,10 @@ log(unit.Active());
             if (unit.type === "Helicopter") {
                 mode = "?{Mode|Flying|NOE|Hovering|Landing}";
             }
-            if (unit.artUnit === true) {
-                pt2 = "?{Action|Move/Direct Fire|Indirect Fire}"
-            } 
             let action = "!Activate;Move/Direct Fire;" + mode;
             AddAbility("Move/Direct Fire",action,unit.charID);
         }
-        if (unit.artUnit) {
+        if (unit.artWeapon !== "") {
             AddAbility("Indirect Fire","!Activate;Indirect Fire;",unit.charID);
         }
 
