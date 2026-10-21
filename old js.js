@@ -4186,40 +4186,6 @@ log("BFF Roll: " + roll)
 
 
 
-    const MoveInfo = (msg) => {
-        let id = msg.content.split(";");
-        let unit = Units[id];
-        if (unit.type === "Infantry") {
-            outputCard.body.push("Roads, Clear, Cultivated, City and Wood Hexes 1 MP");
-            outputCard.body.push("Cleared, Rough or Burnt Out Hexes 2 MP");
-            outputCard.body.push("Rubble = 2 MP, no Roads");
-            outputCard.body.push("Uphill +1 MP");
-        } else if (unit.type === "Vehicle") {
-            outputCard.body.push("Roads and Clear Hexes 1 MP");
-            outputCard.body.push("Cultivated, City and Wood Hexes 2 MP");
-            outputCard.body.push("Cleared, Rough or Burnt Out Hexes 3 MP");
-            outputCard.body.push("Rubble = 3 MP, no Roads");
-
-            outputCard.body.push("Uphill +1 MP");
-            if (unit.movementType === "Amphibious") {
-                outputCard.body.push("Water to Water Hex = 1 MP");
-                outputCard.body.push("Water to Land or Land to Water = 1/2 total MP");
-                outputCard.body.push("(All MP To Cross a River)");
-            }
-        } else if (unit.type === "Helicopter") {
-            let mode = HeloMode(unit);
-            if (mode === "Flying") {
-                outputCard.body.push("Unlimited MP");
-                outputCard.body.push("Cannot fire if moves more than 12 Hexes");
-            } else if (mode === "NOE") {
-                outputCard.body.push("Unit has 12 MP");
-                outputCard.body.push("1 MP per Hex");
-            }
-        }
-        outputCard.body.push("Smoke adds 1 to MP/Hex");
-
-    }
-
 
 
     const AddAbility = (abilityName,action,characterID) => {
@@ -4566,9 +4532,6 @@ log("BFF Roll: " + roll)
                 break;
             case '!Activate':
                 Activate(msg);
-                break;
-            case '!MoveInfo':
-                MoveInfo(msg);
                 break;
             case '!Test':
                 state.WaW85.turn = (state.WaW85.turn === 0) ? 1:0;
