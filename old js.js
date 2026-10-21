@@ -711,17 +711,13 @@ const WaW85 = (() => {
 
             let type = attributes.type;
             let group;
-            if (type === "Infantry" || type === "Towed" || type === "Vehicle") {
+            if (type === "Infantry" || type === "Towed" || type === "Vehicle" || type === "HQ" || type === "Leader") {
                 group = "Ground";
             }
             if (type === "Aircraft" || type === "Helicopter") {
                 group = "Air"
             }
-            if (type === "HQ" || type === "Leader" || type === "Support") {
-                group = "Support"
-            }
-
-
+            
             let armourType = attributes.armourtype;
             let armour;
             let save = attributes.save;
@@ -1004,13 +1000,11 @@ const WaW85 = (() => {
             let hex = HexMap[this.hexLabel];
             if (this.type === "Aircraft") {
                 height = hex.unitHeight["CAS"];
-            }
-            if (this.group === "Ground") {
-                height = hex.unitHeight["Ground"];
-            }
-            if (this.type === "Helicopter") {
+            } else if (this.type === "Helicopter") {
                 let heloStatus = this.HeloStatus();
                 height = hex.unitHeight[heloStatus];
+            } else {
+                height = hex.unitHeight["Ground"];
             }
             return height;
         }
@@ -1834,22 +1828,6 @@ const WaW85 = (() => {
 
     }
 
-    const InLOS = (unit) => {
-        //does someone have LOS to this unit
-        let los = false;
-        let keys = Object.keys(Formations);
-        for (let i=0;i<keys.length;i++) {
-            let unit2 = Formations[keys[i]];
-            if (unit2.player !== unit.player && unit2.offboard === false && unit2.group !== "Aircraft" || unit2.group !== "Artillery") {
-                let losResult = LOS(unit2,unit);
-                if (losResult.los === true) {
-                    los = true;
-                    break;
-                }
-            }
-        }
-        return los;
-    }
 
 
 
@@ -2017,8 +1995,8 @@ const WaW85 = (() => {
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
-//log("S Height: " + shooterHeight)
-//log("T Height: " + targetHeight)
+log("S Height: " + shooterHeight)
+log("T Height: " + targetHeight)
 
 log(interLabels)
         let finalBlockAt;
@@ -2358,13 +2336,13 @@ log("both hexes block")
                 }
             }
             if (!spotter) {
-                errorMsg.push("[#ff00ff]No Unit able to Spot[/#]");
+                errorMsg.push("No Unit able to Spot");
             } 
         }
 
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
-                outputCard.body.push("[#ff00ff]" + msg + "[/#]");
+                outputCard.body.push("[#ff0000]" + msg + "[/#]");
             })
             return {spotter: false};
         }
@@ -2393,9 +2371,6 @@ log("both hexes block")
         let target = Units[targetID];
 
 //check if is leader or HQ and if is transfer to appr unit
-        if (target.group === "Support") {
-            
-        }
 
 
 
@@ -2727,6 +2702,7 @@ log("both hexes block")
             if (a.type === "Infantry") {
                 noInfantry[a.player] === false;
             }
+////needs rework due to change to group meaning            
             if (a.group === "Support") {
                 //skip all support type, but get HQ bonus
                 if (a.type === "HQ") {
@@ -3051,8 +3027,8 @@ log("both hexes block")
             tip = '[' + result + '](#" class="showtip" title="' + tip + ')';
             outputCard.body.push("Spotter Check: " + tip);
             if (moraleRoll > morale) {
-                artillery.SetReady(false);
-                outputCard.body.push(artillery.name + " is marked OPS Complete");
+                artUnit.SetReady(false);
+                outputCard.body.push(artUnit.name + " is marked OPS Complete");
                 PrintCard();
                 return;
             } 
