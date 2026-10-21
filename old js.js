@@ -971,8 +971,12 @@ log(weapons)
         }
         SetReady(ready) {
             let aura = (ready === true) ? "#ff00ff":"#000000";
-            this.token.set("aura1_color",aura);
-            this.token.set("aura1_radius",20);
+            this.token.set({
+                aura1_color: aura,
+                aura1_radius: 20,
+                bar3_value: 0,
+                bar3_max: 0,
+            })
         }
 
 
@@ -982,8 +986,12 @@ log(weapons)
             return ooc;
         }
         SetOOC() {
-            this.token.set("aura1_color","#ffff00");
-            this.token.set("aura1_radius",20);
+            this.token.set({
+                aura1_color: "#ffff00",
+                aura1_radius: 20,
+                bar3_value: 0,
+                bar3_max: 0,
+            })
         }
 
 
@@ -3725,10 +3733,6 @@ log("BFF Roll: " + roll)
             }
         })
         _.each(formation.unitIDs,unitID => {
-            Units[unitID].token.set({
-                bar3_value: 0,
-                bar3_max: 0,
-            })
             let hexLabel = Units[unitID].hexLabel;
             if (hexes[hexLabel]) {
                 hexes[hexLabel].push(unitID);
