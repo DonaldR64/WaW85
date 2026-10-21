@@ -103,37 +103,39 @@ const Activate = (msg) => {
         }
 
         //firepower/stabilization notes here
+        if (unit.type !== "Helicopter" && mp > 1 && weapons.length > 0) {
+            let halfMP = Math.round(mp/2);
+            if (unit.stabilizedWeapons) {
+                if (RedFor.includes(unit.nation)) {
+                    outputCard.body.push("Using up to " + halfMP + "MP may fire with a -1FP penalty");
+                    outputCard.body.push("More than that is a -2FP penalty");
 
-
-
-
+                } else {
+                    outputCard.body.push("Using up to " + halfMP + "MP may fire without penalty");
+                    outputCard.body.push("More than that is a -1FP penalty");
+                }
+            } else {
+                outputCard.body.push("May move up to " + halfMP + "MP and fire with a -2FP penalty");
+                outputCard.body.push("More than that may not fire");
+            }
+            outputCard.body.push("Assault Move - the unit may not fire");
+        }
+        if (unit.type === "Helicopter" && mode === "Flying") {
+            outputCard.body.push("Moving less than 12 hexes allows fire without penalty");
+            outputCard.body.push("More than that may not fire");
+        }
     } else if (action === "Indirect Fire") {
         //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
         unit.token.set("bar3_value",0);
         unit.token.set("bar3_max",0);
-
         let targetID = CreateMarker(HexMap[unit.hexLabel],"Target",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
         let target = new Unit(targetID);
         AddAbilities(target); //clears the old abilities
-        AddAbility("FFE","!FFE;SpotterID;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
-        outputCard.body.push("Place Target, FFE to Fire");
-        AddAbility("0: Check LOS/Distance","!ArtCheck;SpotterID;" + target.id,target.charID); 
+        AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
+        outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
+        AddAbility("Check","!ArtCheck;Onboard" + target.id + ";" + unit.id,target.charID); 
     }
 
     PrintCard();
-
-
-
-
-
-
-
-
 }
-
-
-
-
-//Load or Unload Passengers
-
 

@@ -741,6 +741,9 @@ const WaW85 = (() => {
             let assaultFP = Stats(attributes.assaultfp);
             let assaultToHit = Stats(attributes.assaulttohit);
             let artUnit = false;
+            let artMinRange;
+            let artMaxRange;
+            let stabilizedWeapons = false;
 
             let weapons = [];
             for (let i=1;i<4;i++) {
@@ -767,8 +770,12 @@ const WaW85 = (() => {
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
                 if (wnotes.includes("Indirect")) {
                     artUnit = true;
+                    artMinRange = wminRange;
+                    artMaxRange = wrange * 2;
                 }
-
+                if (wnotes.includes("Stabilized")) {
+                    stabilizedWeapons = true;
+                }
 
 
                 let weapon = {
@@ -818,7 +825,9 @@ log(weapons)
             this.assaultCB = 0;
 
             this.artUnit = artUnit;
-
+            this.artMinRange = artMinRange;
+            this.artMaxRange = artMaxRange;
+            this.stabilizedWeapons = stabilizedWeapons;
 
             this.attachedID = "";//id of unit THIS unit is attached to - HQ, leader etc
 
@@ -2203,12 +2212,14 @@ log(hex)
                     for(let a=0;a<abilArray.length;a++) {
                         abilArray[a].remove();
                     } 
+                    AddAbility("Check","!ArtCheck;Offboard;" + unit.id + ";" + artilleryID);
                     if (unit.name.includes("HE")) {
                         AddAbility("FFE","!FFE;-;" + unit.id + ";" + artilleryID + ";HE;Offboard",unit.charID);
                     }
                     if (unit.name.includes("Smoke")) {
                         AddAbility("FFE","!FFE;SpotterID;" + unit.id + ";" + artilleryID + ";Smoke;Offboard",unit.charID);
                     }
+
     //others
 
 
@@ -2292,31 +2303,60 @@ log(hex)
 
     const ArtCheck = (msg) => {
         let Tag = msg.content.split(";");
-        let spotter = Units[Tag[1]];
         let target = Units[Tag[2]];
+        let artID = Tag[3];
+        let onboard = Tag[1] === "Onboard" ? true:false;
+        let spotter;
+        let spotCheck = true;
         SetupCard(spotter.name,"LOS Check",spotter.nation);
-        let losResult = LOS(spotter,target);
-        if (losResult.los === false) {
-            outputCard.body.push("No LOS to Target");
-        } else {
-            outputCard.body.push("There is LOS to Target");
-            _.each(artilleryIDs, artID => {
-                let artillery = Units[artID];
-                let distance = artillery.Distance(target);
-                let weapon;
-                for (let i=0;i<artillery.weapons.length;i++) {
-                    if (artillery.weapons[i].notes.includes("Indirect")) {
-                        weapon = artillery.weapons[i];
-                        break;
+        errorMsg = [];
+        if (onboard === true) {
+            let artUnit = Units[artID];
+            let distance = artUnit.Distance(target);
+            if (distance < artMinRange) {
+                errorMsg.push("Target is under Artillery's Minimum Range");
+            }
+            if (distance > artMaxRange) {
+                errorMsg.push("Target is over Artillery's Maximum Range");
+            }
+        }
+        if (errorMsg.length === 0) {
+            let keys = Object.keys(Units);
+            for (let i=0;i<keys.length;i++) {
+                let unit = Units[keys[i]];
+                if (unit.Ready() === false || unit.OOC() || unit.Disrupted()) {continue};
+                if (unit.nation === activeFormation.nation) {
+                    if (unit.type === "HQ" || unit.special.includes("Recon")) {
+                        let spotterLOS = LOS(unit,target);
+                        if (spotterLOS.los === true) {
+                            spotter = unit;
+                            spotCheck = false;
+                            break;
+                        }
+                    }
+                    if ((unit.type === "Infantry" || unit.type === "Vehicle") && unit.name.includes("Lt.") && onboard === true) {
+                        let spotterLOS = LOS(unit,target);
+                        if (spotterLOS.los === true) {
+                            spotter = unit;
+                        }
                     }
                 }
-                if (!weapon) {return}
-                if (weapon.minRange <= distance && distance <= (2 * weapon.range)) {
-                    outputCard.body.push(artillery.name + " is In Range");
-                } else {
-                    outputCard.body.push("[#FF0000]" + artillery.name + " is NOT In Range[/#]");
-                }
+            }
+            if (!spotter) {
+                errorMsg.push("[#ff00ff]No Unit able to Spot[/#]");
+            } 
+        }
+
+        if (errorMsg.length > 0) {
+            _.each(errorMsg,msg => {
+                outputCard.body.push("[#ff00ff]" + msg + "[/#]");
             })
+        } else {
+            outputCard.body.push(spotter.name + " has LOS");
+            outputCard.body.push("Artillery has Range to Target");
+            if (spotCheck === true) {
+                outputCard.body.push("A Spot Check will be Required");
+            }
         }
         PrintCard();
     }
@@ -3997,27 +4037,36 @@ log("BFF Roll: " + roll)
         state.WaW85.turn++;
     }
 
-
-
-
-    const Activate = (msg) => { 
-
-//reset MP, factoring choice and things like Mud
-
-
+    const Activate = (msg) => {
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
+        let mode = Tag[2] || "NA" //helicopter mode, blank for others
         let unit = Units[id];
         let errorMsg = [];
-        if (unit.token.get("aura1_color") === "#000000" && unit.action !== "Change Mode" && unit.action !== "Load" && unit.action !== "Unload") {
-            errorMsg.push("Unit has already Activated");
+
+        let lastUnit = Units[state.WaW85.activeUnitID];
+        if (lastUnit && lastUnit.token) {
+            lastUnit.SetReady(false);
+        } 
+
+
+
+        if (unit.Active() === false) {
+            if (unit.OOC()) {
+                errorMsg.push("Unit is Out of Command");
+            } else if (unit.formationID !== state.WaW85.activeFormationID) {
+                errorMsg.push("Unit is not part of the Active Formation");
+            } else {
+                errorMsg.push("Unit has Activated");
+            }
         }
-//other checks like transport movement here
+        if (unit.Disrupted() && action === "Indirect Fire") {
+            errorMsg.push("Disrupted Units may not Fire");
+        }
 
 
-
-
+        state.WaW85.activeUnitID = unit.id;
         SetupCard(unit.name,action,unit.nation);
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
@@ -4026,51 +4075,116 @@ log("BFF Roll: " + roll)
             PrintCard();
             return;
         }
-        activeUnitID = id;
-        if (action === "Move/Fire") {
-            if (unit.type !== "Helicopter") {
-                outputCard.body.push("Unit has " + movement + " Movement Points");
+
+        if (action === "Move/Direct Fire") {
+            //move, move & fire, fire only or move to assault
+            //calculate max MP based on weather, mud
+            //display how far can move and still fire based on abilities
+            //if transport note re load/unload
+            if (unit.Disrupted()) {
+                let inLOS = false;
+                let keys = Object.keys(Units);
+                for (let i=0;i<keys.length;i++) {
+                    let unit2 = Units[keys[i]];
+                    if (unit2.nation !== unit.nation) {
+                        let los = LOS(unit,unit2);
+                        if (los.los === true) {
+                            inLOS = true;
+                            break;
+                        }
+                    }
+                }
+                if (inLOS === true) {
+                    outputCard.body.push("The Unit may not move closer to an enemy unit in LOS");
+                } else {
+                    outputCard.body.push("The Unit must stop when entering a hex in LOS of an enemy and cannot end adjacent to an enemy unit");
+                }
+                outputCard.body.push("Disrupted Units may not Fire");
             }
-            ButtonInfo("Show Movement Costs","!MoveInfo;" + unit.id);
-        } else if (action === "Spot") {
-            Spot(unit);
-        } else if (action === "Assault") {
-            ButtonInfo("Show Movement Costs","!MoveInfo");
-            outputCard.body.push("Unit must be able to move into Enemy's Hex");
-        } else if (action === "Change Mode") {
-            let newMode = Tag[2];
-            HeloMode(unit,newMode);
-            outputCard.body.push("The Helicopter changes to " + newMode);
-        } else if (action === "Load") {
-            //load will be on the infantry or artillery piece
+            let mp = unit.movement;
+            if (EventInfo === "Cautious Approach") {
+                mp = Math.ceil(mp/2);
+            }
+            if (state.WaW85.weatherLevel === 4) {
+                mp = Math.ceil(mp/2);
+            }
+            if (state.WaW85.mud && unit.movementType.includes("Ground")) {
+                mp = Math.max(1,mp - 1);
+            }
+            if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
+                mp = 100;
+            }
+            if (unit.type === "Helicopter") {
+                let oldMode = unit.HeloStatus();
+                if (oldMode !== mode) {
+                    outputCard.body.push("Changing Flying Mode allows Opp Fire");
+                }
+                unit.SetHeloStatus(mode);
+                if (mode === "Flying") {mp = 1000};
+                if (mode === "NOE") {mp = 12};
+                if (mode === "Landed" || mode === "Hovering") {
+                    mp = 0;
+                }
+            }
+            if (EventInfo === "High Rate of Fire") {
+                mp = 0;
+            }
+            unit.token.set("bar3_value",mp);
+            unit.token.set("bar3_max",mp);
+            if (mp === 1000) {
+                outputCard.body.push("The Unit may move anywhere on the Map");
+            } else if (mp === 100) {
+                outputCard.body.push("The Unit must move with its Parent Unit");
+            } else if (mp > 0) {
+                outputCard.body.push("The Unit has " + mp + " MP");
+            } else if (mp === 0) {
+                outputCard.body.push("The Unit is Stationary");
+            }
 
+            //firepower/stabilization notes here
+            if (unit.type !== "Helicopter" && mp > 1 && weapons.length > 0) {
+                let halfMP = Math.round(mp/2);
+                if (unit.stabilizedWeapons) {
+                    if (RedFor.includes(unit.nation)) {
+                        outputCard.body.push("Using up to " + halfMP + "MP may fire with a -1FP penalty");
+                        outputCard.body.push("More than that is a -2FP penalty");
 
-        } else if (action === "Unload") {
-            //unload on the transport
-
-
+                    } else {
+                        outputCard.body.push("Using up to " + halfMP + "MP may fire without penalty");
+                        outputCard.body.push("More than that is a -1FP penalty");
+                    }
+                } else {
+                    outputCard.body.push("May move up to " + halfMP + "MP and fire with a -2FP penalty");
+                    outputCard.body.push("More than that may not fire");
+                }
+                outputCard.body.push("Assault Move - the unit may not fire");
+            }
+            if (unit.type === "Helicopter" && mode === "Flying") {
+                outputCard.body.push("Moving less than 12 hexes allows fire without penalty");
+                outputCard.body.push("More than that may not fire");
+            }
+        } else if (action === "Indirect Fire") {
+            //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
+            unit.token.set("bar3_value",0);
+            unit.token.set("bar3_max",0);
+            let targetID = CreateMarker(HexMap[unit.hexLabel],"Target",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
+            let target = new Unit(targetID);
+            AddAbilities(target); //clears the old abilities
+            AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
+            outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
+            AddAbility("Check","!ArtCheck;Onboard" + target.id + ";" + unit.id,target.charID); 
         }
 
-        if (action !== "Spot") {
-            //Spotting units can activate later, firing unit will have aura changed in indirect fire
-            unit.token.set("aura1_color","#000000");
-            unit.action = action;
-        }
         PrintCard();
     }
 
 
-    const HeloMode = (unit,note) => {
-        if (!note) {
-            //is a query as to which mode helo is in
 
 
-        } else {
-            //change mode
 
 
-        }
-    } 
+
+
 
     const MoveInfo = (msg) => {
         let id = msg.content.split(";");
