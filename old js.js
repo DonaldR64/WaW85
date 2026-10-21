@@ -770,7 +770,7 @@ const WaW85 = (() => {
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
                 if (wnotes.includes("Indirect")) {
                     artUnit = true;
-                    artMinRange = wminRange;
+                    artMinRange = wminrange;
                     artMaxRange = wrange * 2;
                 }
                 if (wnotes.includes("Stabilized")) {
@@ -974,7 +974,7 @@ log(weapons)
             this.token.set({
                 aura1_color: aura,
                 aura1_radius: 20,
-                bar3_value: 0,
+                bar3_value: "",
                 bar3_max: 0,
             })
         }
@@ -989,7 +989,7 @@ log(weapons)
             this.token.set({
                 aura1_color: "#ffff00",
                 aura1_radius: 20,
-                bar3_value: 0,
+                bar3_value: "",
                 bar3_max: 0,
             })
         }
@@ -1786,6 +1786,7 @@ log(roads)
             weatherLevel: 0,
             moveMarkers: [],
             activeFormationID: "",
+            activeUnitID: "",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
         }
@@ -2312,19 +2313,19 @@ log(hex)
     const ArtCheck = (msg) => {
         let Tag = msg.content.split(";");
         let target = Units[Tag[2]];
-        let artID = Tag[3];
+        let artUnit = Units[Tag[3]];
         let onboard = Tag[1] === "Onboard" ? true:false;
         let spotter;
         let spotCheck = true;
-        SetupCard(spotter.name,"LOS Check",spotter.nation);
+        let activeFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
+        SetupCard(artUnit.name,"LOS Check",artUnit.nation);
         errorMsg = [];
         if (onboard === true) {
-            let artUnit = Units[artID];
             let distance = artUnit.Distance(target);
-            if (distance < artMinRange) {
+            if (distance < artUnit.artMinRange) {
                 errorMsg.push("Target is under Artillery's Minimum Range");
             }
-            if (distance > artMaxRange) {
+            if (distance > artUnit.artMaxRange) {
                 errorMsg.push("Target is over Artillery's Maximum Range");
             }
         }
@@ -4049,7 +4050,7 @@ log("BFF Roll: " + roll)
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
-        let mode = Tag[2] || "NA" //helicopter mode, blank for others
+        let mode = Tag[2]; //helicopter mode, blank for others
         let unit = Units[id];
         let errorMsg = [];
 
@@ -4150,7 +4151,7 @@ log("BFF Roll: " + roll)
             }
 
             //firepower/stabilization notes here
-            if (unit.type !== "Helicopter" && mp > 1 && weapons.length > 0) {
+            if (unit.type !== "Helicopter" && mp > 1 && unit.weapons.length > 0) {
                 let halfMP = Math.round(mp/2);
                 if (unit.stabilizedWeapons) {
                     if (RedFor.includes(unit.nation)) {
@@ -4180,7 +4181,7 @@ log("BFF Roll: " + roll)
             AddAbilities(target); //clears the old abilities
             AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
             outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
-            AddAbility("Check","!ArtCheck;Onboard" + target.id + ";" + unit.id,target.charID); 
+            AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         }
 
         PrintCard();
@@ -4221,12 +4222,20 @@ log("BFF Roll: " + roll)
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
             AddAbility("Spot","!Spot");
-
-
-
         }
 
-
+        if (unit.type !== "HQ" && unit.type !== "Leader") {
+            let pt3 = "";
+            let pt2 = "Move/Direct Fire";
+            if (unit.type === "Helicopter") {
+                pt3 = "?{Mode|Flying|NOE|Hovering|Landing}";
+            }
+            if (unit.artUnit === true) {
+                pt2 = "?{Action|Move/Direct Fire|Indirect Fire}"
+            } 
+            let action = "!Activate;" + pt2 + ";" + pt3;
+            AddAbility("Activate Unit",action,unit.charID);
+        }
 
 
 
