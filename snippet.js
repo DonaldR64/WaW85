@@ -13,7 +13,6 @@ const Activate = (msg) => {
 
 
 
-
     if (unit.Active() === false) {
         if (unit.OOC()) {
             errorMsg.push("Unit is Out of Command");
@@ -113,11 +112,15 @@ const Activate = (msg) => {
         unit.token.set("bar3_value",0);
         unit.token.set("bar3_max",0);
 
-
-
+        let targetID = CreateMarker(HexMap[unit.hexLabel],"Target",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
+        let target = new Unit(targetID);
+        AddAbilities(target); //clears the old abilities
+        AddAbility("FFE","!FFE;SpotterID;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
+        outputCard.body.push("Place Target, FFE to Fire");
+        AddAbility("0: Check LOS/Distance","!ArtCheck;SpotterID;" + target.id,target.charID); 
     }
 
-
+    PrintCard();
 
 
 
@@ -131,7 +134,6 @@ const Activate = (msg) => {
 
 
 
-///Change Mode for Helos
 //Load or Unload Passengers
 
 

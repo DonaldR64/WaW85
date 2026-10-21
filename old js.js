@@ -2290,46 +2290,6 @@ log(hex)
         sendChat("",line)
     }
 
-    const Spot = (msg) => {
-        //for onboard only, for offboard, uses token itself
-        //checks for available artillery - ready, in range etc
-        let spotter = Units[msg.selected[0]._id];
-        SetupCard(spotter.name,"Spot",spotter.nation);
-
-        if (spotter.Active() === false) {
-            outputCard.body.push("Spotter is OPS Complete");
-            PrintCard();
-            return;
-        }
-
-        artilleryIDs = [];
-        let formation = state.WaW85.formationInfo[spotter.formationID];
-
-        _.each(formation.unitIDs, unitID => {
-            let unit = Units[unitID];
-            if (unit.artUnit && unit.Active() && unit.Disrupted() === false) {
-                artilleryIDs.push(unitID);
-            } 
-        })
-
-        if (artilleryIDs.length === 0) {
-            outputCard.body.push("No Available Artillery Units");
-        } else {
-            let targetID = CreateMarker(HexMap[spotter.hexLabel],"Target",0,Nations[spotter.nation].targetImg,Nations[spotter.nation].targetID);
-            let target = new Unit(targetID);
-            AddAbilities(target); //clears the old abilities
-            for (let i=0;i<artilleryIDs.length;i++) {
-                let artID = artilleryIDs[i];
-                AddAbility((i+1) + ": " + Units[artID].name,"!FFE;" + spotter.id + ";" + target.id + ";" + artID + ";?{Type|HE|Smoke};Onboard",target.charID);
-            }
-            outputCard.body.push("Place Target, Select Artillery Unit to Fire");
-            AddAbility("0: Check LOS/Distance","!ArtCheck;" + spotter.id + ";" + target.id,target.charID);
-
-        }
-
-        PrintCard();
-    }
-
     const ArtCheck = (msg) => {
         let Tag = msg.content.split(";");
         let spotter = Units[Tag[1]];
