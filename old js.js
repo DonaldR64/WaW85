@@ -852,6 +852,12 @@ log(weapons)
                 this.leaderMorale = leaderMorale;
             }
 
+            let formationID = "";
+            if (state.WaW85.unitInfo[id]) {
+                formationID = state.WaW85.unitInfo[id];
+            }
+            this.formationID = formationID;
+
 
 
 
@@ -1667,7 +1673,6 @@ log(roads)
             let unitInfo = state.WaW85.unitInfo[token.id];
             if (character && unitInfo) {
                 let unit = new Unit(token.get("id"));
-                unit.formationID = unitInfo;
                 s++;
             }
         });
@@ -3063,11 +3068,11 @@ log(hex)
         //!FFE;spotterID;targetID;artilleryID;type;Offboard - last can be false for onboard
         //for offboard tokens, spotterID  will be a placeholder
         let Tag = msg.content.split(";");
-        let target = Units[Tag[2]];
-        let artillery = Units[Tag[3]]
+        let target = Units[Tag[1]];
+        let artillery = Units[Tag[2]]
         let spotter;
-        let type = Tag[4]; //HE, Smoke etc
-        let offboard = (Tag[5] === "Offboard") ? true:false;
+        let type = Tag[3]; //HE, Smoke etc
+        let offboard = (Tag[4] === "Offboard") ? true:false;
 
         let weapon;
         for (let i=0;i<artillery.weapons.length;i++) {
@@ -4059,7 +4064,8 @@ log("BFF Roll: " + roll)
             lastUnit.SetReady(false);
         } 
 
-
+log(unit.formationID)
+log(unit.Active());
 
         if (unit.Active() === false) {
             if (unit.OOC()) {
@@ -4225,16 +4231,18 @@ log("BFF Roll: " + roll)
         }
 
         if (unit.type !== "HQ" && unit.type !== "Leader") {
-            let pt3 = "";
-            let pt2 = "Move/Direct Fire";
+            let mode = "";
             if (unit.type === "Helicopter") {
-                pt3 = "?{Mode|Flying|NOE|Hovering|Landing}";
+                mode = "?{Mode|Flying|NOE|Hovering|Landing}";
             }
             if (unit.artUnit === true) {
                 pt2 = "?{Action|Move/Direct Fire|Indirect Fire}"
             } 
-            let action = "!Activate;" + pt2 + ";" + pt3;
-            AddAbility("Activate Unit",action,unit.charID);
+            let action = "!Activate;Move/Direct Fire;" + mode;
+            AddAbility("Move/Direct Fire",action,unit.charID);
+        }
+        if (unit.artUnit) {
+            AddAbility("Indirect Fire","!Activate;Indirect Fire;",unit.charID);
         }
 
 
