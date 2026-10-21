@@ -2020,7 +2020,7 @@ const WaW85 = (() => {
 //log("S Height: " + shooterHeight)
 //log("T Height: " + targetHeight)
 
-//log(interLabels)
+log(interLabels)
         let finalBlockAt;
         let finalLOS = true;
         let finalObscured = 0;
@@ -2035,12 +2035,12 @@ const WaW85 = (() => {
             for (let side=0;side<2;side++) {
                 let label = interLabels[side][i];
                 let interHex = HexMap[label];
-//log(side + " - " + label + ": " + interHex.terrain)
-//log("H:" + interHex.height)
-//log("LOS: " + interHex.los)
+log(side + " - " + label + ": " + interHex.terrain)
+log("H:" + interHex.height)
+log("LOS: " + interHex.los)
                 //terrain
                 if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
-//log("Smoke")
+log("Smoke")
                     //1 smoke or fire hex, even if hexside, blocks LOS
                     blocked = 2;
                     blockLabel = label;
@@ -2048,7 +2048,7 @@ const WaW85 = (() => {
                 }
                 if (shooterHeight === targetHeight) {
                     if ((interHex.los === "Blocks" || interHex.rubble.length > 0) && interHex.height > shooterHeight) {
-//log("Blocking Terrain")
+log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2059,14 +2059,14 @@ const WaW85 = (() => {
                 } else {
                     //terrain height than both = LOS Blocked
                     if (interHex.height > shooterHeight && interHex.height > targetHeight) {
-//log("Intervening Higher Terrain")
+log("Intervening Higher Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
                     }
                     //terrain higher than one and equal to other = LOS Blocked
                     if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
-//log("Higher than one, equal to other")
+log("Higher than one, equal to other")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2074,7 +2074,7 @@ const WaW85 = (() => {
                     //Blind Spots for 1 height difference
                     if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
                         if (len < 2*i) {
-//log("Blind Spot")
+log("Blind Spot")
                             blocked++;
                             blockLabel = label;
                             continue;
@@ -2082,7 +2082,7 @@ const WaW85 = (() => {
                     }
                     if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
                         if (len > 2*i) {
-//log("Blind Spot")
+log("Blind Spot")
 
                             blocked++;
                             blockLabel = label;
@@ -2091,7 +2091,7 @@ const WaW85 = (() => {
                     }
                     //Blind spot for 2 height+ differrence is one hex
                     if ((shooterHeight - interHex.height > 1 && i === (len-1) && interHex.height > targetHeight) ||  (targetHeight - interHex.height > 1 && i === 0 && interHex.height > shooterHeight) ) {
-//log("Blind Spot 2+")
+log("Blind Spot 2+")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2104,7 +2104,7 @@ const WaW85 = (() => {
             if (obscured === 2) {
                 finalObscured++;
                 if (finalObscured > 1) {
-//log("2 Obscuring Hexes")
+log("2 Obscuring Hexes")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
@@ -2116,13 +2116,13 @@ const WaW85 = (() => {
             if (blocked === 1) {
                 edgeBlock++;
                 if (edgeBlock > 1) {
-//log("2 Blocking Edges")
+log("2 Blocking Edges")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
                 } 
             } else if (blocked === 2) {
-//log("both hexes block")
+log("both hexes block")
                 finalBlockAt = blockLabel;
                 finalLOS = false;
                 break;
