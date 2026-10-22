@@ -117,6 +117,8 @@ const WaW85 = (() => {
 
         EW: "status_ew::7901717",
         EWReducing: "status_ew2::7901718", 
+
+        passenger: "status_letters_and_number0266::5982386",
     }; 
 
 
@@ -136,6 +138,7 @@ const WaW85 = (() => {
         "Autocannon": "Autocannon",
         "Vehicle ATGM": "Vehicle Missile", 
         "Vehicle SAM": "ATG",  
+
     }
 
     let outputCard = {title: "",subtitle: "",nation: "",body: [],buttons: [],};
