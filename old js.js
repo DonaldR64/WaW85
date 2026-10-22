@@ -103,22 +103,19 @@ const WaW85 = (() => {
 
 
     const SM = {
-        moved: "status_Advantage-or-Up::2006462",
-        fired: "status_Shell::5553215",
-
         oom: "status_MissileOut::7901720",
         low: "status_MissileLow::7901721", 
         reload: "status_MissileReload::7901719",
 
-        landed: "status_status_letters_and_numbers0262::5982382",
-        noe: "status_status_letters_and_numbers0264::5982384",
+        landed: "status_letters_and_numbers0262::5982382",
+        noe: "status_letters_and_numbers0264::5982384",
         hovering: "status_letters_and_numbers0258::5982378",
         flying: "status_letters_and_numbers0256::5982376",
 
         EW: "status_ew::7901717",
         EWReducing: "status_ew2::7901718", 
 
-        passenger: "status_letters_and_number0266::5982386",
+        passenger: "status_letters_and_numbers0266::5982386",
     }; 
 
 
@@ -807,7 +804,6 @@ const WaW85 = (() => {
             this.nation = nation;
 
             this.hexLabel = hexLabel; //current location
-            this.startHexLabel = hexLabel; //start of turn
             this.lastHexInfo = {}; //last hex moved into during movement, blank at start of turn and when fired at
 
             this.armourType = armourType;
@@ -855,6 +851,12 @@ const WaW85 = (() => {
             this.unloaded = false; //a flag
             this.passUnloaded = false; //flag
 
+            let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === id);
+            if (transportID) {
+                let transTok = getObj('graphic',transportID)
+                let transLabel = new Point(transTok.get("left"),transTok.get("top")).toCube().label();
+                this.hexLabel = transLabel;
+            }
 
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
@@ -1767,7 +1769,7 @@ const WaW85 = (() => {
             activeUnitID: "",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
-            transportID: {}, //ref by tokenID for the transport is the ID of the passenger
+            passengerID: {}, //ref by tokenID for the transport is the ID of the passenger
         }
     
 
@@ -1902,28 +1904,6 @@ const WaW85 = (() => {
 
 
 
-
-
-
-
-
-
-
-    const TokenInfo = (msg) => {
-        if (!msg.selected) {
-            sendChat("","No Token Selected");
-            return;
-        };
-        let playerID = msg.playerid;
-        let id = msg.selected[0]._id;
-        let team = Units[id];
-        let hexLabel = team.hexLabel;
-        SetupCard(team.name,hexLabel,team.nation);
-        let hex = HexMap[hexLabel];
-        outputCard.body.push(hex.terrain);
-        outputCard.body.push("Elevation: " + hex.elevation)
-        PrintCard();
-    }
 
     const CheckLOS = (msg) => {
         let Tag = msg.content.split(";");
@@ -2946,7 +2926,7 @@ log("both hexes block")
             return;
         }
         let level = parseInt(unit.token.get("currentSide"));
-        SetupCard(unit.name,"",unit.nation);
+        SetupCard(unit.name,unit.hexLabel,unit.nation);
         if (unit.Disrupted()) {
             outputCard.body.push("Unit is Disrupted");
         }
@@ -2958,11 +2938,15 @@ log("both hexes block")
         }
         if (unit.type === "Helicopter") {
             let status = unit.HeloStatus();
-            if (status === "NOE") {outputCard.body.push("Helicopter is Flying NOE")};
-
-
-
+            if (status === "NOE") {status = "Flying NOE"};
+            outputCard.body.push("Helicopter is " + status);
         }
+        if (state.WaW85.passengerID[unit.id]) {
+            outputCard.body.push("Carrying Passenger - " + Units[state.WaW85.passengerID[unit.id]].name);
+        }
+
+
+
         let hex = HexMap[unit.hexLabel];
         if (hex.offboard === true) {
             outputCard.body.push("Offboard");
@@ -3953,7 +3937,7 @@ outputCard.body.push("FFE Effects")
             lastUnit.SetReady(false);
         } 
 
-        if (unit.Active() === false) {
+        if (unit.Active() === false && state.WaW85.turn > 0) {
             if (unit.OOC()) {
                 errorMsg.push("Unit is Out of Command");
             } else if (unit.formationID !== state.WaW85.activeFormationID) {
@@ -4084,7 +4068,7 @@ outputCard.body.push("FFE Effects")
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         } else if (action === "Unload") {
             let errorMsg = [];
-            let passenger = Units[state.WaW85.transportID[unit.id]];
+            let passenger = Units[state.WaW85.passengerID[unit.id]];
             if (!passenger) {
                 errorMsg.push("No Passenger");
             }
@@ -4112,10 +4096,10 @@ outputCard.body.push("FFE Effects")
             }
         } else if (action === "Load") {
             let passengerID = mode; //just a rename
-            let passenger = Unit[passengerID];
+            let passenger = Units[passengerID];
             let errorMsg = [];
             let distance = unit.Distance(passenger);
-            if (unit.offboard && passenger.offboard) {
+            if (HexMap[unit.hexLabel].offboard && HexMap[passenger.hexLabel].offboard) {
                 distance = 0;
             }
             let passMPMax = parseInt(passenger.token.get("bar3_max"));
@@ -4137,9 +4121,6 @@ outputCard.body.push("FFE Effects")
             if (distance > 0) {
                 errorMsg.push("Must be in same Hex");
             }
-
-
-
             if (errorMsg.length > 0) {
                 _.each(errorMsg,msg => {
                     outputCard.body.push(msg);
@@ -4167,21 +4148,23 @@ outputCard.body.push("FFE Effects")
         })
         toFront(passenger.token);
         transport.token.set(SM.passenger,false);
+        state.WaW85.passengerID[transport.id] = "";
         ChangeTokenIDs(passenger.id,passenger.hexLabel,transport.hexLabel);
     }
 
     const Load = (passenger,transport) => {
         let name = (RedFor.includes(transport.nation)) ? "Red Card":"Blue Card"; 
-        let card = findObjs({_type:"graphic", name: name})[0];
+        let card = findObjs({_type:"graphic",layer: "map", name: name})[0];
         if (!card) {
             sendChat("","Cards not Set Up");
         } else {
             passenger.token.set({
-                left: card.token.get("left"),
-                top: card.token.get("top"),
+                left: card.get("left"),
+                top: card.get("top"),
             })
             transport.token.set(SM.passenger,true);
         }
+        state.WaW85.passengerID[transport.id] = passenger.id;
     }
 
 
@@ -4352,7 +4335,8 @@ outputCard.body.push("FFE Effects")
         let moveType = unit.MoveType();
         let minMove = state.WaW85.weatherLevel === 4 ? true:false;
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
-
+        let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === unit.id);
+        if (transportID) {return};
         if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true && unit.passUnloaded === false) {
             if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
                 //moving back 1 hex, reset remainingMove and remove the last movemarker
