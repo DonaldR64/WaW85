@@ -852,6 +852,8 @@ const WaW85 = (() => {
             this.formationID = formationID;
 
 
+            this.unloaded = false; //a flag
+            this.passUnloaded = false; //flag
 
 
             Units[id] = this;
@@ -1765,6 +1767,7 @@ const WaW85 = (() => {
             activeUnitID: "",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
+            transportID: {}, //ref by tokenID for the transport is the ID of the passenger
         }
     
 
@@ -3547,6 +3550,7 @@ outputCard.body.push("FFE Effects")
         let ew = (hq.token.get(SM.EW) || hq.token.get(SM.EWReducing)) ? true:false;
 
         SetupCard(formation.name,"Activation",formation.nation);
+        ResetFlags(formation);
         InCommand(formation,hq,ew);
         Disruption(formation,hq,ew)
         Reloads(formation,hq);
@@ -3589,6 +3593,18 @@ outputCard.body.push("FFE Effects")
         }
         PrintCard();
     }
+
+    const ResetFlags = (formation) => {
+        _.each(formation.unitIDs,unitID => {
+            let unit = Units[unitID];
+            if (unit) {
+                unit.unloaded = false;
+                unit.passUnloaded = false;
+
+            } 
+        })
+    }
+
 
     const InCommand = (formation,hq,ew) => {
         let hqLevel = parseInt(hq.token.get("currentSide"));
@@ -3986,15 +4002,23 @@ outputCard.body.push("FFE Effects")
                 }
                 outputCard.body.push("Disrupted Units may not Fire");
             }
+            unit.passUnloaded = false;
             let mp = unit.movement;
             if (EventInfo === "Cautious Approach") {
                 mp = Math.ceil(mp/2);
+                outputCard.body.push("Cautious Approach - MP Halved ⬆️")
             }
             if (state.WaW85.weatherLevel === 4) {
+                outputCard.body.push("Extreme Weather - MP Halved ⬆️")
                 mp = Math.ceil(mp/2);
+            }
+            if (unit.unloaded === true) {
+                outputCard.body.push("Transport Loaded/Unloaded - MP halved ⬇️");
+                mp = Math.floor(mp/2);
             }
             if (state.WaW85.mud && unit.movementType.includes("Ground")) {
                 mp = Math.max(1,mp - 1);
+                outputCard.body.push("Mud -1 MP");
             }
             if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
                 mp = 100;
@@ -4002,7 +4026,7 @@ outputCard.body.push("FFE Effects")
             if (unit.type === "Helicopter") {
                 let oldMode = unit.HeloStatus();
                 if (oldMode !== mode) {
-                    outputCard.body.push("Changing Flying Mode allows Opp Fire");
+                    outputCard.body.push("Changing Flying Mode can trigger Opp Fire");
                 }
                 unit.SetHeloStatus(mode);
                 if (mode === "Flying") {mp = 1000};
@@ -4012,6 +4036,7 @@ outputCard.body.push("FFE Effects")
                 }
             }
             if (EventInfo === "High Rate of Fire") {
+                outputCard.body.push("High Rate of Fire");
                 mp = 0;
             }
             unit.token.set("bar3_value",mp);
@@ -4042,7 +4067,6 @@ outputCard.body.push("FFE Effects")
                     outputCard.body.push("May move up to " + halfMP + "MP and fire with a -2FP penalty");
                     outputCard.body.push("More than that may not fire");
                 }
-                outputCard.body.push("Assault Move - the unit may not fire");
             }
             if (unit.type === "Helicopter" && mode === "Flying") {
                 outputCard.body.push("Moving less than 12 hexes allows fire without penalty");
@@ -4058,14 +4082,107 @@ outputCard.body.push("FFE Effects")
             AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
             outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
-        }
+        } else if (action === "Unload") {
+            let errorMsg = [];
+            let passenger = Units[state.WaW85.transportID[unit.id]];
+            if (!passenger) {
+                errorMsg.push("No Passenger");
+            }
+            let mpMax = parseInt(unit.token.get("bar3_max"));
+            let mp = parseInt(unit.token.get("bar3_value"));
+            if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
+                errorMsg.push("Transport has moved too far to Load this turn");
+            }
+            if (errorMsg.length > 0) {
+                _.each(errorMsg,msg => {
+                    outputCard.body.push(msg);
+                })
+            } else {
+                Unload(passenger,unit);
+                outputCard.body.push("Unloading can trigger Opp Fire");
+                outputCard.body.push("Then the passenger can move into an adjacent hex or stay put as part of the Unload");
+                passenger.passUnloaded = true;
+                if (mpMax > 0) {
+                    outputCard.body.push("Transport's activation is Done");
+                    unit.SetReady(false);
+                } else {
+                    outputCard.body.push("After Unloading, the Transport can Move");
+                }
+                unit.unloaded = true;
+            }
+        } else if (action === "Load") {
+            let passengerID = mode; //just a rename
+            let passenger = Unit[passengerID];
+            let errorMsg = [];
+            let distance = unit.Distance(passenger);
+            if (unit.offboard && passenger.offboard) {
+                distance = 0;
+            }
+            let passMPMax = parseInt(passenger.token.get("bar3_max"));
+            let passMP = parseInt(passenger.token.get("bar3_value"));
+            let mpMax = parseInt(unit.token.get("bar3_max"));
+            let mp = parseInt(unit.token.get("bar3_value"));
+            if (unit.token.get(SM.passenger)) {
+                errorMsg.push("Already has a Passenger");
+            }
+            if (passMPMax > 0 && (passMPMax - passMP) > 1) {
+                errorMsg.push("Passenger has moved too far to be Loaded");
+            }
+            if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
+                outputCard.body.push("Transport has moved too far to Load this turn");
+            }
+            if (unit.Disrupted()) {
+                errorMsg.push("Disrupted Transports may not Load");
+            }
+            if (distance > 0) {
+                errorMsg.push("Must be in same Hex");
+            }
 
+
+
+            if (errorMsg.length > 0) {
+                _.each(errorMsg,msg => {
+                    outputCard.body.push(msg);
+                })
+            } else {
+                outputCard.body.push("Loading can trigger Opp Fire");
+                Load(passenger,unit);
+                if (mpMax > 0) {
+                    outputCard.body.push("Transport's activation is Done");
+                    unit.SetReady(false);
+                } else{
+                    outputCard.body.push("After Loading, the Transport can Move");
+                }
+                unit.unloaded = true;
+            }
+        }
         PrintCard();
     }
 
 
+    const Unload = (passenger,transport) => {
+        passenger.token.set({
+            left: transport.token.get("left"),
+            top: transport.token.get("top"),
+        })
+        toFront(passenger.token);
+        transport.token.set(SM.passenger,false);
+        ChangeTokenIDs(passenger.id,passenger.hexLabel,transport.hexLabel);
+    }
 
-
+    const Load = (passenger,transport) => {
+        let name = (RedFor.includes(transport.nation)) ? "Red Card":"Blue Card"; 
+        let card = findObjs({_type:"graphic", name: name})[0];
+        if (!card) {
+            sendChat("","Cards not Set Up");
+        } else {
+            passenger.token.set({
+                left: card.token.get("left"),
+                top: card.token.get("top"),
+            })
+            transport.token.set(SM.passenger,true);
+        }
+    }
 
 
 
@@ -4236,7 +4353,7 @@ outputCard.body.push("FFE Effects")
         let minMove = state.WaW85.weatherLevel === 4 ? true:false;
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
 
-        if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true) {
+        if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true && unit.passUnloaded === false) {
             if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
                 //moving back 1 hex, reset remainingMove and remove the last movemarker
                 unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
@@ -4315,17 +4432,25 @@ outputCard.body.push("FFE Effects")
                 }
             }
         }
-
+        unit.passUnloaded = false;
         unit.hexLabel = endHex.label;
-        let index = startHex.tokenIDs.indexOf(unit.id);
+        ChangeTokenIDs(unit.id,startHex.label,endHex.label);
+    }
+
+    const ChangeTokenIDs = (id,startLabel,endLabel) => {
+        let startHex = HexMap[startLabel];
+        let endHex = HexMap[endLabel]
+        let index = startHex.tokenIDs.indexOf(id);
         if (index > -1) {
             startHex.tokenIDs.splice(index,1);
         }
-        if (!endHex.tokenIDs.includes(unit.id)) {
-            endHex.tokenIDs.push(unit.id);
+        if (!endHex.tokenIDs.includes(id)) {
+            endHex.tokenIDs.push(id);
         }
-
     }
+
+
+
 
 
 
