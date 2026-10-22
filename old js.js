@@ -3928,7 +3928,7 @@ outputCard.body.push("FFE Effects")
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
-        let mode = Tag[2]; //helicopter mode, blank for others
+        let mode = Tag[2]; //helicopter mode or passengerID if Load
         let unit = Units[id];
         let errorMsg = [];
 
@@ -4110,8 +4110,12 @@ outputCard.body.push("FFE Effects")
         if (unit.artWeapon !== "") {
             AddAbility("Indirect Fire","!Activate;Indirect Fire;",unit.charID);
         }
-
-
+        if (unit.special.includes("Transport")) {
+            AddAbility("Load","!Activate;Load;@{target|Passenger|token_id}",unit.charID);
+        }
+        if (unit.special.includes("Transport")) {
+            AddAbility("Unload","!Activate;Unload",unit.charID);
+        }
 
 
 
