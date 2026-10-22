@@ -1089,9 +1089,21 @@ const WaW85 = (() => {
                         }
                     }
                 })
+                let hq = Units[formation.hqID];
+                let distance = this.Distance(hq);
+                if (distance === 0) {
+                     let dx = Math.abs(hq.token.get("left") - this.token.get("left"));
+                    let dy = Math.abs(hq.token.get("top") - this.token.get("top"));
+                    if (dx <= 25 && dy <= 25) {
+                        stats.command = Math.max(hq.command,stats.command);
+                    }
+                }
             }
             return stats;
         }
+
+
+
 
 
 
@@ -2169,6 +2181,7 @@ log("both hexes block")
         let leaderIDs = [];
         let formation = DeepCopy(Scenario.formations[formNum]);
         let artilleryID;
+        let hqID = "";
 
         _.each(UnitIDList,unitID => {
             let unit = Units[unitID];
@@ -2176,6 +2189,9 @@ log("both hexes block")
             state.WaW85.unitInfo[unitID] = formNum;
             if (unit.type === "Leader") {
                 leaderIDs.push(unitID);
+            }
+            if (unit.type === "HQ") {
+                hqID = unitID;
             }
             if (formation.type === "Offboard Artillery" && unit.type !== "Artillery Token") {
                 artilleryID = unit.id;
@@ -2215,6 +2231,7 @@ log("both hexes block")
 
         formation.unitIDs = UnitIDList;
         formation.leaderIDs = leaderIDs;
+        formation.hqID = hqID;
 
         state.WaW85.formationInfo[formNum] = formation;
 
@@ -2330,7 +2347,8 @@ log("both hexes block")
                             break;
                         }
                     }
-                    if ((unit.type === "Infantry" || unit.type === "Vehicle") && unit.name.includes("Lt.") && onboard === true && unit.formationID === artUnit.formationID) {
+///may need to modify once have national tables
+                    if ((unit.type === "Infantry" || unit.type === "Vehicle") && onboard === true && unit.formationID === artUnit.formationID) {
                         let spotterLOS = LOS(unit,target);
                         if (spotterLOS.los === true) {
                             spotter = unit;
@@ -3020,8 +3038,11 @@ log("both hexes block")
             let moraleRoll = randomInteger(6) + randomInteger(6) - bonus;
             let tip = "Roll: " + moraleRoll + " vs. " + morale;
             if (bonus !== 0) {
-                tip += "<br>Leader Bonus: " + bonus;
+                tip += "<br>Leader/HQ Bonus: " + bonus;
             }
+
+
+
             if (moraleRoll <= morale) {
                 result = "Passed";
             } else {
@@ -4114,7 +4135,7 @@ log(unit.Active());
                 mode = "?{Mode|Flying|NOE|Hovering|Landing}";
             }
             let action = "!Activate;Move/Direct Fire;" + mode;
-            AddAbility("Move/Direct Fire",action,unit.charID);
+            AddAbility("Move",action,unit.charID);
         }
         if (unit.artWeapon !== "") {
             AddAbility("Indirect Fire","!Activate;Indirect Fire;",unit.charID);
@@ -4448,9 +4469,6 @@ log(unit.Active());
                 break;
             case '!AddToFormation':
                 AddToFormation(msg);
-                break;
-            case '!Spot':
-                Spot(msg);
                 break;
             case '!FFE':
                 FFE(msg);
