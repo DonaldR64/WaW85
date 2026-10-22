@@ -980,6 +980,9 @@ const WaW85 = (() => {
                 bar3_value: "",
                 bar3_max: 0,
             })
+            if (this.type !== "Leader" || this.type !== "HQ" || this.type !== "Support") {
+                this.SetAssociated(ready);
+            }
         }
 
 
@@ -1106,8 +1109,45 @@ const WaW85 = (() => {
             return stats;
         }
 
+        Associated() {
+            let types = ["Leader","HQ","Support"];
+            if (types.includes(this.type)) {return};
+            //ids of any stacked leaders, HQ or support
+            let ids = [];
+            _.each(HexMap[this.hexLabel].tokenIDs, id => {
+                let unit2 = Units[id];
+                if (unit2.nation === this.nation && types.includes(unit2.type)) {
+                    let dx = Math.abs(unit2.token.get("left") - this.token.get("left"));
+                let dy = Math.abs(unit2.token.get("top") - this.token.get("top"));
+                    if (dx <= 25 && dy <= 25) {
+                        ids.push(id);
+                    }
+                }
+            })
+            return ids;
+        }
 
+        MoveAssociated() {
+            let assoc = this.Associated();
+            if (!assoc) {return};
+            _.each(assoc,id => {
+                let unit2 = Units[id];
+                unit2.token.set({
+                    left: this.token.get("left"),
+                    top: this.token.get("top"),
+                })
+                ChangeTokenIDs(id,unit2.hexLabel,this.hexLabel);
+            })
+        }
 
+        SetAssociated(ready) {
+            let assoc = this.Associated();
+            if (!assoc) {return};
+            _.each(assoc,id => {
+                let unit2 = Units[id];
+                unit2.SetReady(ready);
+            })
+        }
 
 
 
@@ -1722,6 +1762,7 @@ const WaW85 = (() => {
         HexMap = {}; 
         Units = {};
         
+        RemoveMoveMarkers();
         //clear token info
         let tokens = findObjs({
             _pageid: Campaign().get("playerpageid"),
@@ -1858,7 +1899,7 @@ const WaW85 = (() => {
 
 
     const Naming = (unit) => {
-        let name = "N/A",init,surname;
+        let name,init,surname;
         let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"];
         if (unit.nation) {
             init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
@@ -1881,11 +1922,11 @@ const WaW85 = (() => {
                 name = "Captain " + init + surname;
             }
         }
-        if (unit.type === "Leader") {
+        if (unit.type === "Leader" || unit.type === "Artillery Token") {
             name = unit.charName;
         }
-        if (!unit.type || unit.type === "Support" || unit.type === "Artillery Token") {
-            name = unit.charName;
+        if (!unit.type || unit.type === "Support") {
+            name = "";
         }
         unit.name = name;
         if (name) {
@@ -1894,7 +1935,7 @@ const WaW85 = (() => {
                 name: name,
             })
         }
-        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token") {
+        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token" || unit.type === "Support") {
             toFront(unit.token);
         }
     }
@@ -3212,7 +3253,7 @@ outputCard.body.push("FFE Effects")
             outputCard.body.push("[B]" + formation.name + " has Initiative[/b]");
             outputCard.nation = formation.nation;
             outputCard.body.push("The HQ may be Placed with a Unit");
-            outputCard.body.push("Transfer any Leaders");
+            outputCard.body.push("Transfer any Leaders or Inf Support Weapons");
             outputCard.body.push("Activate Formation from the HQ when Done")
             state.WaW85.phase = "Operations";
             state.WaW85.turn = 1;
@@ -3523,6 +3564,7 @@ outputCard.body.push("FFE Effects")
         }
         state.WaW85.activeFormationID = "";
         state.WaW85.activeUnitID = "";
+        RemoveMoveMarkers();
     }
 
     const ActivateFormation = (msg) => {
@@ -3879,6 +3921,7 @@ outputCard.body.push("FFE Effects")
 
         
     const EndPhase = () => {
+        RemoveMoveMarkers();
         //Marker Removal
         _.each(Units,unit => {
             //remove all OPS Complete, out of command
@@ -3931,7 +3974,7 @@ outputCard.body.push("FFE Effects")
         let mode = Tag[2]; //helicopter mode or passengerID if Load
         let unit = Units[id];
         let errorMsg = [];
-
+        RemoveMoveMarkers();
         let lastUnit = Units[state.WaW85.activeUnitID];
         if (lastUnit && lastUnit.token && lastUnit.id !== id) {
             lastUnit.SetReady(false);
@@ -4037,7 +4080,7 @@ outputCard.body.push("FFE Effects")
 
             //firepower/stabilization notes here
             if (unit.type !== "Helicopter" && mp > 1 && unit.weapons.length > 0) {
-                let halfMP = Math.round(mp/2);
+                let halfMP = Math.floor(mp/2);
                 if (unit.stabilizedWeapons) {
                     if (RedFor.includes(unit.nation)) {
                         outputCard.body.push("Using up to " + halfMP + "MP may fire with a -1FP penalty");
@@ -4292,12 +4335,10 @@ outputCard.body.push("FFE Effects")
 
 
     const RemoveMoveMarkers = () => {
-        let markers = state.WaW85.moveMarkers;
+        let markers = findObjs({_type:"graphic",layer: "foreground", name: "Move Marker"});
         _.each(markers,marker => {
-            let token = getObj("graphic",marker);
-            if (token) {token.remove()};
+            marker.remove();
         })
-        state.WaW85.moveMarkers = [];
     }
 
     const CreateMoveMarker = (startHex,endHex,cost) => {
@@ -4312,7 +4353,7 @@ outputCard.body.push("FFE Effects")
             top: y,
             width: 25,
             height: 25, 
-            name: "Map Marker",
+            name: "Move Marker",
             pageid: Campaign().get("playerpageid"),
             imgsrc: getCleanImgSrc(MoveMarkers[cost]),
             layer: "foreground",
@@ -4320,7 +4361,6 @@ outputCard.body.push("FFE Effects")
 
         if (newToken) {
             toFront(newToken);
-            state.WaW85.moveMarkers.push(newToken.id);
             return newToken.id;
         } 
     }
@@ -4419,6 +4459,7 @@ outputCard.body.push("FFE Effects")
         unit.passUnloaded = false;
         unit.hexLabel = endHex.label;
         ChangeTokenIDs(unit.id,startHex.label,endHex.label);
+        unit.MoveAssociated();
     }
 
     const ChangeTokenIDs = (id,startLabel,endLabel) => {
