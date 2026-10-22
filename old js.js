@@ -3937,9 +3937,6 @@ outputCard.body.push("FFE Effects")
             lastUnit.SetReady(false);
         } 
 
-log(unit.formationID)
-log(unit.Active());
-
         if (unit.Active() === false) {
             if (unit.OOC()) {
                 errorMsg.push("Unit is Out of Command");
