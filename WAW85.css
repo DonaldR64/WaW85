@@ -389,6 +389,22 @@ input[type="hidden"][value="Off"].weapon3-status ~ .weapon3{
   padding: 3px;
 }
 
+input[type="hidden"][value="Off"].weapon4-status ~ .weapon4{
+  display: none;
+}
+
+.weapon4 {
+  display: grid;
+  grid-gap: 1px;
+  grid-template-columns: 3fr 1fr 1fr 1fr 1fr 2fr;
+  grid-template-rows: 1;
+  background-color: white;
+  text-align: center;
+  align-items: center;
+  padding: 3px;
+}
+
+
 .movementnotes h4{
   color: darkred;
 }
@@ -400,5 +416,8 @@ input[type="hidden"][value="Off"].weapon3-status ~ .weapon3{
   color: darkred;
 }
 .weapon3 h4{
+  color: darkred;
+}
+.weapon4 h4{
   color: darkred;
 }
