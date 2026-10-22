@@ -1111,33 +1111,6 @@ const WaW85 = (() => {
 
     }
 
-    const DefineScenario = () => {
-        let name = pageInfo.name;
-        let info = ScenarioInfo(name);
-
-
-
-
-    }
-
-
-
-
-
-    const TranslateLabel = (offset) => {
-        let newLabel;
-        if (pageInfo.name === "Map 1") {
-            let pt1 = offset.col - 4;
-            let pt2 = offset.row;
-            if (pt1 < 0 || pt1 > 22 || pt2 < 1 || pt2 > 13) {
-                newLabel = "Offboard";
-            } else {
-                newLabel = rowLabels[pt1] + pt2.toString();
-            }
-        }
-        return newLabel;
-    }
-
 
     const DefineMap = () => {
         let path = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map", stroke: "#93c47d"})[0];
@@ -3991,7 +3964,7 @@ log(unit.Active());
             return;
         }
 
-        if (action === "Move/Direct Fire") {
+        if (action === "Move") {
             //move, move & fire, fire only or move to assault
             //calculate max MP based on weather, mud
             //display how far can move and still fire based on abilities
@@ -4134,7 +4107,7 @@ log(unit.Active());
             if (unit.type === "Helicopter") {
                 mode = "?{Mode|Flying|NOE|Hovering|Landing}";
             }
-            let action = "!Activate;Move/Direct Fire;" + mode;
+            let action = "!Activate;Move;" + mode;
             AddAbility("Move",action,unit.charID);
         }
         if (unit.artWeapon !== "") {
