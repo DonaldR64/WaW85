@@ -24,7 +24,6 @@ const ScenarioData = {
                 cards: 1,
                 type: "Formation",
                 opsDeck: true,
-                support: {"Sagger ATGM": "-P4_wCdYb-K3SNuy8w40"},
             },
             2: {
                 //one artillery piece per formation
@@ -47,7 +46,6 @@ const ScenarioData = {
                 cards: 1,
                 type: "Formation",
                 opsDeck: true,
-                support: {},
             },
 
 
