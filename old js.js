@@ -1889,12 +1889,10 @@ const WaW85 = (() => {
                 name = "Captain " + init + surname;
             }
         }
-        if (unit.type === "Leader" || unit.type === "Artillery Token") {
+        if (unit.type === "Leader" || unit.type === "Artillery Token" || unit.type === "Support") {
             name = unit.charName;
         }
-        if (!unit.type || unit.type === "Support") {
-            name = "";
-        }
+
         unit.name = name;
         if (name) {
             unit.name = name;
