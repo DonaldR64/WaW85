@@ -4116,6 +4116,9 @@ outputCard.body.push("FFE Effects")
             if (!passenger) {
                 errorMsg.push("No Passenger");
             }
+            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
+                errorMsg.push("Can only Unload when Landed");
+            }            
             let mpMax = parseInt(unit.token.get("bar3_max"));
             let mp = parseInt(unit.token.get("bar3_value"));
             if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
@@ -4153,6 +4156,10 @@ outputCard.body.push("FFE Effects")
             if (unit.token.get(SM.passenger)) {
                 errorMsg.push("Already has a Passenger");
             }
+            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
+                errorMsg.push("Can only Load when Landed");
+            }
+            
             if (passMPMax > 0 && (passMPMax - passMP) > 1) {
                 errorMsg.push("Passenger has moved too far to be Loaded");
             }
