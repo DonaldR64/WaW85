@@ -857,7 +857,6 @@ const WaW85 = (() => {
                 let transLabel = new Point(transTok.get("left"),transTok.get("top")).toCube().label();
                 this.hexLabel = transLabel;
             }
-            this.attachedIDs = state.WaW85.attachedIDs[id];
 
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
@@ -971,19 +970,26 @@ const WaW85 = (() => {
         }
         Ready() {
             let ready = (this.token.get("aura1_color") === "#00ff00" || this.token.get("aura1_color") === "#ff00ff") ? true:false;
+            if (this.type === "Leader" || this.type === "HQ") {
+                let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(this.id));
+                if (parentID) {
+                    parent = Units[parentID];
+                    ready = parent.Ready();
+                }
+            }
             return ready;
         }
         SetReady(ready) {
             let aura = (ready === true) ? "#ff00ff":"#000000";
+            if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
+                aura = "transparent";
+            }
             this.token.set({
                 aura1_color: aura,
                 aura1_radius: 20,
                 bar3_value: "",
                 bar3_max: 0,
             })
-            if (this.type !== "Leader" || this.type !== "HQ" || this.type !== "Support") {
-                this.SetAssociated(ready);
-            }
         }
 
 
@@ -1083,8 +1089,9 @@ const WaW85 = (() => {
                 command: 0,
                 morale: 0,
             }
-            for (let i=0;i<this.attachedIDs.length;i++) {
-                let unit2 = Units[this.attachedIDs[i]];
+            let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
+            for (let i=0;i<attachedIDs.length;i++) {
+                let unit2 = Units[attachedIDs[i]];
                 stats.command = Math.max(stats.command,unit2.command);
                 if (unit2.type === "Leader") {
                     stats.morale = unit2.morale;
@@ -1094,23 +1101,19 @@ const WaW85 = (() => {
         }
 
         MoveAttached() {
-            for (let i=0;i<this.attachedIDs.length;i++) {
-                let unit2 = Units[this.attachedIDs[i]];
+            let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
+            for (let i=0;i<attachedIDs.length;i++) {
+                let unit2 = Units[attachedIDs[i]];
+                let x = this.token.get("left") - this.token.get("width")/2 + 10;
+                let y = this.token.get("top") - this.token.get('height')/2 + 10;
                 unit2.token.set({
-                    left: this.token.get("left"),
-                    top: this.token.get("top"),
+                    left: x,
+                    top: y,
                 })
-                ChangeTokenIDs(id,unit2.hexLabel,this.hexLabel);
+                ChangeTokenIDs(unit2.id,unit2.hexLabel,this.hexLabel);
             }
         }
 
-        SetAttached(ready) {
-            for (let i=0;i<this.attachedIDs.length;i++) {
-                let unit2 = Units[this.attachedIDs[i]];
-                unit2.SetReady(ready);
-
-            }
-        }
 
 
 
@@ -2949,6 +2952,22 @@ log("both hexes block")
         if (state.WaW85.passengerID[unit.id]) {
             outputCard.body.push("Carrying Passenger - " + Units[state.WaW85.passengerID[unit.id]].name);
         }
+        if (unit.type === "HQ" || unit.type === "Leader") {
+            let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(id));
+            if (parentID) {
+                parent = Units[parentID];
+                outputCard.body.push("Attached to " + parent.name);
+            } else {
+                outputCard.body.push("Not Attached");
+            }
+        }
+        if (state.WaW85.attachedIDs[id]) {
+            _.each(state.WaW85.attachedIDs,id => {
+                let unit2 = Units[id];
+                outputCard.body.push(unit2.name + " is Attached");
+            })
+        }
+
 
 
 
@@ -3540,6 +3559,13 @@ outputCard.body.push("FFE Effects")
         let ew = (hq.token.get(SM.EW) || hq.token.get(SM.EWReducing)) ? true:false;
 
         SetupCard(formation.name,"Activation",formation.nation);
+        let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(hq.id));
+        if (!parentID) {
+            outputCard.body.push("Needs to be Attached to a Unit in Formation");
+            PrintCard();
+            return;
+        }
+
         ResetFlags(formation);
         InCommand(formation,hq,ew);
         Disruption(formation,hq,ew)
@@ -3547,7 +3573,6 @@ outputCard.body.push("FFE Effects")
         outputCard.body.push("[hr]");
         if (ew === true) {
             outputCard.body.push("Artillery cannot be called due to the effects of Electronic Warfare");
-            let moraleRoll = randomInteger(6) + randomInteger(6);
         } else {
             outputCard.body.push("Offboard Artillery can be called now, up to 2 Strikes");
         }
@@ -3565,7 +3590,6 @@ outputCard.body.push("FFE Effects")
                 outputCard.body.push("Units may only execute Move or Move and Fire Actions");
             }
         }
-
 
         let index = state.WaW85.missed.indexOf(formation.name);
         if (index > -1) {
@@ -3629,7 +3653,10 @@ outputCard.body.push("FFE Effects")
             let unitIDs = hexes[hexLabel];
             if (distance <= commandRange || leaderHexLabels.includes(hexLabel) || HexMap[hexLabel].offboard === true) {
                 _.each(unitIDs,unitID => {
-                    Units[unitID].SetActive(true);
+                    let unit2 = Units[unitID];
+                    if (unit2.type !== "HQ" || unit2.type !== "Leader" || unit2.type !== "Support") {
+                        Units[unitID].SetActive(true);
+                    }
                 })
             } else {
                 let moraleRoll = randomInteger(6) + randomInteger(6);
@@ -3944,13 +3971,11 @@ outputCard.body.push("FFE Effects")
             lastUnit.SetReady(false);
         } 
 
-        if (unit.Active() === false && state.WaW85.turn > 0) {
+        if (unit.Active() === false && state.WaW85.turn > 0 && action !== "Attach") {
             if (unit.OOC()) {
                 errorMsg.push("Unit is Out of Command");
-            } else if (unit.formationID !== state.WaW85.activeFormationID) {
-                errorMsg.push("Unit is not part of the Active Formation");
             } else {
-                errorMsg.push("Unit has Activated");
+                errorMsg.push("Unit is not Active");
             }
         }
         if (unit.Disrupted() && action === "Indirect Fire") {
@@ -4143,6 +4168,33 @@ outputCard.body.push("FFE Effects")
                 }
                 unit.unloaded = true;
             }
+        } else if (action === "Attach") {
+            let unit2 = Units[mode];
+            let errorMsg = [];
+            if (unit2.formationID !== unit.formationID) {
+                errorMsg.push("Must be in same Formation");
+            }
+            if (unit2.Distance(unit) > 1) {
+                errorMsg.push("Should be adjacent/in same hex");
+            }
+            if (errorMsg.length > 0) {
+                _.each(errorMsg,msg => {
+                    outputCard.body.push(msg);
+                })
+            } else {
+                outputCard.body.push(unit.name + " is now Attached to " + unit2.name);
+                //remove from old parent if any
+                let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
+                if (oldID) {
+                    let index = state.WaW85.attachedIDs[oldID].indexOf(unit.id);
+                    state.WaW85.attachedIDs[oldID].splice(index,1);
+                }
+                //add to new parent
+                let ids = state.WaW85.attachedIDs[unit2.id] || [];
+                ids.push(unit.id);
+                state.WaW85.attachedIDs[unit2.id] = ids;
+                unit2.MoveAttached();
+            }
         }
         PrintCard();
     }
@@ -4204,6 +4256,9 @@ outputCard.body.push("FFE Effects")
 
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
+        }
+        if (unit.type === "HQ" || unit.type === "Leader") {
+            AddAbility("Attach","!Activate;Attach;@{target|Attach To|token_id}",unit.charID);
         }
 
         if (unit.type !== "HQ" && unit.type !== "Leader") {
@@ -4423,7 +4478,7 @@ outputCard.body.push("FFE Effects")
         unit.passUnloaded = false;
         unit.hexLabel = endHex.label;
         ChangeTokenIDs(unit.id,startHex.label,endHex.label);
-        unit.MoveAssociated();
+        unit.MoveAttached();
     }
 
     const ChangeTokenIDs = (id,startLabel,endLabel) => {
