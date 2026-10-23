@@ -8,14 +8,9 @@ const WaW85 = (() => {
     let Units = {};
     let HexMap = {}; 
     let activeUnitID;
-    let ScenarioInfo = {};
     let UnitIDList = []; //used in create formation
     let Scenario = {};
     let EventInfo = "";
-    let artilleryIDs = []; //used as temp for spotting
-
-
-    let playerInfo = [];
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -2252,27 +2247,6 @@ log("both hexes block")
 
 
 
-
-
-
-
-
-
-    const PlaceHQ = (msg) => {
-        if (!msg.selected) {sendChat("","Pick a Unit");return};
-        let id = msg.selected[0]._id;
-        let unit = Units[id];
-        if (!unit) {sendChat("","Pick a Valid Unit");return};
-
-        SetupCard("HQ","",unit.nation);
-        outputCard.body.push("HQ Attached to " + unit.name);
-        PrintCard();
-
-        //Create HQ Marker and place on unit
-
-
-    }
-
     const PickScenario = (msg) => {
         let Tag = msg.content.split(";");
         state.WaW85.scenario = "Scenario " + Tag[1];
@@ -4433,18 +4407,18 @@ outputCard.body.push("FFE Effects")
         let remainingMove = parseInt(unit.token.get("bar3_value"));
         let usedMove = totalMove - remainingMove;
         let moveType = unit.MoveType();
-        let minMove = state.WaW85.weatherLevel === 4 ? true:false;
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
         let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === unit.id);
         if (transportID) {return};
         if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true && unit.passUnloaded === false) {
-            if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label) {
+            if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label && unit.id === state.WaW85.activeUnitID) {
                 //moving back 1 hex, reset remainingMove and remove the last movemarker
                 unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
                 let mmToken = getObj("graphic",unit.lastHexInfo.markerID);
                 if (mmToken) {mmToken.remove()};
-            } else if (distance > 1 || remainingMove === 0) {
-                endHex = startHex;
+            } else if (distance > 1 || remainingMove === 0 || unit.id !== state.WaW85.activeUnitID) {
+log("Not Active, Distance > 1 or Remaining move === 0")
+                endHex = DeepCopy(startHex);
             } else {
                 let cost = endHex.movementCosts[moveType] || 100;
                 let dir = startHex.cube.whatDirection(endHex.cube);
@@ -4498,10 +4472,11 @@ outputCard.body.push("FFE Effects")
                     }
                 }
 
-                if ((cost <= remainingMove) || (usedMove === 0 && minMove === true && cost < 100)) {
+                if ((cost <= remainingMove) || (usedMove === 0 && state.WaW85.weatherLevel === 4 && cost < 100)) {
                     //2nd condition above is if hasnt moved yet in severe weather, can move 1 hex regardless of cost
                     //place a move marker
                     totalCost = cost + usedMove;
+
                     let mmID = CreateMoveMarker(startHex,endHex,totalCost);
                     //update remaining movement
                     let newMove = Math.max(0,remainingMove - cost);
@@ -4512,12 +4487,16 @@ outputCard.body.push("FFE Effects")
                         markerID: mmID,
                     }
                 } else {
-                    endHex = startHex;
+                    endHex = DeepCopy(startHex);
                 }
             }
         }
         unit.passUnloaded = false;
         unit.hexLabel = endHex.label;
+        unit.token.set({
+            left: endHex.centre.x,
+            top: endHex.centre.y,
+        })
         ChangeTokenIDs(unit.id,startHex.label,endHex.label);
         unit.MoveAttached();
     }
@@ -4637,11 +4616,9 @@ outputCard.body.push("FFE Effects")
                 Activate(msg);
                 break;
             case '!Test':
-                state.WaW85.turn = (state.WaW85.turn === 0) ? 1:0;
+
                 break;
-            case '!PlaceHQ':
-                PlaceHQ(msg);
-                break;
+
             case '!NextPhase':
                 NextPhase();
                 break;
