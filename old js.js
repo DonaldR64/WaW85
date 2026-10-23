@@ -699,9 +699,10 @@ const WaW85 = (() => {
     class Unit {
         constructor(id) {
             let token = findObjs({_type:"graphic", id: id})[0];
+            if (!token) {return};
             let charID = token.get("represents");
             let char = getObj("character", charID); 
-
+            if (!char) {return};
             let location = new Point(token.get("left"),token.get("top"));
             let hexLabel = location.label();
             let attributes = AttributeArray(char.id);  
@@ -965,16 +966,19 @@ const WaW85 = (() => {
             return active;
         }
         SetActive() {
-            this.token.set("aura1_color","#00ff00");
-            this.token.set("aura1_radius",20);
+            if (this.type !== "HQ" && this.type !== "Leader" && this.type !== "Support") {
+                this.token.set("aura1_color","#00ff00");
+            }
         }
         Ready() {
             let ready = (this.token.get("aura1_color") === "#00ff00" || this.token.get("aura1_color") === "#ff00ff") ? true:false;
-            if (this.type === "Leader" || this.type === "HQ") {
+            if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
                 let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(this.id));
                 if (parentID) {
-                    parent = Units[parentID];
-                    ready = parent.Ready();
+                    let parent = Units[parentID];
+                    if (parent) {
+                        ready = parent.Ready();
+                    }
                 }
             }
             return ready;
@@ -1086,13 +1090,15 @@ const WaW85 = (() => {
 
         Leader() {
             let stats = {
-                command: 0,
-                morale: 0,
+                command: 0, //command bonus
+                morale: 0, //alt morale due to leader
             }
             let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
-                stats.command = Math.max(stats.command,unit2.command);
+                if (unit2.type === "Leader" || unit2.type === "HQ") {
+                    stats.command = Math.max(stats.command,unit2.command);
+                }
                 if (unit2.type === "Leader") {
                     stats.morale = unit2.morale;
                 }
@@ -1104,13 +1110,27 @@ const WaW85 = (() => {
             let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
-                let x = this.token.get("left") - this.token.get("width")/2 + 10;
-                let y = this.token.get("top") - this.token.get('height')/2 + 10;
+                let dx = this.token.get("width")/2;
+                let dy = this.token.get('height')/2;
+                if (unit2.type === "HQ") {
+                    //top L
+                    dx = -dx;
+                    dy = -dy;
+                } else if (unit2.type === "Leader") {
+                    //bottom L
+                    dx = -dx;
+                } else {
+                    //default is top R
+                    dy = -dy;
+                }
+                let x = this.token.get("left") + dx;
+                let y = this.token.get("top") + dy;
                 unit2.token.set({
                     left: x,
                     top: y,
                 })
                 ChangeTokenIDs(unit2.id,unit2.hexLabel,this.hexLabel);
+                unit2.hexLabel = this.hexLabel;
             }
         }
 
@@ -2939,8 +2959,10 @@ log("both hexes block")
         if (unit.Reduced()) {
             outputCard.body.push("Unit is Reduced");
         }
-        if (unit.Active()) {
-            outputCard.body.push("Unit is Active");
+        if (unit.Ready()) {
+            outputCard.body.push("Unit is Ready");
+        } else {
+            outputCard.body.push("Unit is Not Ready")
         }
         if (unit.type === "Helicopter") {
             let status = unit.HeloStatus();
@@ -2950,7 +2972,7 @@ log("both hexes block")
         if (state.WaW85.passengerID[unit.id]) {
             outputCard.body.push("Carrying Passenger - " + Units[state.WaW85.passengerID[unit.id]].name);
         }
-        if (unit.type === "HQ" || unit.type === "Leader") {
+        if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(id));
             if (parentID) {
                 parent = Units[parentID];
@@ -2960,9 +2982,11 @@ log("both hexes block")
             }
         }
         if (state.WaW85.attachedIDs[id]) {
-            _.each(state.WaW85.attachedIDs,id => {
-                let unit2 = Units[id];
-                outputCard.body.push(unit2.name + " is Attached");
+            _.each(state.WaW85.attachedIDs[id],id2 => {
+                let unit2 = Units[id2];
+                if (unit2) {
+                    outputCard.body.push(unit2.name + " is Attached");
+                }
             })
         }
 
@@ -3534,6 +3558,10 @@ outputCard.body.push("FFE Effects")
     }
 
     const LastFormation = () => {
+        if (state.WaW85.activeUnitID) {
+            Units[state.WaW85.activeUnitID].SetReady(false);
+            state.WaW85.activeUnitID = "";
+        }
         if (state.WaW85.activeFormationID) {
             let prevFormation = state.WaW85.formationInfo[state.WaW85.activeFormationID];
              if (prevFormation) {
@@ -3544,7 +3572,6 @@ outputCard.body.push("FFE Effects")
             }
         }
         state.WaW85.activeFormationID = "";
-        state.WaW85.activeUnitID = "";
         RemoveMoveMarkers();
     }
 
@@ -4168,12 +4195,27 @@ outputCard.body.push("FFE Effects")
             }
         } else if (action === "Attach") {
             let unit2 = Units[mode];
+            let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
+
             let errorMsg = [];
             if (unit2.formationID !== unit.formationID) {
                 errorMsg.push("Must be in same Formation");
             }
-            if (unit2.Distance(unit) > 1) {
-                errorMsg.push("Should be adjacent/in same hex");
+            let distance = unit2.Distance(unit);
+            if (HexMap[unit2.hexLabel].offboard || HexMap[unit.hexLabel].offboard) {
+                distance = 0;
+            }
+            if (unit2.Distance(unit) > 0 && (unit2.type === "Support" || unit2.type === "Leader")) {
+                errorMsg.push("Can only transfer in same Hex");
+            }
+            if (unit.special.includes("Infantry") && unit2.type !== "Infantry") {
+                errorMsg.push("This is an Infantry Support Weapon");
+            }
+            if (unit.special.includes("Armour") && unit2.type !== "Vehicle") {
+                errorMsg.push("This is an Armour Support Weapon");
+            }
+            if (unit.special.includes("Armour") && oldID) {
+                errorMsg.push("Cannot transfer Armour Support Weapons");
             }
             if (errorMsg.length > 0) {
                 _.each(errorMsg,msg => {
@@ -4182,10 +4224,11 @@ outputCard.body.push("FFE Effects")
             } else {
                 outputCard.body.push(unit.name + " is now Attached to " + unit2.name);
                 //remove from old parent if any
-                let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
                 if (oldID) {
-                    let index = state.WaW85.attachedIDs[oldID].indexOf(unit.id);
-                    state.WaW85.attachedIDs[oldID].splice(index,1);
+                    let ids = state.WaW85.attachedIDs[oldID];
+                    let index = ids.indexOf(unit.id);
+                    ids.splice(index,1);
+                    state.WaW85.attachedIDs[oldID] = ids;
                 }
                 //add to new parent
                 let ids = state.WaW85.attachedIDs[unit2.id] || [];
@@ -4255,7 +4298,7 @@ outputCard.body.push("FFE Effects")
         if (unit.type === "HQ") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
         }
-        if (unit.type === "HQ" || unit.type === "Leader") {
+        if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             AddAbility("Attach","!Activate;Attach;@{target|Attach To|token_id}",unit.charID);
         }
 
