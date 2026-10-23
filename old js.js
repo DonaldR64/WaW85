@@ -1,5 +1,5 @@
 const WaW85 = (() => {
-    const version = '2026.10.16';
+    const version = '2026.10.23';
     if (!state.WaW85) {state.WaW85 = {}};
 
     const pageInfo = {};
