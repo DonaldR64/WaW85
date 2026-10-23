@@ -857,6 +857,7 @@ const WaW85 = (() => {
                 let transLabel = new Point(transTok.get("left"),transTok.get("top")).toCube().label();
                 this.hexLabel = transLabel;
             }
+            this.attachedIDs = state.WaW85.attachedIDs[id];
 
             Units[id] = this;
             HexMap[hexLabel].tokenIDs.push(id);
@@ -1082,71 +1083,33 @@ const WaW85 = (() => {
                 command: 0,
                 morale: 0,
             }
-            let formation = state.WaW85.formationInfo[this.formationID];
-            if (formation) {
-                _.each(formation.leaderIDs, leaderID => {
-                    let leader = Units[leaderID];
-                    let distance = this.Distance(leader);
-                    if (distance === 0) {
-                        let dx = Math.abs(leader.token.get("left") - this.token.get("left"));
-                        let dy = Math.abs(leader.token.get("top") - this.token.get("top"));
-                        if (dx <= 25 && dy <= 25) {
-                            stats.command = leader.command;
-                            stats.morale = leader.leaderMorale;
-                        }
-                    }
-                })
-                let hq = Units[formation.hqID];
-                let distance = this.Distance(hq);
-                if (distance === 0) {
-                     let dx = Math.abs(hq.token.get("left") - this.token.get("left"));
-                    let dy = Math.abs(hq.token.get("top") - this.token.get("top"));
-                    if (dx <= 25 && dy <= 25) {
-                        stats.command = Math.max(hq.command,stats.command);
-                    }
+            for (let i=0;i<this.attachedIDs.length;i++) {
+                let unit2 = Units[this.attachedIDs[i]];
+                stats.command = Math.max(stats.command,unit2.command);
+                if (unit2.type === "Leader") {
+                    stats.morale = unit2.morale;
                 }
-            }
+            }            
             return stats;
         }
 
-        Associated() {
-            let types = ["Leader","HQ","Support"];
-            if (types.includes(this.type)) {return};
-            //ids of any stacked leaders, HQ or support
-            let ids = [];
-            _.each(HexMap[this.hexLabel].tokenIDs, id => {
-                let unit2 = Units[id];
-                if (unit2.nation === this.nation && types.includes(unit2.type)) {
-                    let dx = Math.abs(unit2.token.get("left") - this.token.get("left"));
-                let dy = Math.abs(unit2.token.get("top") - this.token.get("top"));
-                    if (dx <= 25 && dy <= 25) {
-                        ids.push(id);
-                    }
-                }
-            })
-            return ids;
-        }
-
-        MoveAssociated() {
-            let assoc = this.Associated();
-            if (!assoc) {return};
-            _.each(assoc,id => {
-                let unit2 = Units[id];
+        MoveAttached() {
+            for (let i=0;i<this.attachedIDs.length;i++) {
+                let unit2 = Units[this.attachedIDs[i]];
                 unit2.token.set({
                     left: this.token.get("left"),
                     top: this.token.get("top"),
                 })
                 ChangeTokenIDs(id,unit2.hexLabel,this.hexLabel);
-            })
+            }
         }
 
-        SetAssociated(ready) {
-            let assoc = this.Associated();
-            if (!assoc) {return};
-            _.each(assoc,id => {
-                let unit2 = Units[id];
+        SetAttached(ready) {
+            for (let i=0;i<this.attachedIDs.length;i++) {
+                let unit2 = Units[this.attachedIDs[i]];
                 unit2.SetReady(ready);
-            })
+
+            }
         }
 
 
@@ -1165,7 +1128,7 @@ const WaW85 = (() => {
     }
 
 
-    const edgeCrossed= (unit) => {
+    const edgeCrossed = (unit) => {
         let hex = HexMap[unit.hexLabel];
         let prevHex = HexMap[unit.lastHexLabel];
         let direction = prevHex.cube(hex.cube);
@@ -1811,6 +1774,7 @@ const WaW85 = (() => {
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
             passengerID: {}, //ref by tokenID for the transport is the ID of the passenger
+            attachedIDs: {}, //ref by tokenID of the main unit, is the IDs in an array of leaders, HQs attached to it
         }
     
 
