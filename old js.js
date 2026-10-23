@@ -760,6 +760,7 @@ const WaW85 = (() => {
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
 
                 let weapon = {
+                    pos: (i-1),
                     name: wname,
                     type: wtype,
                     minRange: wminrange,
@@ -2338,6 +2339,7 @@ log("both hexes block")
 
     const DirectFire = (msg) => {
         let Tag = msg.content.split(";");
+return
         let shooterID = Tag[1];
         let targetID = Tag[2];
         let weaponNumber = Tag[3];
@@ -4296,7 +4298,7 @@ outputCard.body.push("FFE Effects")
             AddAbility("Move",action,unit.charID);
         }
         if (unit.artWeapon !== "") {
-            AddAbility("Indirect Fire","!Activate;Indirect Fire;",unit.charID);
+            AddAbility("0: Indirect Fire","!Activate;Indirect Fire;",unit.charID);
         }
         if (unit.special.includes("Transport")) {
             AddAbility("Load","!Activate;Load;@{target|Passenger|token_id}",unit.charID);
@@ -4304,6 +4306,25 @@ outputCard.body.push("FFE Effects")
         if (unit.special.includes("Transport")) {
             AddAbility("Unload","!Activate;Unload",unit.charID);
         }
+
+        if (unit.weapons.length > 0) {
+            let macros = [];
+            for (let w=0;w<unit.weapons.length;w++) {
+                let weapon = unit.weapons[w];
+                if (weapon.notes.includes("Indirect")) {
+                    continue;
+                }
+                abilityName = w + ": " + weapon.name;
+                action = "!DirectFire;" + unit.id + ";@{target|token_id};" + w;
+                AddAbility(abilityName,action,unit.charID);
+            }
+
+
+
+
+        }
+
+
 
 
 
