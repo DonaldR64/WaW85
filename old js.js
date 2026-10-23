@@ -3198,6 +3198,9 @@ outputCard.body.push("FFE Effects")
         if (state.WaW85.eventCard === true) {
             cards.push({name: "Battlefield Event/Friction"});
         }
+        if (Scenario.designatedFormation && Scenario.designatedFormation.turns.includes(state.WaW85.turn)) {
+            cards.push({name: "Designated Formation"});
+        }
 
 
         //others based on scenario
@@ -3261,7 +3264,7 @@ outputCard.body.push("FFE Effects")
                 state.WaW85.played.push(card.name);
             }
         }
-        outputCard.body.push("[B]" + card.name + "[/b]");
+        outputCard.body.push("[B]" + card.name + " Card[/b]");
         outputCard.body.push("[hr]");
         if (state.WaW85.endOps > 1) {
             EndOpsEvent();
@@ -3269,6 +3272,13 @@ outputCard.body.push("FFE Effects")
             if (card.name === "Battlefield Event/Friction") {
                 BattleFieldEvent();
             } else if (card.type && card.type === "Formation") {
+                FormationEvent(card);
+            } else if (card.name === "Designated Formation") {
+                card = Scenario.formations[Scenario.designatedFormation.formationID];
+                outputCard.body.push(card.name);
+                if (!state.WaW85.played.includes(card.name)) {
+                    state.WaW85.played.push(card.name);
+                }                
                 FormationEvent(card);
             }
         }
@@ -3951,10 +3961,11 @@ outputCard.body.push("FFE Effects")
         //Victory Determination
         outputCard.body.push("Check Victory Conditions");
         
-        CreateOpsDeck("End");
         state.WaW85.phase = "Operations";
         state.WaW85.endOps = 0;
         state.WaW85.turn++;
+        CreateOpsDeck("End");
+
     }
 
     const Activate = (msg) => {
