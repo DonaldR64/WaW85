@@ -4299,11 +4299,14 @@ outputCard.body.push("FFE Effects")
         if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             AddAbility("Attach","!Activate;Attach;@{target|Attach To|token_id}",unit.charID);
         }
-
         if (unit.type !== "HQ" && unit.type !== "Leader") {
-            let mode = "";
+            mode = "";
             if (unit.type === "Helicopter") {
-                mode = "?{Mode|Flying|NOE|Hovering|Landing}";
+                mode = "?{Mode|Flying|NOE|Hovering}";
+            if (unit.special.includes("Transport")) {
+                mode += "|Landing";
+            }
+                mode += "}";
             }
             let action = "!Activate;Move;" + mode;
             AddAbility("Move",action,unit.charID);
