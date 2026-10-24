@@ -4126,6 +4126,9 @@ outputCard.body.push("FFE Effects")
             if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
                 errorMsg.push("Transport has moved too far to Load this turn");
             }
+            if (unit.unloaded === true) {
+                errorMsg.push("Already Loaded or Unloaded this Activation");
+            }
             if (errorMsg.length > 0) {
                 _.each(errorMsg,msg => {
                     outputCard.body.push(msg);
@@ -4163,12 +4166,17 @@ outputCard.body.push("FFE Effects")
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
                 errorMsg.push("Can only Load when Landed");
             }
-            
+            if (unit.unloaded === true) {
+                errorMsg.push("Already Loaded or Unloaded this Activation");
+            }
             if (passMPMax > 0 && (passMPMax - passMP) > 1) {
                 errorMsg.push("Passenger has moved too far to be Loaded");
             }
             if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
-                outputCard.body.push("Transport has moved too far to Load this turn");
+                errorMsg.push("Transport has moved too far to Load this turn");
+            }
+            if (mp > 0 && passMP > 0 && passenger.type === "Towed") {
+                errorMsg.push("Towed Weapons and Transports have to start in same Hex to Load");
             }
             if (unit.Disrupted()) {
                 errorMsg.push("Disrupted Transports may not Load");
