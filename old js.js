@@ -4163,6 +4163,7 @@ outputCard.body.push("FFE Effects")
             if (unit.token.get(SM.passenger)) {
                 errorMsg.push("Already has a Passenger");
             }
+            if (passenger.type === )
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
                 errorMsg.push("Can only Load when Landed");
             }
@@ -4217,7 +4218,7 @@ outputCard.body.push("FFE Effects")
             if (unit.special.includes("Infantry") && unit2.type !== "Infantry") {
                 errorMsg.push("This is an Infantry Support Weapon");
             }
-            if (unit.special.includes("Armour") && unit2.type !== "Vehicle") {
+            if (unit.special.includes("Armour") && unit2.type === "Infantry") {
                 errorMsg.push("This is an Armour Support Weapon");
             }
             if (unit.special.includes("Armour") && oldID) {
