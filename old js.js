@@ -734,6 +734,7 @@ const WaW85 = (() => {
             let assaultToHit = Stats(attributes.assaulttohit);
             let stabilizedWeapons = false;
             let artWeapon = "";
+            let apWeapon = false; //a flag for assault if unit has a valid AP weapon
 
             let weapons = [];
             for (let i=1;i<4;i++) {
@@ -750,9 +751,6 @@ const WaW85 = (() => {
                 } else {
                     wrange = parseInt(wrange);
                 }
-
-
-    
 
 
                 let wfp = Stats(attributes["weapon" + i + "fp"]);
@@ -775,7 +773,9 @@ const WaW85 = (() => {
                 if (wnotes.includes("Stabilized")) {
                     stabilizedWeapons = true;
                 } 
-
+                if (wtype === "AP" && wminRange > 0) {
+                    apWeapon = true;
+                }
 
 
                 weapons.push(weapon);
@@ -807,13 +807,14 @@ const WaW85 = (() => {
             this.armour = armour;
             this.save = save;
             
-            this.assaultFP = assaultFP;
-            this.assaultToHit = assaultToHit;
+            this.assaultFP = assaultFP || 0;
+            this.assaultToHit = assaultToHit || 7;
             this.assaultDamage = 0;
             this.assaultCB = 0;
 
             this.artWeapon = artWeapon;
             this.stabilizedWeapons = stabilizedWeapons;
+            this.apWeapon = apWeapon;
 
             this.attachedID = "";//id of unit THIS unit is attached to - HQ, leader etc
 
@@ -2656,8 +2657,8 @@ return
     }
         
     //in movement - when move units into other hex then is an assault
-    //cant move a unit with no AP into a hex with a unit with AP - so flag that
-    //cant move a unit without an assault value or where assault = 0 into a hex (unless is HQ/Leader/Support)
+    //cant move a unit with no AP into a hex with a unit with AP - so flag that in movehex
+    //cant move a unit without an assault value or where assault = 0 into a hex (unless is HQ/Leader/Support) - in move hex
     //could be a defender with no AP being attacked, its damage vs Heavy Armour will just 'bounce'
 
     const Assault = (msg) => {
@@ -4111,6 +4112,7 @@ outputCard.body.push("FFE Effects")
             outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         } else if (action === "Unload") {
+//put in combat lift off
             let errorMsg = [];
             let passenger = Units[state.WaW85.passengerID[unit.id]];
             if (!passenger) {
@@ -4142,6 +4144,8 @@ outputCard.body.push("FFE Effects")
                 unit.unloaded = true;
             }
         } else if (action === "Load") {
+//put in combat lift off
+
             let passengerID = mode; //just a rename
             let passenger = Units[passengerID];
             let errorMsg = [];
@@ -4313,6 +4317,9 @@ outputCard.body.push("FFE Effects")
         if (unit.special.includes("Transport")) {
             AddAbility("Unload","!Activate;Unload",unit.charID);
         }
+
+
+
 
         if (unit.weapons.length > 0) {
             let macros = [];
@@ -4495,20 +4502,37 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     cost = 100;
                 }
 
-                //Stacking
+                //Stacking and Enemy issues
                 if (endHex.tokenIDs.length > 0 && unit.Stackable() === false) {
-                    let friendly = 0;
+                    let unitCount = 0;
                     _.each(endHex.tokenIDs, tokenID => {
                         if (tokenID !== unit.id) {
                             let unit2 = Units[tokenID]
                             if (unit2.player === unit.player && unit2.Stackable() === false) {
-                                friendly++;
+                                unitCount++;
+                            }
+                            if (unit2.player !== unit.player) {
+                                //unit with no AP cant go into assault with armour
+                                if (unit.apWeapon === false && unit2.armourType === "Heavy") {
+                                    unitCount = 100;
+                                }
+                                //if has no assault value
+                                if (unit.assaultFP === 0) {
+                                    unitCount = 100;
+                                }
                             }
                         }
                     })
-                    if (friendly >= 2) {
+
+
+
+                    if (unitCount >= 2) {
                         cost = 100;
                     }
+
+                    
+
+
                 }
 
                 if ((cost <= remainingMove) || (usedMove === 0 && state.WaW85.weatherLevel === 4 && cost < 100)) {
