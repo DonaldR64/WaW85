@@ -4302,13 +4302,13 @@ outputCard.body.push("FFE Effects")
         if (unit.type !== "HQ" && unit.type !== "Leader") {
             mode = "";
             if (unit.type === "Helicopter") {
-                mode = "?{Mode|Flying|NOE|Hovering}";
-            if (unit.special.includes("Transport")) {
-                mode += "|Landing";
-            }
+                mode = ";?{Mode|Flying|NOE|Hovering}";
+                if (unit.special.includes("Transport")) {
+                    mode += "|Landing";
+                }
                 mode += "}";
             }
-            let action = "!Activate;Move;" + mode;
+            let action = "!Activate;Move" + mode;
             AddAbility("Move",action,unit.charID);
         }
         if (unit.artWeapon !== "") {
@@ -4320,9 +4320,6 @@ outputCard.body.push("FFE Effects")
         if (unit.special.includes("Transport")) {
             AddAbility("Unload","!Activate;Unload",unit.charID);
         }
-
-
-
 
         if (unit.weapons.length > 0) {
             let macros = [];
