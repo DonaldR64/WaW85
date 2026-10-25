@@ -7,14 +7,15 @@ const Attack = (weapon,shooter,target,losResult) => {
         ddT = " [Artillery]";
     }
     let defBonusDice = 0; //capped at 2;
-    let save = target.save;
+    let save = target.save || 7;
     let toHit = weapon.toHit;
     let fp = weapon.fp;
-    let shooterTips = weapon.fp + " FP needing " + toHit + "+ TH";
-    let targetTips = target.armourType + " Armour: " + defDice + " Dice" + ddT;
+    let shooterTips = "<br>" + weapon.fp + " FP needing " + toHit + "+ TH";
+    let armourTips = "<br>" + target.armourType + " Armour: " + defDice + " Dice" + ddT;
     if (defDice > 0) {
-        targetTips += "<br>Armour Save: " + save + "+";
+        armourTips += "<br>Armour Save: " + save + "+";
     }
+    let bonusTips = "";
 
     //10.6.1 AA Fire
     let aaFlag = false;
@@ -73,13 +74,13 @@ const Attack = (weapon,shooter,target,losResult) => {
     }
     if (terBonus !== 0) {
         let sign = (terBonus > 0) ? "+":"";
-        targetTips += "<br>Terrain Bonus: " + sign + terBonus + " Dice";
+        bonusTips += "<br>Terrain Bonus: " + sign + terBonus + " Dice";
         defBonusDice += terBonus;
     }
     //10.6.9 Composite or Reactive Armour vs ATGM
     if (weapon.notes.includes("ATGM") && (target.special.includes("Composite") || target.special.includes("Reactive"))) {
         save--;
-        targetTips += "<br>Composite/Reactive Armour -1 to Save";
+        armourTips += "<br>Composite/Reactive Armour -1 to Save";
     }
     //10.6.10 Volley Fire - work this out in firing, inc. the weapon.fp by 1
     //10.6.11 Target is a Landed Helicopter
@@ -90,12 +91,12 @@ const Attack = (weapon,shooter,target,losResult) => {
     }
     //10.6.12 ATGM at a target in blocking terrain
     if (weapon.notes.includes("ATGM") && HexMap[target.hexLabel].los === "Blocks") {
-        targetTips += "<br>ATGM vs Blocking Terrain +1 Dice";
+        bonusTips += "<br>ATGM vs Blocking Terrain +1 Dice";
         defBonusDice++;
     }
     //10.6.13 Concealment
     if (CheckConcealment(target) === true) {
-        targetTips += "<br>Concealment +1 Dice";
+        bonusTips += "<br>Concealment +1 Dice";
         defBonusDice++;
     }
     //smoke for thermal imagers - anyone else will have no LOS
@@ -107,17 +108,17 @@ const Attack = (weapon,shooter,target,losResult) => {
     //Weather - mostly factored into abvoe PB and LR fire, and prevent LR fire for weatherLevel 4
     if (state.WaW85.weatherLevel > 1) {
         defBonusDice++;
-        targetTips += "<br>Weather +1 Dice";
+        bonusTips += "<br>Weather +1 Dice";
     }
     if (state.WaW85.squall) {
         defBonusDice++;
-        targetTips += "<br>Squall +1 Dice";
+        bonusTips += "<br>Squall +1 Dice";
     }
     //10.6.14 Max Defensive Bonus
     if (target.armourType === "Heavy" || target.armourType === "Light") {
         if (defBonusDice > 2) {
             defBonusDice = 2;
-            targetTips += "<br>Max of 2 Bonus Dice";
+            bonusTips += "<br>Max of 2 Bonus Dice";
         }
     }
     //10.6.15 Max To Hit of 6
@@ -158,15 +159,80 @@ const Attack = (weapon,shooter,target,losResult) => {
         shooterTips = "<br>Severe Weather FP = 1, TH = 6";
     }
 
+    //display total FP, To Hit etc 
+    let line, line2
+    line = "FP: " + fp + " Dice, TH " + toHit + "+";
+    shooterTips = line + "<br>-----------------" + shooterTips;
+    let st = (defDice === 0) ? "":", Save " + save + "+";
+    armourTips = "Defense: " + defDice + " Dice" + st + "<br>-----------------" + armourTips;
+    if (defBonusDice > 0) {
+        bonusTips = "<br>Bonus: " + defBonusDice + " Dice, Save 5+" + "<br>-----------------" + bonusTips;
+    }
 
     //defDice, needing save+
     //defBonusDice, needing 5+
     //fp dice, needing toHit+
 
-//2638
+    let hits = 0,armourSaves = 0,terrainSaves = 0;
+    let attackRolls = [],armourRolls = [],terRolls = [];
+    for (let i=0;i<fp;i++) {
+        let roll = randomInteger(6);
+        attackRolls.push(roll);
+        if (roll >= toHit) {
+            hits++;
+        }
+    }
+    attackRolls.sort().reverse();
+    let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+" + shooterTips;
+    tip = '[🎲](#" class="showtip" title="' + tip + ')';
+
+    if (hits > 0) {
+        outputCard.body.push(tip + " Firing " + weapon.name + ": " + hits + " Hits");
+        //Defender - armour then terrain saves
+        if (defDice > 0) {
+            for (let i=0;i<defDice;i++) {
+                let roll = randomInteger(6);
+                if (roll >= save) {
+                    armourSaves++;
+                }
+                armourRolls.push(roll);
+            }
+            armourRolls.sort().reverse();
+            tip = "Rolls: " + armourRolls + " vs. " + save + "+" + armourTips;
+            tip = '[🎲](#" class="showtip" title="' + tip + ')';
+            outputCard.body.push(tip + " Armour: " + armourSaves + " Saves");
+        }
+        if (defBonusDice > 0) {
+            for (let i=0;i<defBonusDice;i++) {
+                let roll = randomInteger(6);
+                if (roll >= 5) {
+                    terrainSaves++;
+                }
+                terRolls.push(roll);
+            }
+            terRolls.sort().reverse();
+            tip = "Rolls: " + terRolls + " vs. 5+" + bonusTips;
+            tip = '[🎲](#" class="showtip" title="' + tip + ')';
+            outputCard.body.push(tip + " Terrain: " + terrainSaves + " Saves");
+        }
 
 
+        let damage = Math.max(0,hits-armourSaves-terrainSaves);
+        if (HexMap[target.hexLabel].improved === true && target.type !== "Aircraft" && target.type === "Helicopter") {
+            outputCard.body.push("Improved Positions reduce Damage");
+            damage--;
+        }
+        if (damage > 0) {
+            outputCard.body.push(target.name + " takes " + damage + " Damage");
+            //apply damage
+            //excess damage to other units in hex
+        } else {
+            outputCard.body.push("No Damage");
+        }
 
+    } else {
+        outputCard.body.push(tip + " Firing " + weapon.name + ": Misses");
+    }
 
 
 
