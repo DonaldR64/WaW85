@@ -943,6 +943,11 @@ const WaW85 = (() => {
         SetDisrupt(stat) {
             let tint = stat === true ? "#ff0000":"transparent";
             this.token.set("tint_color",tint);
+            let passengerID = state.WaW85.passengerID[this.id] || "";
+            if (passengerID && stat === false) {
+                let passenger = Units[passengerID];
+                passenger.SetDisrupt(false);
+            }
         }
         Reduced(){
             //returns true if reduced or 1 step
@@ -4098,10 +4103,13 @@ outputCard.body.push("FFE Effects")
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         } else if (action === "Unload") {
             let errorMsg = [];
-            let passenger = Units[state.WaW85.passengerID[unit.id]];
-            if (!passenger) {
+            let passengerID = state.WaW85.passengerID[unit.id] || "";
+            if (!passengerID) {
                 errorMsg.push("No Passenger");
+            } else {
+                let passenger = Units[passengerID];
             }
+
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
                 errorMsg.push("Can only Unload when Landed");
             }            
