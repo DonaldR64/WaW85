@@ -111,6 +111,7 @@ const WaW85 = (() => {
         EWReducing: "status_ew2::7901718", 
 
         passenger: "status_letters_and_numbers0266::5982386",
+        longMove: "status_Advantage-or-Up::2006462",
 
         leaderBonusUsed: "status_blue",
     }; 
@@ -2006,7 +2007,9 @@ const WaW85 = (() => {
     }
 
 
-    const LOS = (shooter,target,thermal = false) => {
+    const LOS = (shooter,target) => {
+
+        let thermal = shooter.special.includes("Thermal") ? true:false;
         let shooterHex = HexMap[shooter.hexLabel];
         let targetHex = HexMap[target.hexLabel];
 log(shooter.name + ": " + shooter.hexLabel)
@@ -2404,10 +2407,7 @@ log("Checking " + unit.name);
 
 
     const Attack = (weapon,shooter,target) => {
-
-        let thermal = (shooter.special.includes("Thermal Imaging")) ? true:false;
-        let losResult = LOS(shooter,target,thermal);
-
+        let losResult = LOS(shooter,target);
         let defDice = target.armour;
         let ddT = "";
         if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
@@ -2534,19 +2534,16 @@ log("Checking " + unit.name);
 
         //11.0 Move and Fire Effects, direct fire will remove 'illegals'
         if (shooter.type !== "Helicopter" && weapon.type !== "Artillery") {
-            let mpMax = parseInt(shooter.token.get("bar3_max"));
-            let mpLeft = parseInt(shooter.token.get("bar3_value"));
-            let fullMove = ((mpLeft/mpMax) < .5) ? true:false;
             if (weapon.notes.includes("Stabilized")) {
                 if (shooter.player === 0) {
-                    if (fullMove) {
+                    if (shooter.token.get(SM.longMove)) {
                         weapon.fp -= 2;
                         shooterTips += "<br>Movement -2 FP";
                     } else {
                         weapon.fp--;
                         shooterTips += "<br>Movement -1 FP";
                     }
-                } else if (shooter.player === 1 && fullMove) {
+                } else if (shooter.player === 1 && shooter.token.get(SM.longMove)) {
                     //if Nato and under half MP, then no effect
                     weapon.fp--;
                     shooterTips += "<br>Movement -1 FP";
@@ -2664,38 +2661,36 @@ log("Checking " + unit.name);
 
     const DirectFire = (msg) => {
         let Tag = msg.content.split(";");
-return
         let shooterID = Tag[1];
         let targetID = Tag[2];
         let weaponNumber = Tag[3];
         let options = Tag[4];
-    
+        let heloStatus;
+
         let shooter = Units[shooterID];
-        let shooterHex = HexMap[shooter.hexLabel];
         let target = Units[targetID];
+        if (target.type === "Leader" || target.type === "HQ") {
+            targetID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(id));
+            target = Units[targetID];
+        }
 
-//check if is leader or HQ and if is transfer to appr unit
+        if (!target) {
+            sendChat("","No Target Unit");
+            return;
+        }
 
-
-
-
-        let targetHex = HexMap[target.hexLabel];
         let weapon = DeepCopy(shooter.weapons[weaponNumber]);
         let losResult = LOS(shooter,target);
-        let damageType = weapon.type;   
         if (target.armourType === "Heavy" && weapon.notes.includes("HROF")) {
-            damageType = "AP";
+            weapon.type = "AP";
         }
 
         //validity checks
         let errorMsg = [];
-        if (shooter.token.get(SM.fired) === true) {
-            errorMsg.push("Unit has already Fired");
+        if (shooter.Ready() === false) {
+            errorMsg.push("Unit is not Ready");
         }
-        if (shooter.token.get("aura1_color") === "#000000" && shooter.id !== activeUnitID) {
-            errorMsg.push("Unit is Ops Complete");
-        }
-        if (shooter.Status() === false) {
+        if (shooter.Disrupted()) {
             errorMsg.push("Unit is Disrupted and cannot Fire");
         }
         if (shooter.token.get(SM.oom) === true && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
@@ -2708,61 +2703,40 @@ return
         if (losResult.distance > (weapon.range * 2)) {
             errorMsg.push("Out of Range of Weapon");
         }
-        if (weapon.notes.includes("Minimum") && losResult.distance < 3) {
-            errorMsg.push("Weapon has a Minimum Range of 3");
-        }
-        if (weapon.notes.includes("Direct Fire Capable") && losResult.distance > 6) {
-            errorMsg.push("Max Range Firing Direct is 6");
-    ///? 
+        if (losResult.distance > weapon.minRange) {
+            errorMsg.push("Weapon has a Minimum Range of " + weapon.minRange);
         }
         if (shooterHex.terrain === "Water" && shooter.type !== "Helicopter" && shooter.type !== "Aircraft") {
             errorMsg.push("Cannot Fire from Water Hex");
         }
-        if (shooter.token.get(SM.oom) === true && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
-            errorMsg.push("Out of Missiles");
+        if (shooter.type === "Helicopter") {
+            heloStatus = shooter.HeloStatus();
+            if (shooter.HeloStatus() === "NOE") {
+                errorMsg.push("NOE - Cannot Fire");
+            } else if (heloStatus === "Landed" && weapon.notes.includes("ATGM")) {
+                errorMsg.push("Cannot Fire ATGM while Landed");
+            }    
         }
-        let mpMax = 1, mpUsed = 0, underHalf = true;
-        if (shooter.type !== "Aircraft") {
-            mpMax = parseInt(shooter.token.get("bar1_max"));
-            mpUsed = mpMax - parseInt(shooter.token.get("bar1_value"));
-            underHalf = (mpUsed <= Math.floor(mpMax/2)) ? true:false;
-        }
-        if (shooter.type === "Helicopter" && shooter.type !== "Aircraft" && mpUsed > 12) {
-            errorMsg.push("Helicopter Moved Too Far to Fire");
-        }
-        if (shooter.type !== "Helicopter" && shooter.type !== "Aircraft" && weapon.notes.includes("Stabilized") === false && underHalf === false) {
+        if (weapon.notes.includes("Stabilized") === false && shooter.token.get(SM.longMove)) {
             errorMsg.push("Moved too far to fire");
         }
-
         if (damageType === "AP" && (target.type === "Infantry" || target.type === "Towed")) {
             errorMsg.push("AP Ineffective vs this Target");
         }
         if (damageType === "HE" && target.armourType === "Heavy") {
             errorMsg.push("HE Ineffective vs this Target");
         }
-        if (weapon.notes.includes("SAM")) {
-            if (target.type !== "Aircraft" && target.type !== "Helicopter") {
-                errorMsg.push("SAMs cannot target this Unit");
-            }
-            if (target.type === "Helicopter") {
-                if (target.token.get(SM.landed) === true) {
-                    errorMsg.push("SAMs cannot target landed Helicopters");
-                }
-                if (target.toke.get(SM.noe) === true) {
-                    errorMsg.push("SAMs cannot target Helicopters in NOE");
-                }
-            }
+        if (weapon.notes.includes("SAM") && target.type !== "Aircraft" && target.type !== "Helicopter") {
+            errorMsg.push("SAMs cannot target this Unit");
+            
         }
-        if ((target.type === "Helicopter" && target.token.get(SM.landed) === false) || target.type === "Aircraft") {
-            if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                if (weapon.notes.includes("ATGM")) {
-                    errorMsg.push("ATGM's cannnot target this Unit");
-                } else {
-                    if (losResult.distance > weapon.range || losResult.distance > 10) {
-                        errorMsg.push("Out of Range for AA Fire with this weapon");
-                    }
-                }
-            }
+        if (target.type === "Helicopter" || target.type === "Aircraft") {
+            
+
+
+
+
+
         }
 
 
@@ -3961,6 +3935,7 @@ return
                 unit.unloaded = false;
                 unit.passUnloaded = false;
                 unit.token.set(SM.leaderBonusUsed,false);
+                unit.token.set(SM.longMove,false);
             } 
         })
     }
@@ -4224,6 +4199,9 @@ return
         
     const EndPhase = () => {
         RemoveMoveMarkers();
+        _.each(Scenario.formations, formation => {
+            ResetFlags[formation];
+        })
         //Marker Removal
         _.each(Units,unit => {
             //remove all OPS Complete, out of command
@@ -4395,7 +4373,7 @@ return
                 }
             }
             if (unit.type === "Helicopter" && mode === "Flying") {
-                outputCard.body.push("Moving less than 12 hexes allows fire without penalty");
+                outputCard.body.push("Moving 12 hexes or less allows fire without penalty");
                 outputCard.body.push("More than that may not fire");
             }
         } else if (action === "Indirect Fire") {
@@ -4856,9 +4834,8 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 if ((cost <= remainingMove) || (usedMove === 0 && state.WaW85.weatherLevel === 4 && cost < 100)) {
                     //2nd condition above is if hasnt moved yet in severe weather, can move 1 hex regardless of cost
                     //place a move marker
-                    totalCost = cost + usedMove;
-
-                    let mmID = CreateMoveMarker(startHex,endHex,totalCost);
+                    usedMove += cost;
+                    let mmID = CreateMoveMarker(startHex,endHex,usedMove);
                     //update remaining movement
                     let newMove = Math.max(0,remainingMove - cost);
                     unit.token.set("bar3_value",newMove);
@@ -4870,6 +4847,15 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 } else {
                     endHex = DeepCopy(startHex);
                 }
+
+                if (usedMove > Math.floor(totalMove/2)  && moveTypes.includes(unit.type)) {
+                    unit.token.set(SM.longMove,true);
+                } else {
+                    unit.token.set(SM.longMove,false);
+                }
+                if (unit.type === "Helicopter" && usedMove > 12) {
+                    unit.token.set(SM.longMove,true);
+                }
             }
         }
         unit.passUnloaded = false;
@@ -4878,6 +4864,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             left: endHex.centre.x,
             top: endHex.centre.y,
         })
+
         ChangeTokenIDs(unit.id,startHex.label,endHex.label);
         unit.MoveAttached();
     }
