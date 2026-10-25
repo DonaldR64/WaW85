@@ -2057,7 +2057,7 @@ log("LOS: " + interHex.los)
                 if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
 log("Smoke")
                     //1 smoke or fire hex, even if hexside, blocks LOS, unless thermal
-                    if (thermal === true && smokeHexes < 6) {
+                    if (thermal === true) {
                         smokeHexes++;
                     } else {
                         blocked = 2;
@@ -3510,7 +3510,7 @@ return
                 lines.push("A Blizzard hits the Battlefield");
                 lines.push("The Ground becomes covered in Deep Snow");
             }
-            lines.push("LOS Is reduced, Movement is reduced, Direct and Indirect Fire is reduced");
+            lines.push("LOS is reduced, Movement is reduced, Direct and Indirect Fire is severely reduced");
             lines.push("Units may receive a Defensive Bonus");
             lines.push("Helicopters and Close Air Support leave the Battlefield");
             AirGone = true;
@@ -3526,7 +3526,7 @@ return
                 lines.push("Heavy Snow begins to fall");
                 lines.push("The Ground becomes covered in Deep Snow");
             }
-            lines.push("LOS Is reduced");
+            lines.push("LOS is reduced");
             lines.push("Units may receive a Defensive Bonus");
             lines.push("Helicopters and Close Air Support leave the Battlefield");
             AirGone = true;
