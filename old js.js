@@ -3105,6 +3105,9 @@ return
         //Resolve FFE
 outputCard.body.push("FFE Effects")
 
+//based on artillery type
+
+
 
     //Sound, FX
         if (artUnit.special.includes("Offboard") === false) {
