@@ -2403,7 +2403,10 @@ log("Checking " + unit.name);
     }
 
 
-    const Attack = (weapon,shooter,target,losResult) => {
+    const Attack = (weapon,shooter,target) => {
+
+        let thermal = (shooter.special.includes("Thermal Imaging")) ? true:false;
+        let losResult = LOS(shooter,target,thermal);
 
         let defDice = target.armour;
         let ddT = "";
@@ -2427,7 +2430,7 @@ log("Checking " + unit.name);
 
         //10.6.2 HQ or Leader Bonus
         let leaderBonus = 0;
-        if (damageType !== "Artillery") {
+        if (weapon.type !== "Artillery") {
             leaderBonus = shooter.Leader().command;
             shooterTips += "<br>Leader/HQ Bonus +" + leaderBonus + "FP";
             fp += leaderBonus;
@@ -2435,7 +2438,7 @@ log("Checking " + unit.name);
 
         //10.6.3 - minimum range for ATGM already done above
         //10.6.4 Point Blank Range, 10.6.5 Long Range
-        if (weapon.type !== "Artillery" || weapon.type !== "CAS") {
+        if (weapon.type !== "Artillery" && weapon.type !== "CAS") {
             if (losResult.distance > weapon.range || losResult.distance > 1 && Scenario.night === true) {
                 if (state.WaW85.weatherLevel > 0 || state.WaW85.squall) {
                     toHit += 2;
@@ -2505,7 +2508,7 @@ log("Checking " + unit.name);
             defBonusDice++;
         }
         //smoke for thermal imagers - anyone else will have no LOS
-        if (losResult.smokeHexes > 0) {
+        if (losResult.smokeHexes > 0 && weapon.type !== "Artillery") {
             shooterTips += "<br>Smoke in Intervening Hexes -" + losResult.smokeHexes;
             toHit += losResult.smokeHexes;
         }
@@ -2588,11 +2591,12 @@ log("Checking " + unit.name);
             }
         }
         attackRolls.sort().reverse();
-        let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+" + shooterTips;
+        let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+<br>" + shooterTips;
         tip = '[🎲](#" class="showtip" title="' + tip + ')';
 
         if (hits > 0) {
-            outputCard.body.push(tip + " Firing " + weapon.name + ": " + hits + " Hits");
+            let s = (hits === 1) ? "":"s"
+            outputCard.body.push(tip + target.name + " takes " + hits + " Hit" + s);
             //Defender - armour then terrain saves
             if (defDice > 0) {
                 for (let i=0;i<defDice;i++) {
@@ -2603,7 +2607,7 @@ log("Checking " + unit.name);
                     armourRolls.push(roll);
                 }
                 armourRolls.sort().reverse();
-                tip = "Rolls: " + armourRolls + " vs. " + save + "+" + armourTips;
+                tip = "Rolls: " + armourRolls + " vs. " + save + "+<br>" + armourTips;
                 tip = '[🎲](#" class="showtip" title="' + tip + ')';
                 outputCard.body.push(tip + " Armour: " + armourSaves + " Saves");
             }
@@ -2636,7 +2640,7 @@ log("Checking " + unit.name);
             }
 
         } else {
-            outputCard.body.push(tip + " Firing " + weapon.name + ": Misses");
+            outputCard.body.push(tip + target.name + " is Missed");
         }
 
 
@@ -3195,6 +3199,8 @@ return
     
     
     const CheckConcealment = (unit) => {
+        return false;
+
         if (unit.type === "Helicopter" || unit.type === "Aircraft") {
             return false;
         }
@@ -3333,6 +3339,7 @@ return
             return;
         }
         outputCard.body.push(spotter.name + " is Spotting");
+        outputCard.body.push(artUnit.name + " is firing " + weapon.name);
         //spot check
         if (results.spotCheck === true) {
             let spotResult = spotter.CommandTest();
@@ -3395,7 +3402,7 @@ return
             }
             for (let i=0;i<targetHex.tokenIDs.length;i++) {
                 let unit2 = Units[targetHex.tokenIDs[i]];
-                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader") {continue};
+                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader" || unit2.id === target.id) {continue};
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
                 if (i > 0) {outputCard.body.push("[hr]")};
                 Attack(weapon,artUnit,unit2);
