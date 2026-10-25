@@ -7,6 +7,14 @@ const Attack = (weapon,shooter,target,losResult) => {
     let targetTips = "";
     let toHit = weapon.toHit;
     let fp = weapon.fp;
+
+
+    if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
+        defDice = 1;
+        targetTips += "<br>Armour vs Artillery = 1 Armour Dice";
+    }
+
+
     //10.6.1 AA Fire
     let aaFlag = false;
 
@@ -149,11 +157,10 @@ const Attack = (weapon,shooter,target,losResult) => {
         toHit = 6;
         shooterTips = "<br>Severe Weather FP = 1, TH = 6";
     }
-
-    if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
-        defDice = 1;
-        targetTips += "<br>Armour vs Artillery = 1 Armour Dice";
-    }
+    //replace 1st <br>
+    shooterTips = shooterTips.replace("<br>","");
+    targetTips = targetTips.replace("<br>","");
+    
     //defDice, needing save+
     //defBonusDice, needing 5+
     //fp dice, needing toHit+
