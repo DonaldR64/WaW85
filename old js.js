@@ -3385,8 +3385,8 @@ return
                 let unit2 = Units[targetHex.tokenIDs[i]];
                 if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader") {continue};
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+                if (i > 0) {outputCard.body.push("[hr]")};
                 Attack(weapon,shooter,unit2);
-                outputCard.body.push("[hr]")
             }
         }
         if (type === "Smoke") {
