@@ -4149,7 +4149,6 @@ outputCard.body.push("FFE Effects")
             if (unit.token.get(SM.passenger)) {
                 errorMsg.push("Already has a Passenger");
             }
-            if (passenger.type === )
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
                 errorMsg.push("Can only Load when Landed");
             }
