@@ -1999,12 +1999,14 @@ const WaW85 = (() => {
     }
 
 
-    const LOS = (shooter,target) => {
+    const LOS = (shooter,target,thermal = false) => {
         let shooterHex = HexMap[shooter.hexLabel];
         let targetHex = HexMap[target.hexLabel];
         let distance = shooter.Distance(target);
         let shooterHeight = shooter.Height();
         let targetHeight = target.Height();
+        let delta = shooterHeight - targetHeight;
+        let smokeHexes = 0;
 
         let maxLOS = 70;
         if (state.WaW85.weatherLevel === 3 && Scenario.night === true) {
@@ -2020,6 +2022,8 @@ const WaW85 = (() => {
                 los: false,
                 losBlocked: "Maximum LOS Is " + maxLOS,
                 obscured: false,
+                delta: delta,
+                smokeHexes: 0,
             }
             return result;
         }
@@ -2052,7 +2056,16 @@ log("LOS: " + interHex.los)
                 //terrain
                 if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
 log("Smoke")
-                    //1 smoke or fire hex, even if hexside, blocks LOS
+                    //1 smoke or fire hex, even if hexside, blocks LOS, unless thermal
+                    if (thermal === true && smokeHexes < 6) {
+                        smokeHexes++;
+                    } else {
+                        blocked = 2;
+                        blockLabel = label;
+                        continue;
+                    }
+                }
+                if (interHex.fire.length > 0) {
                     blocked = 2;
                     blockLabel = label;
                     continue;
@@ -2142,11 +2155,16 @@ log("both hexes block")
 
         let obscured = (finalObscured > 0) ? true:false;
 
+
+
+
         let result = {
             distance: distance,
             los: finalLOS,
             losBlocked: finalBlockAt,
             obscured: obscured,
+            delta: delta,
+            smokeHexes: smokeHexes,
         }
 
         return result;
@@ -3043,7 +3061,13 @@ return
         let artUnit = Units[Tag[2]]
         let type = Tag[3]; //HE, Smoke etc
         let onboard = Tag[4] === "Onboard" ? true:false;
-        let weapon = artUnit.artWeapon;
+        let weapon = DeepCopy(artUnit.artWeapon);
+        let artSide = parseInt(artUnit.token.get("currentSide"));
+        weapon.fp = weapon.fp[artSide];
+        weapon.toHit = weapon.toHit[artSide];
+        weapon.type = "Artillery";
+
+
         SetupCard(artUnit.name,"FFE",artUnit.nation);
 
         let results = SpotterCheck(target,artUnit,onboard);
@@ -3108,9 +3132,25 @@ return
         outputCard.body.push("[hr]");
 
         //Resolve FFE
-outputCard.body.push("FFE Effects")
+        if (type === "HE") {
+            let targetHex = HexMap[target.hexLabel];
+            if (targetHex.tokenIDs.length === 0) {
+                outputCard.body.push("No effect");
+            }
+            for (let i=0;i<targetHex.tokenIDs.length;i++) {
+                let unit2 = Units[targetHex.tokenIDs[i]];
+                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader") {continue};
+                if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+                Attack(weapon,shooter,unit2);
+                outputCard.body.push("[hr]")
+            }
+        }
+        if (type === "Smoke") {
+            //place smoke, # based on unit and offboard/onboard
+        }
+        //other types
 
-//based on artillery type
+
 
 
 
