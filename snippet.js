@@ -79,7 +79,7 @@ const Attack = (weapon,shooter,target,losResult) => {
     //10.6.9 Composite or Reactive Armour vs ATGM
     if (weapon.notes.includes("ATGM") && (target.special.includes("Composite") || target.special.includes("Reactive"))) {
         save--;
-        targetTips += "<br>Composite/Reactive Armour +1 to Armour";
+        targetTips += "<br>Composite/Reactive Armour -1 to Save";
     }
     //10.6.10 Volley Fire - work this out in firing, inc. the weapon.fp by 1
     //10.6.11 Target is a Landed Helicopter
