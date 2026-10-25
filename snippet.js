@@ -5,7 +5,6 @@ const Attack = (weapon,shooter,target,losResult) => {
     let save = target.save;
     let shooterTips = "";
     let targetTips = "";
-    let terrainTips = "";
     let toHit = weapon.toHit;
     let fp = weapon.fp;
     //10.6.1 AA Fire
@@ -16,6 +15,8 @@ const Attack = (weapon,shooter,target,losResult) => {
     let leaderBonus = 0;
     if (damageType !== "Artillery") {
         leaderBonus = shooter.Leader().command;
+        shooterTips += "<br>Leader/HQ Bonus +" + leaderBonus + "FP";
+        fp += leaderBonus;
     }
 
     //10.6.3 - minimum range for ATGM already done above
@@ -148,6 +149,17 @@ const Attack = (weapon,shooter,target,losResult) => {
         toHit = 6;
         shooterTips = "<br>Severe Weather FP = 1, TH = 6";
     }
+
+    if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
+        defDice = 1;
+        targetTips += "<br>Armour vs Artillery = 1 Armour Dice";
+    }
+    //defDice, needing save+
+    //defBonusDice, needing 5+
+    //fp dice, needing toHit+
+
+//2638
+
 
 
 

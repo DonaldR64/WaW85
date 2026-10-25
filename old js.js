@@ -111,6 +111,8 @@ const WaW85 = (() => {
         EWReducing: "status_ew2::7901718", 
 
         passenger: "status_letters_and_numbers0266::5982386",
+
+        leaderBonusUsed: "status_blue",
     }; 
 
 
@@ -1098,6 +1100,7 @@ const WaW85 = (() => {
             let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
+                if (unit2.token.get(SM.leaderBonusUsed)) {continue};
                 let level = parseInt(unit2.token.get("currentSide"));
                 if (unit2.type === "Leader" || unit2.type === "HQ") {
                     stats.command = Math.max(stats.command,unit2.command[level]);
@@ -3693,7 +3696,7 @@ return
             if (unit) {
                 unit.unloaded = false;
                 unit.passUnloaded = false;
-
+                unit.token.set(SM.leaderBonusUsed,false);
             } 
         })
     }
