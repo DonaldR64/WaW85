@@ -4094,7 +4094,6 @@ outputCard.body.push("FFE Effects")
             outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         } else if (action === "Unload") {
-//put in combat lift off
             let errorMsg = [];
             let passenger = Units[state.WaW85.passengerID[unit.id]];
             if (!passenger) {
@@ -4117,20 +4116,21 @@ outputCard.body.push("FFE Effects")
                 })
             } else {
                 Unload(passenger,unit);
-                outputCard.body.push("Unloading can trigger Opp Fire");
-                outputCard.body.push("Then the passenger can move into an adjacent hex or stay put as part of the Unload");
+                outputCard.body.push("Unloading can trigger Opp Fire");       
+                outputCard.body.push("The Passenger can move into an adjacent hex or stay put as part of the Unload");
                 passenger.passUnloaded = true;
+                
                 if (mpMax > 0) {
                     outputCard.body.push("Transport's activation is Done");
                     unit.SetReady(false);
                 } else {
-                    if (unit.type !== "Helicopter") {
-                        outputCard.body.push("After Unloading, the Transport can Move");
-                    } else {
-                        if (unit.CommandTest().success) {
-                            outputCard.body.push("Helicopter can make a Combat Lift-Off and Move Again");
-                        }
-                    }
+                    outputCard.body.push("After Unloading, the Transport can Move");
+                }
+
+                if (unit.type === "Helicopter" && unit.CommandTest().success) {
+                    outputCard.body.push("Helicopter can make a Combat Lift-Off and Move Again");
+                } else {
+                    unit.SetReady(false);
                 }
                 unit.unloaded = true;
             }
