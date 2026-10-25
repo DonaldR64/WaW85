@@ -1,23 +1,23 @@
 const Attack = (weapon,shooter,target,losResult) => {
 
     let defDice = target.armour;
-    let defBonusDice = 0; //capped at 2;
-    let save = target.save;
-    let shooterTips = "";
-    let targetTips = "";
-    let toHit = weapon.toHit;
-    let fp = weapon.fp;
-
-
+    let ddT = "";
     if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
         defDice = 1;
-        targetTips += "<br>Armour vs Artillery = 1 Armour Dice";
+        ddT = " [Artillery]";
     }
-
+    let defBonusDice = 0; //capped at 2;
+    let save = target.save;
+    let toHit = weapon.toHit;
+    let fp = weapon.fp;
+    let shooterTips = weapon.fp + " FP needing " + toHit + "+ TH";
+    let targetTips = target.armourType + " Armour: " + defDice + " Dice" + ddT;
+    if (defDice > 0) {
+        targetTips += "<br>Armour Save: " + save + "+";
+    }
 
     //10.6.1 AA Fire
     let aaFlag = false;
-
 
     //10.6.2 HQ or Leader Bonus
     let leaderBonus = 0;
@@ -157,10 +157,8 @@ const Attack = (weapon,shooter,target,losResult) => {
         toHit = 6;
         shooterTips = "<br>Severe Weather FP = 1, TH = 6";
     }
-    //replace 1st <br>
-    shooterTips = shooterTips.replace("<br>","");
-    targetTips = targetTips.replace("<br>","");
-    
+
+
     //defDice, needing save+
     //defBonusDice, needing 5+
     //fp dice, needing toHit+
