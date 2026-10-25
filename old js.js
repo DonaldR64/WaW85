@@ -775,7 +775,7 @@ const WaW85 = (() => {
                 if (wnotes.includes("Stabilized")) {
                     stabilizedWeapons = true;
                 } 
-                if (wtype === "AP" && wminRange > 0) {
+                if (wtype === "AP" && wminrange > 0) {
                     apWeapon = true;
                 }
 
@@ -1948,7 +1948,10 @@ const WaW85 = (() => {
                 name = "Captain " + init + surname;
             }
         }
-        if (unit.type === "Leader" || unit.type === "Artillery Token" || unit.type === "Support") {
+        if (unit.type === "Leader") {
+            name = unit.charName;
+        }
+        if (unit.type === "Artillery Token" || unit.type === "Support") {
             name = unit.charName;
         }
 
@@ -1962,6 +1965,7 @@ const WaW85 = (() => {
         if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token" || unit.type === "Support") {
             toFront(unit.token);
         }
+
     }
 
 
@@ -2005,6 +2009,8 @@ const WaW85 = (() => {
     const LOS = (shooter,target,thermal = false) => {
         let shooterHex = HexMap[shooter.hexLabel];
         let targetHex = HexMap[target.hexLabel];
+log(shooter.name + ": " + shooter.hexLabel)
+log(target.name + ": " + target.hexLabel)
         let distance = shooter.Distance(target);
         let shooterHeight = shooter.Height();
         let targetHeight = target.Height();
@@ -2251,12 +2257,12 @@ log("both hexes block")
                     for(let a=0;a<abilArray.length;a++) {
                         abilArray[a].remove();
                     } 
-                    AddAbility("Check","!ArtCheck;Offboard;" + unit.id + ";" + artilleryID);
+                    AddAbility("Check","!ArtCheck;Offboard;@{selected|token_id};" + artilleryID,unit.charID);
                     if (unit.name.includes("HE")) {
-                        AddAbility("FFE","!FFE;-;" + unit.id + ";" + artilleryID + ";HE;Offboard",unit.charID);
+                        AddAbility("FFE","!FFE;@{selected|token_id};" + artilleryID +";HE;Offboard",unit.charID);
                     }
                     if (unit.name.includes("Smoke")) {
-                        AddAbility("FFE","!FFE;SpotterID;" + unit.id + ";" + artilleryID + ";Smoke;Offboard",unit.charID);
+                        AddAbility("FFE","!FFE;@{selected|token_id};" + artilleryID +";Smoke;Offboard",unit.charID);
                     }
 
     //others
@@ -2341,6 +2347,11 @@ log("both hexes block")
         let spotter;
         let spotCheck = true;
         let errorMsg = [];
+log("Target: " + target.name)
+log("Art Unit: " + artUnit.name)
+log("Onboard: " + onboard)
+
+
         if (onboard === true) {
             let distance = artUnit.Distance(target);
             if (distance < artUnit.artWeapon.minRange) {
@@ -2357,6 +2368,7 @@ log("both hexes block")
                 let unit = Units[keys[i]];
                 if (unit.Ready() === false || unit.OOC() || unit.Disrupted()) {continue};
                 if (unit.nation === artUnit.nation) {
+log("Checking " + unit.name);
                     if (unit.type === "HQ" || unit.special.includes("Recon")) {
                         let spotterLOS = LOS(unit,target);
                         if (spotterLOS.los === true) {
@@ -3298,7 +3310,7 @@ return
 
 
     const FFE = (msg) => {
-        //!FFE;spotterID;targetID;artilleryID;type;Offboard - last can be false for onboard
+        //!FFE;targetID;artilleryID;type;Offboard - last can be false for onboard
         //for offboard tokens, spotterID  will be a placeholder
         let Tag = msg.content.split(";");
         let target = Units[Tag[1]];
@@ -3386,7 +3398,7 @@ return
                 if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader") {continue};
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
                 if (i > 0) {outputCard.body.push("[hr]")};
-                Attack(weapon,shooter,unit2);
+                Attack(weapon,artUnit,unit2);
             }
         }
         if (type === "Smoke") {
