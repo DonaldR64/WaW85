@@ -2335,7 +2335,7 @@ log("both hexes block")
         let results = SpotterCheck(target,artUnit,onboard);
         if (results.spotter !== false) {
             outputCard.body.push(results.spotter.name + " is Spotting");
-            outputCard.body.push("Artillery has Range to Target");
+            outputCard.body.push("Target is in Range of the Artillery");
             if (results.spotCheck === true) {
                 outputCard.body.push("A Spot Check will be Required");
             }
@@ -2418,10 +2418,10 @@ log("Checking " + unit.name);
         let save = target.save || 7;
         let toHit = weapon.toHit;
         let fp = weapon.fp;
-        let shooterTips = "<br>" + weapon.fp + " FP needing " + toHit + "+ TH";
+        let shooterTips = "<br>FP " + weapon.fp + ", " + toHit + "+";
         let armourTips = "<br>" + target.armourType + " Armour: " + defDice + " Dice" + ddT;
-        if (defDice > 0) {
-            armourTips += "<br>Armour Save: " + save + "+";
+        if (save < 7) {
+            armourTips += "<br>Save: " + save + "+";
         }
         let bonusTips = "";
 
@@ -2568,14 +2568,15 @@ log("Checking " + unit.name);
         }
 
         //display total FP, To Hit etc 
-        let line, line2
-        line = "FP: " + fp + " Dice, TH " + toHit + "+";
-        shooterTips = line + "<br>-----------------" + shooterTips;
-        let st = (defDice === 0) ? "":", Save " + save + "+";
-        armourTips = "Defense: " + defDice + " Dice" + st + "<br>-----------------" + armourTips;
-        if (defBonusDice > 0) {
-            bonusTips = "<br>Bonus: " + defBonusDice + " Dice, Save 5+" + "<br>-----------------" + bonusTips;
+        shooterTips = "<br>-----------------" + shooterTips;
+
+        if (defDice > 0) {
+            armourTips = defDice + " Dice, " + save + "+" + "<br>-----------------" + armourTips;
         }
+        if (bonusTips !== "") {
+            bonusTips = "<br>" + defBonusDice + " Dice, 5+" + "<br>-----------------" + bonusTips;
+        }
+
 
         //defDice, needing save+
         //defBonusDice, needing 5+
@@ -2591,12 +2592,14 @@ log("Checking " + unit.name);
             }
         }
         attackRolls.sort().reverse();
-        let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+<br>" + shooterTips;
-        tip = '[🎲](#" class="showtip" title="' + tip + ')';
+        let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+" + shooterTips;
+        let s = (hits === 1) ? "":"s"
+
+        let hitText = hits === 0 ? "Misses ":hits + " hit" + s + " on ";
+        tip = '[' + hitText + '](#" class="showtip" title="' + tip + ')';
+        outputCard.body.push(tip + target.name);
 
         if (hits > 0) {
-            let s = (hits === 1) ? "":"s"
-            outputCard.body.push(tip + target.name + " takes " + hits + " Hit" + s);
             //Defender - armour then terrain saves
             if (defDice > 0) {
                 for (let i=0;i<defDice;i++) {
@@ -2608,10 +2611,13 @@ log("Checking " + unit.name);
                 }
                 armourRolls.sort().reverse();
                 tip = "Rolls: " + armourRolls + " vs. " + save + "+<br>" + armourTips;
-                tip = '[🎲](#" class="showtip" title="' + tip + ')';
-                outputCard.body.push(tip + " Armour: " + armourSaves + " Saves");
+
+                let asText = armourSaves === 0 ? "No":armourSaves;
+                tip = '[' + asText+ '](#" class="showtip" title="' + tip + ')';
+                let as = armourSaves === 1 ? "":"s";
+                outputCard.body.push("Armour: " + tip + " Save" + as);
             }
-            if (defBonusDice > 0) {
+            if (bonusTips !== "") {
                 for (let i=0;i<defBonusDice;i++) {
                     let roll = randomInteger(6);
                     if (roll >= 5) {
@@ -2620,9 +2626,13 @@ log("Checking " + unit.name);
                     terRolls.push(roll);
                 }
                 terRolls.sort().reverse();
+                if (terRolls.length === 0) {terRolls = "Nil"}
                 tip = "Rolls: " + terRolls + " vs. 5+" + bonusTips;
-                tip = '[🎲](#" class="showtip" title="' + tip + ')';
-                outputCard.body.push(tip + " Terrain: " + terrainSaves + " Saves");
+                let ts = terrainSaves === 1 ? "":"s";
+                let tsText = terrainSaves === 0 ? "No":terrainSaves
+
+                tip = '[' + tsText + '](#" class="showtip" title="' + tip + ')';
+                outputCard.body.push("Terrain/Other: " + tip + " Save" + ts);
             }
 
 
@@ -2632,16 +2642,13 @@ log("Checking " + unit.name);
                 damage--;
             }
             if (damage > 0) {
-                outputCard.body.push(target.name + " takes " + damage + " Damage");
+                outputCard.body.push("[#ff0000]" + target.name + " takes " + damage + " Damage[/#]");
                 //apply damage
                 //excess damage to other units in hex
             } else {
                 outputCard.body.push("No Damage");
             }
-
-        } else {
-            outputCard.body.push(tip + target.name + " is Missed");
-        }
+        } 
 
 
 
@@ -3379,12 +3386,12 @@ return
                 PrintCard();
                 return;
             } else {
-                let newHex = Scatter(target);
-                if (scatterRoll2 > 4 && newHex) {
-                    newHex = Scatter(target);
+                let newLabel = Scatter(target);
+                if (scatterRoll2 > 4 && newLabel) {
+                    newLabel = Scatter(target);
                 }
-                if (newHex) {
-                    outputCard.body.push("FFE Scatters");
+                if (newLabel) {
+                    outputCard.body.push("FFE Scatters to Hex "+ newLabel);
                 } else {
                     outputCard.body.push("The Fire Scatters Off Map");
                     PrintCard();
@@ -3397,9 +3404,6 @@ return
         //Resolve FFE
         if (type === "HE") {
             let targetHex = HexMap[target.hexLabel];
-            if (targetHex.tokenIDs.length === 0) {
-                outputCard.body.push("No effect");
-            }
             for (let i=0;i<targetHex.tokenIDs.length;i++) {
                 let unit2 = Units[targetHex.tokenIDs[i]];
                 if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader" || unit2.id === target.id) {continue};
@@ -3450,7 +3454,7 @@ return
             target.token.remove();
             delete Units[target];
         }
-        return newHex;
+        return newLabel;
     }
 
 
