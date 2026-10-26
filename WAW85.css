@@ -265,7 +265,9 @@ input[type="hidden"][value="Infantry"].armour2-status ~ .armour2 {
 input[type="hidden"][value="Towed"].armour2-status ~ .armour2 {
     display: none;
 }
-
+input[type="hidden"][value="Aircraft"].armour2-status ~ .armour2 {
+    display: none;
+}
 
 
 
