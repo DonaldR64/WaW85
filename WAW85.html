@@ -39,7 +39,7 @@
 
     <div class="2colrow">
         <div class="col">
-                <h3>Armour</h3>
+                <h3>Armour - Flying/NOE if Helo</h3>
                 <label for="attr_armourtype">Armour Type:</label>
                 <select name="attr_armourtype">
                     <option value="" selected disabled hidden>Choose here</option>
@@ -61,6 +61,21 @@
             <label>Firepower:</label><input type="text" name="attr_assaultfp">
             <label>To Hit:</label><input type="text" name="attr_assaulttohit">
         </div> 
+
+        <div class = "col">
+            <h3>Armour 2 - Hover/Landed Helo</h3>
+                <label for="attr_armour2type">Armour Type:</label>
+                <select name="attr_armour2type">
+                    <option value="" selected disabled hidden>Choose here</option>
+                    <option value="Soft">Soft</option>
+                    <option value="Light">Light</option>
+                    <option value="Heavy">Heavy</option>
+                </select>          
+                <label>Dice:</label><input type="text" name="attr_armour2">
+                <label>Armour Save:</label><input type="text" name="attr_save2">
+        </div>
+
+
 
     </div> 
 
@@ -250,8 +265,27 @@
                     </div>
                 </div>   
             </div>
-
           </section>
+
+        <input type="hidden" name="attr_type" class="armour2-status" value="Infantry">
+          <section class="armour2 f-col">
+            <div class = "armour2display">
+                <h3><u><span name="attr_armour2type"></span> Armour</u></h3>
+                <div class="armour2info">
+                    <input type="hidden" name="attr_armour2type" class="armour2num-status" value="Soft">
+                    <div class="armour2num">
+                        <h3>Armour: <span name="attr_armour2"></span></h4>
+                    </div>
+                    <input type="hidden" name="attr_armour2type" class="armour2save-status" value="Soft">
+                    <div class="armour2save">
+                        <h3>Save: <span name="attr_save2"></span>+</h4>
+                    </div>
+                </div>   
+            </div>
+          </section>
+
+
+
 
 
 

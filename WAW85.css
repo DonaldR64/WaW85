@@ -203,9 +203,6 @@ input[type="hidden"][value="Artillery Token"].armour-status ~ .armour {
   flex-direction: center;
   background-color: white;
 }
-
-
-
 .armourinfo h3 {
   color: darkred;
 }
@@ -219,6 +216,59 @@ input[type="hidden"][value="Light"].armournum-status ~ .armournum {
 input[type="hidden"][value="Soft"].armoursave-status ~ .armoursave {
     display: none;
 }
+
+
+
+
+input[type="hidden"][value="Support"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="HQ"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="Leader"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="Artillery Token"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="Vehicle"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="Infantry"].armour2-status ~ .armour2 {
+    display: none;
+}
+input[type="hidden"][value="Towed"].armour2-status ~ .armour2 {
+    display: none;
+}
+
+
+
+
+
+.armour2 {
+  grid-area: assault;    
+  flex-direction: center;
+  background-color: white;
+}
+.armour2info h3 {
+  color: darkred;
+}
+
+input[type="hidden"][value="Soft"].armour2num-status ~ .armour2num {
+    display: none;
+}
+input[type="hidden"][value="Light"].armour2num-status ~ .armour2num {
+    display: none;
+}
+input[type="hidden"][value="Soft"].armour2save-status ~ .armour2save {
+    display: none;
+}
+
+
+
+
+
 
 
 .special {
@@ -243,6 +293,13 @@ input[type="hidden"][value="Leader"].assault-status ~ .assault {
 input[type="hidden"][value="Artillery Token"].assault-status ~ .assault {
     display: none;
 }
+input[type="hidden"][value="Helicopter"].assault-status ~ .assault {
+    display: none;
+}
+input[type="hidden"][value="Aircraft"].assault-status ~ .assault {
+    display: none;
+}
+
 
 
 .assault {
