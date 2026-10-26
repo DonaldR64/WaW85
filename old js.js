@@ -113,9 +113,6 @@ const WaW85 = (() => {
         passenger: "status_letters_and_numbers0266::5982386",
         longMove: "status_Advantage-or-Up::2006462",
 
-        leaderBonusUsed: "status_blue",
-
-        fired: "status_Flare::5867553",
     }; 
 
 
@@ -853,6 +850,7 @@ const WaW85 = (() => {
 
             this.unloaded = false; //a flag
             this.passUnloaded = false; //flag
+            this.leaderBonusUsed = false; //flag
 
             let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === id);
             if (transportID) {
@@ -1103,7 +1101,7 @@ const WaW85 = (() => {
             let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
-                if (unit2.token.get(SM.leaderBonusUsed)) {continue};
+                if (unit2.leaderBonusUsed) {continue};
                 let level = parseInt(unit2.token.get("currentSide"));
                 if (unit2.type === "Leader" || unit2.type === "HQ") {
                     stats.command = Math.max(stats.command,unit2.command[level]);
@@ -2438,8 +2436,11 @@ log("Checking " + unit.name);
         let leaderBonus = 0;
         if (weapon.type !== "Artillery") {
             leaderBonus = shooter.Leader().command;
-            shooterTips += "<br>Leader/HQ Bonus +" + leaderBonus + "FP";
-            fp += leaderBonus;
+            if (leaderBonus > 0) {
+                shooterTips += "<br>Leader/HQ Bonus +" + leaderBonus + "FP";
+                fp += leaderBonus;
+                shooter.leaderBonusUsed = true;
+            }            
         }
 
         //10.6.3 - minimum range for ATGM already done above
@@ -2696,7 +2697,7 @@ log("Checking " + unit.name);
         if (shooter.Ready() === false) {
             errorMsg.push("Unit is not Ready");
         }
-        if (shooter.token.get(SM.fired)) {
+        if (shooter.fired === true) {
             errorMsg.push("Support Weapon has already Fired");
         }
         if (shooter.Disrupted()) {
@@ -2816,9 +2817,7 @@ log("Checking " + unit.name);
         PrintCard();
         //mark shooter OPS Complete
         shooter.SetReady(false);
-        if (shooter.type === "Support") {
-            shooter.token.set(SM.fired,true);
-        }
+        shooter.fired = true;
     
     }
         
@@ -3803,9 +3802,9 @@ log("Checking " + unit.name);
             if (unit) {
                 unit.unloaded = false;
                 unit.passUnloaded = false;
-                unit.token.set(SM.leaderBonusUsed,false);
+                unit.leaderBonusUsed = false;
                 unit.token.set(SM.longMove,false);
-                unit.token.set(SM.fired,false);
+                unit.fired = false;
             } 
         })
     }
