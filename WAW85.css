@@ -217,6 +217,30 @@ input[type="hidden"][value="Soft"].armoursave-status ~ .armoursave {
     display: none;
 }
 
+input[type="hidden"][value="Support"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="HQ"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="Leader"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="Artillery Token"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="Vehicle"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="SuInfantrypport"].flying-status ~ .flyingstatus {
+    display: none;
+}
+input[type="hidden"][value="Towed"].flying-status ~ .flyingstatus {
+    display: none;
+}
+
+
+
 
 
 
