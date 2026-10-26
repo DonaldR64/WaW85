@@ -2789,10 +2789,7 @@ log("Checking " + unit.name);
         }
     
         Attack(weapon,shooter,target,aaFireMod);
-
-
-////////
-
+        //sound, fx
 
         //missile ammo check
         if (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM")) {
@@ -2802,13 +2799,9 @@ log("Checking " + unit.name);
                 shooter.token.set(SM.oom,true);
                 shooter.token.set(SM.low,false);
             } else {
-                let roll1 = randomInteger(6);
-                let roll2 = randomInteger(6);
-                let total = roll1 + roll2;
-                let tip = "Roll: " + roll1 + " + " + roll2 + " = " + total;
-                tip = '[🎲](#" class="showtip" title="' + tip + ')';
-                if (roll > shooter.morale) {
-                    outputCard.body.push(tip + " The Unit must Reload");
+                let results = CommandTest("Reload","");
+                if (results.success === false) {
+                    outputCard.body.push("The Unit must " + tip);
                     shooter.token.set(SM.reload,true);
                 }
             }
@@ -2817,7 +2810,7 @@ log("Checking " + unit.name);
 
         PrintCard();
         //mark shooter OPS Complete
-        
+        shooter.SetReady(false);
     
     }
         
