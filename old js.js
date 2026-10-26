@@ -2406,7 +2406,7 @@ log("Checking " + unit.name);
     }
 
 
-    const Attack = (weapon,shooter,target) => {
+    const Attack = (weapon,shooter,target,aaFireMod = false) => {
         let losResult = LOS(shooter,target);
         let defDice = target.armour;
         let ddT = "";
@@ -2425,8 +2425,12 @@ log("Checking " + unit.name);
         }
         let bonusTips = "";
 
-        //10.6.1 AA Fire
-        let aaFlag = false;
+        //10.6.1 AA Fire Mods, fed in from Direct Fire, true if a non-AA Weapon
+        if (aaFireMod) {
+            fp -= 2;
+            toHit = 6;
+            shooterTips += "<br>Non-AA Weapon -2 FP/TH 6";
+        }
 
         //10.6.2 HQ or Leader Bonus
         let leaderBonus = 0;
@@ -2438,7 +2442,7 @@ log("Checking " + unit.name);
 
         //10.6.3 - minimum range for ATGM already done above
         //10.6.4 Point Blank Range, 10.6.5 Long Range
-        if (weapon.type !== "Artillery" && weapon.type !== "CAS") {
+        if (weapon.type !== "Artillery" && shooter.type !== "Aircraft" && aaFireMod === false) {
             if (losResult.distance > weapon.range || losResult.distance > 1 && Scenario.night === true) {
                 if (state.WaW85.weatherLevel > 0 || state.WaW85.squall) {
                     toHit += 2;
@@ -2492,7 +2496,7 @@ log("Checking " + unit.name);
         }
         //10.6.10 Volley Fire - work this out in firing, inc. the weapon.fp by 1
         //10.6.11 Target is a Landed Helicopter
-        if (target.type === "Helictoper" && target.HeloStatus() === "Landed") {
+        if (target.type === "Helicopter" && target.HeloStatus() === "Landed") {
             fp++;
             toHit--;
             shooterTips.push("<br>Landed Helicopter -1TH & +1 FP");
@@ -2728,21 +2732,54 @@ log("Checking " + unit.name);
         }
         if (weapon.notes.includes("SAM") && target.type !== "Aircraft" && target.type !== "Helicopter") {
             errorMsg.push("SAMs cannot target this Unit");
-            
         }
-        if (target.type === "Helicopter" || target.type === "Aircraft") {
-            
-
-
-
-
-
+        //AA
+        let aaFireMod = false; //this is for mods for aaFire
+        if (target.type === "Helicopter") {
+            heloStatus = target.HeloStatus();
+            if (heloStatus === "NOE") {
+                if (weapon.notes.includes("SAM")) {
+                    errorMsg.push("SAMs cannot target NOE Helicopters");
+                } else if (weapon.notes.includes("ATGM")) {
+                    errorMsg.push("ATGMs cannot target NOE Helicopters");
+                } else if (weapon.notes.includes("AA") === false) {
+                    let maxRange = Math.min(weapon.range,10);
+                    aaFireMod = true;
+                    if (losResult.distance > maxRange) {
+                        errorMsg.push("Helicopter out of Range for non-AA Weapon");
+                    } 
+                }
+            } else if (heloStatus === "Flying" || heloStatus === "Hovering") {
+                if (weapon.notes.includes("ATGM")) {
+                    errorMsg.push("ATGMs cannot target " + heloStatus +" Helicopters");
+                } else if (weapon.notes.includes("AA") === false) {
+                    let maxRange = Math.min(weapon.range,10);
+                    aaFireMod = true;
+                    if (losResult.distance > maxRange) {
+                        errorMsg.push("Helicopter out of Range for non-AA Weapon");
+                    } 
+                }
+            } else if (heloStatus === "Landed") {
+                if (weapon.notes.includes("SAM")) {
+                    errorMsg.push("SAMs cannot target Landed Helicopters");
+                }
+            }
         }
-
+        if (target.type === "Aircraft") {
+            if (weapon.notes.includes("ATGM")) {
+                errorMsg.push("ATGMs cannot target Aircraft");
+            } else if (weapon.notes.includes("AA") === false) {
+                let maxRange = Math.min(weapon.range,10);
+                aaFireMod = true;
+                if (losResult.distance > maxRange) {
+                    errorMsg.push("Aircraft out of Range for non-AA Weapon");
+                } 
+            }
+        }
 
 
         SetupCard(shooter.name,"Direct Fire",shooter.nation);
-    
+
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
                 outputCard.body.push(msg);
@@ -2751,181 +2788,11 @@ log("Checking " + unit.name);
             return;
         }
     
-        let firepower = (shooter.health === "Full") ? weapon.fp[0]:weapon.fp[1];
-        let toHit = (shooter.health === "Full") ? weapon.toHit[0]:weapon.toHit[1];
-        let defDice = target.armour;
-        let save = target.save;
-        
-        let shooterTips = "";
-        let armourTips = "";
-        let terrainTips = "";
-        //check modifiers
-        let fpMod = 0;
-        let toHitMod = 0;
-        let defBonusDice = 0;
-        let aaflag = false;
-        //10.6.1 AA Fire
-        if (((target.type === "Helicopter" && target.token.get(SM.landed) === false) || target.type === "Aircraft") && weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-            shooterTips += "<br>AA Fire with non-AA Weapon -2 FP"
-            fpMpd -= 2;
-            toHit = 6;
-            aaflag = true;
-        }
-        //10.6.2 HQ or Leader Bonus
-        //10.6.3 - minimum range for ATGM already done above
-        //10.6.4 Point Blank Range
-        if (losResult.distance <= Math.floor(weapon.range/2) && shooter.type !== "Aircraft" && aaflag === false) {
-            shooterTips += "<br>Point Blank Range +1";
-            toHitMod--;
-        }
-        //10.6.5 Long Range
-        if (losResult.distance > weapon.range && shooter.type !== "Aircraft" && aaflag === false) {
-            shooterTips += "<br>Long Range -1";
-            toHitMod++;
-        }
-        //10.6.6 firing into adjacent smoke hex 10.6.6
-        if (targetHex.smoke === true) {
-            shooterTips += "<br>Smoke in Target Hex +1";
-            toHitMod++;
-        }
-        //10.6.7 firing out of a smoke filled hex into an adjacent hex
-        if (shooterHex.smoke === true) {
-            shooterTips += "<br>Smoke in Shooter's Hex +1";
-            toHitMod++;
-        }
-        //10.6.8 Terrain
-        let terBonus = 0;
-        if (target.type === "Infantry") {
-            terBonus = targetHex.defenseBonus.Troops
-        } 
-        if (target.type === "Vehicle") {
-            terBonus = targetHex.defenseBonus.Vehicles
-        }
-        if (losResult.delta < 0 && aaflag === false) {
-            terBonus += 1;
-        }
-        if (terBonus !== 0) {
-            let sign = (terBonus > 0) ? "+":"-";
-            terrainTips += "<br>Terrain Bonus: " + sign + terBonus + " Dice";
-            defBonusDice += terBonus;
-        }
-        //10.6.9 Composite or Reactive Armour vs ATGM
-        if (weapon.notes.includes("ATGM") && (target.special.includes("Composite") || target.special.includes("Reactive"))) {
-            save--;
-            armourTips += "<br>Composite/Reactive Armour +1 to Armour";
-        }
-        //10.6.10 Volley Fire - use options for this
-        //10.6.11 Target is a Landed Helicopter
-        //10.6.12 ATGM at a target in blocking terrain
-        if (weapon.notes.includes("ATGM") && targetHex.los === "Blocks") {
-            terrainTips += "<br>ATGM vs Blocking Terrain +1 Dice";
-            defBonusDice++;
-        }
-        //10.6.13 Concealment
-        if (CheckConcealment(target) === true) {
-            terrainTips += "<br>Concealment +1 Dice";
-            defBonusDice++;
-        }
-
-        //smoke for thermal imagers - anyone else will have no LOS
-        if (losResult.smokeHexes > 0) {
-            shooterTips += "<br>Smoke in Intervening Hexes -" + losResult.smokeHexes;
-            toHitMod -= losResult.smokeHexes;
-        }
-        //Weather
-
-        //Night
+        Attack(weapon,shooter,target,aaFireMod);
 
 
-        //10.6.14 Max Defensive Bonus
-        if (target.armourType === "Heavy" || target.armourType === "Light") {
-            if (defBonusDice > 2) {
-                defBonusDice = 2;
-                terrainTips += "<br>Max of 2 Dice";
-            }
-        }
-        //10.6.15 Max To Hit of 6
-        toHit = Math.min(6,toHit + toHitMod);
+////////
 
-        //11.0 Move and Fire Effects
-        if (shooter.type !== "Helicopter" && mpUsed > 0) {
-            if (weapon.notes.includes("Stabilized")) {
-                if (shooter.player === 0) {
-                    if (underHalf === true) {
-                        fpMod--;
-                        shooterTips += "<br>Movement -1 Dice";
-                    } else {
-                        fpMod -= 2;
-                        shooterTips += "<br>Movement -2 Dice";
-                    }
-                } else if (shooter.player === 1 && underHalf === false) {
-                    //if Nato and under half MP, then no effect
-                    fpMod--;
-                    shooterTips += "<br>Movement -1 Dice";
-                }
-            } else {
-                //over half MP has been screened out above
-                fpMod -= 2;
-                shooterTips += "<br>Movement -2 Dice";
-            }
-        }
-        //10.6.16 Min FP  of 1
-        firepower = Math.max(1,firepower + fpMod);
-        //10.6.17 All Water Hex - done above in error msg
-    
-        //attacker - firepower, toHit
-        let hits = 0,armourSaves = 0;terrainSaves = 0;
-        let attackRolls = [],armourRolls = [],terRolls = [];
-        for (let i=0;i<firepower;i++) {
-            let roll = randomInteger(6);
-            if (roll >= toHit) {
-                hits++;
-            }
-            attackRolls.push(roll);
-        }
-        let tip = "Rolls: " + attackRolls.toString() + " vs. " + toHit + "+" + shooterTips;
-        tip = '[🎲](#" class="showtip" title="' + tip + ')';
-
-        outputCard.body.push(tip + " Firing " + weapon.name + ": " + hits + " Hits");
-
-        if (hits > 0) {
-            //Defender - armour then terrain saves
-            if (defDice > 0) {
-                for (let i=0;i<defDice;i++) {
-                    let roll = randomInteger(6);
-                    if (roll >= save) {
-                        armourSaves++;
-                    }
-                    armourRolls.push(roll);
-                }
-                tip = "Rolls: " + armourRolls + " vs. " + save + "+" + armourTips;
-                tip = '[🎲](#" class="showtip" title="' + tip + ')';
-                outputCard.body.push(tip + " Armour: " + armourSaves + " Saves");
-            }
-            if (defBonusDice > 0) {
-                for (let i=0;i<defBonusDice;i++) {
-                    let roll = randomInteger(6);
-                    if (roll >= 5) {
-                        terrainSaves++;
-                    }
-                    terRolls.push(roll);
-                }
-                tip = "Rolls: " + terRolls + " vs. 5+" + terrainTips;
-                tip = '[🎲](#" class="showtip" title="' + tip + ')';
-                outputCard.body.push(tip + " Terrain: " + terrainSaves + " Saves");
-            }
-
-
-            let damage = Math.max(0,hits-armourSaves-terrainSaves);
-            if (targetHex.improved === true && target.type !== "Aircraft" && target.type === "Helicopter") {
-                outputCard.body.push("Improved Positions reduce Damage");
-                damage--;
-            }
-            outputCard.body.push("Total: " + damage + " Damage");
-
-            target.ApplyDamage(damage,damageType);
-
-        }        
 
         //missile ammo check
         if (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM")) {
@@ -2950,7 +2817,7 @@ log("Checking " + unit.name);
 
         PrintCard();
         //mark shooter OPS Complete
-        shooter.token.set("aura1_color","#000000");
+        
     
     }
         
