@@ -751,7 +751,7 @@ const WaW85 = (() => {
                     range: wrange,
                     fp: wfp, //array
                     toHit: wtoHit, //array
-                    wsound: wsound,
+                    sound: wsound,
                     notes: wnotes,
                 }
                 if (wnotes.includes("Indirect")) {
@@ -1994,8 +1994,8 @@ const WaW85 = (() => {
         let thermal = shooter.special.includes("Thermal") ? true:false;
         let shooterHex = HexMap[shooter.hexLabel];
         let targetHex = HexMap[target.hexLabel];
-log(shooter.name + ": " + shooter.hexLabel)
-log(target.name + ": " + target.hexLabel)
+//log(shooter.name + ": " + shooter.hexLabel)
+//log(target.name + ": " + target.hexLabel)
         let distance = shooter.Distance(target);
         let shooterHeight = shooter.Height();
         let targetHeight = target.Height();
@@ -2026,10 +2026,10 @@ log(target.name + ": " + target.hexLabel)
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
-log("S Height: " + shooterHeight)
-log("T Height: " + targetHeight)
+//log("S Height: " + shooterHeight)
+//log("T Height: " + targetHeight)
 
-log(interLabels)
+//log(interLabels)
         let finalBlockAt;
         let finalLOS = true;
         let finalObscured = 0;
@@ -2044,12 +2044,12 @@ log(interLabels)
             for (let side=0;side<2;side++) {
                 let label = interLabels[side][i];
                 let interHex = HexMap[label];
-log(side + " - " + label + ": " + interHex.terrain)
-log("H:" + interHex.height)
-log("LOS: " + interHex.los)
+//log(side + " - " + label + ": " + interHex.terrain)
+//log("H:" + interHex.height)
+//log("LOS: " + interHex.los)
                 //terrain
                 if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
-log("Smoke")
+//log("Smoke")
                     //1 smoke or fire hex, even if hexside, blocks LOS, unless thermal
                     if (thermal === true) {
                         smokeHexes++;
@@ -2066,7 +2066,7 @@ log("Smoke")
                 }
                 if (shooterHeight === targetHeight) {
                     if ((interHex.los === "Blocks" || interHex.rubble.length > 0) && interHex.height > shooterHeight) {
-log("Blocking Terrain")
+//log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2077,14 +2077,14 @@ log("Blocking Terrain")
                 } else {
                     //terrain height than both = LOS Blocked
                     if (interHex.height > shooterHeight && interHex.height > targetHeight) {
-log("Intervening Higher Terrain")
+//log("Intervening Higher Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
                     }
                     //terrain higher than one and equal to other = LOS Blocked
                     if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
-log("Higher than one, equal to other")
+//log("Higher than one, equal to other")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2092,7 +2092,7 @@ log("Higher than one, equal to other")
                     //Blind Spots for 1 height difference
                     if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
                         if (len < 2*i) {
-log("Blind Spot")
+//log("Blind Spot")
                             blocked++;
                             blockLabel = label;
                             continue;
@@ -2100,7 +2100,7 @@ log("Blind Spot")
                     }
                     if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
                         if (len > 2*i) {
-log("Blind Spot")
+//log("Blind Spot")
 
                             blocked++;
                             blockLabel = label;
@@ -2109,7 +2109,7 @@ log("Blind Spot")
                     }
                     //Blind spot for 2 height+ differrence is one hex
                     if ((shooterHeight - interHex.height > 1 && i === (len-1) && interHex.height > targetHeight) ||  (targetHeight - interHex.height > 1 && i === 0 && interHex.height > shooterHeight) ) {
-log("Blind Spot 2+")
+//log("Blind Spot 2+")
                         blocked++;
                         blockLabel = label;
                         continue;
@@ -2122,7 +2122,7 @@ log("Blind Spot 2+")
             if (obscured === 2) {
                 finalObscured++;
                 if (finalObscured > 1) {
-log("2 Obscuring Hexes")
+//log("2 Obscuring Hexes")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
@@ -2134,13 +2134,13 @@ log("2 Obscuring Hexes")
             if (blocked === 1) {
                 edgeBlock++;
                 if (edgeBlock > 1) {
-log("2 Blocking Edges")
+//log("2 Blocking Edges")
                     finalBlockAt = blockLabel;
                     finalLOS = false;
                     break;
                 } 
             } else if (blocked === 2) {
-log("both hexes block")
+//log("both hexes block")
                 finalBlockAt = blockLabel;
                 finalLOS = false;
                 break;
@@ -2398,9 +2398,9 @@ log("Checking " + unit.name);
         }
         let defBonusDice = 0; //capped at 2;
         let save = target.save || 7;
-        let toHit = weapon.toHit;
-        let fp = weapon.fp;
-        let shooterTips = "<br>FP " + weapon.fp + ", " + toHit + "+";
+        let toHit = weapon.toHit[parseInt(shooter.token.get("currentSide"))];
+        let fp = weapon.fp[parseInt(shooter.token.get("currentSide"))];
+        let shooterTips = "<br>FP " + fp + ", TH " + toHit + "+";
         let armourTips = "<br>" + target.armourType + " Armour: " + defDice + " Dice" + ddT;
         if (save < 7) {
             armourTips += "<br>Save: " + save + "+";
@@ -2525,33 +2525,33 @@ log("Checking " + unit.name);
         toHit = Math.min(6,toHit);
 
         //11.0 Move and Fire Effects, direct fire will remove 'illegals'
-        if (shooter.type !== "Helicopter" && weapon.type !== "Artillery") {
+        if (shooter.type !== "Helicopter" && weapon.type !== "Artillery" && parseInt(shooter.token.get("bar3_max")) > 0 ) {
             if (weapon.notes.includes("Stabilized")) {
                 if (shooter.player === 0) {
                     if (shooter.token.get(SM.longMove)) {
-                        weapon.fp -= 2;
+                        fp -= 2;
                         shooterTips += "<br>Movement -2 FP";
                     } else {
-                        weapon.fp--;
+                        fp--;
                         shooterTips += "<br>Movement -1 FP";
                     }
                 } else if (shooter.player === 1 && shooter.token.get(SM.longMove)) {
                     //if Nato and under half MP, then no effect
-                    weapon.fp--;
+                    fp--;
                     shooterTips += "<br>Movement -1 FP";
                 }
             } else {
                 //over half MP has been screened out in direct fire
-                weapon.fp -= 2;
+                fp -= 2;
                 shooterTips += "<br>Movement -2 FP";
             }
         }
         //10.6.16 Min FP  of 1
-        weapon.fp = Math.max(1,weapon.fp);
+        fp = Math.max(1,fp);
         //10.6.17 All Water Hex - done in direct fire
         //Weather level 4 overrides FP and To Hit
         if (state.WaW85.weatherLevel === 4) {
-            weapon.fp = 1;
+            fp = 1;
             toHit = 6;
             shooterTips = "<br>Severe Weather FP = 1, TH = 6";
         }
@@ -2679,8 +2679,18 @@ log("Checking " + unit.name);
         //validity checks
         let errorMsg = [];
         if (shooter.Ready() === false) {
-            errorMsg.push("Unit is not Ready");
+            if (shooter.type === "Support") {
+                let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(this.id));
+                if (parentID) {
+                    errorMsg.push("Unit is not Ready");
+                } else {
+                    errorMsg.push("Unit is Unattached");
+                }
+            } else {
+                errorMsg.push("Unit is not Ready");
+            }
         }
+
         if (target.armourType === "Heavy" && (target.type === "Vehicle" || target.type === "Aircraft")) {
             if (weapon.notes.includes("HROF") && losResult.distance > weapon.range) {
                 errorMsg.push("HROF can only affect Armour out to Effective Range");
@@ -2699,9 +2709,14 @@ log("Checking " + unit.name);
         if (shooter.Disrupted()) {
             errorMsg.push("Unit is Disrupted and cannot Fire");
         }
-        if (shooter.token.get(SM.oom) === true && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
+        if (shooter.token.get(SM.oom) && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
             errorMsg.push("Unit is Out of Missiles");
         }
+        if (shooter.token.get(SM.reload) && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
+            errorMsg.push("Unit Must Reload Missiles");
+        }
+
+
         if (losResult.los === false) {
             errorMsg.push("No LOS to Target");
             errorMsg.push(los.losReasons);
@@ -2709,10 +2724,10 @@ log("Checking " + unit.name);
         if (losResult.distance > (weapon.range * 2)) {
             errorMsg.push("Out of Range of Weapon");
         }
-        if (losResult.distance > weapon.minRange) {
+        if (losResult.distance < weapon.minRange) {
             errorMsg.push("Weapon has a Minimum Range of " + weapon.minRange);
         }
-        if (shooterHex.terrain === "Water" && shooter.type !== "Helicopter" && shooter.type !== "Aircraft") {
+        if (HexMap[shooter.hexLabel].terrain === "Water" && shooter.type !== "Helicopter" && shooter.type !== "Aircraft") {
             errorMsg.push("Cannot Fire from Water Hex");
         }
         if (shooter.type === "Helicopter") {
@@ -2725,12 +2740,6 @@ log("Checking " + unit.name);
         }
         if (weapon.notes.includes("Stabilized") === false && shooter.token.get(SM.longMove)) {
             errorMsg.push("Moved too far to fire");
-        }
-        if (damageType === "AP" && (target.type === "Infantry" || target.type === "Towed")) {
-            errorMsg.push("AP Ineffective vs this Target");
-        }
-        if (damageType === "HE" && target.armourType === "Heavy") {
-            errorMsg.push("HE Ineffective vs this Target");
         }
         if (weapon.notes.includes("SAM") && target.type !== "Aircraft" && target.type !== "Helicopter") {
             errorMsg.push("SAMs cannot target this Unit");
@@ -2804,9 +2813,11 @@ log("Checking " + unit.name);
 
 
 
-        Attack(weapon,shooter,target,aaFireMod,options);
+        Attack(weapon,shooter,target,aaFireMod);
+log("Sound: " + weapon.sound)
         PlaySound(weapon.sound);
-        FX(weapon.sound);
+
+
 
         //missile ammo check
         if (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM")) {
@@ -2816,9 +2827,9 @@ log("Checking " + unit.name);
                 shooter.token.set(SM.oom,true);
                 shooter.token.set(SM.low,false);
             } else {
-                let results = CommandTest("Reload","");
+                let results = shooter.CommandTest("Reload","");
                 if (results.success === false) {
-                    outputCard.body.push("The Unit must " + tip);
+                    outputCard.body.push("The Unit must " + results.tip);
                     shooter.token.set(SM.reload,true);
                 }
             }
@@ -3276,7 +3287,8 @@ log("Checking " + unit.name);
 
 
         PlaySound(weapon.sound);
-        FX(weapon.sound);
+log(weapon.sound)
+        FX(type,target.hexLabel);
 
         if (artUnit.special.includes("Offboard") === false) {
             artUnit.SetReady(false);
@@ -3347,7 +3359,34 @@ log("Checking " + unit.name);
     }
 
 
+    const FX = (type, hexLabel) => {
+        if (type === "HE") {
+            const CreateExplosion = () => {
+                let dx = randomInteger(71) - 36;
+                let dy = randomInteger(71) - 36;
+                let x = HexMap[hexLabel].centre.x + dx;
+                let y = HexMap[hexLabel].centre.y + dy;
+                let colours = ["smoke","death","fire","smoke","smoke"];
+                let colour = colours[randomInteger(colours.length) - 1] || "smoke";
+                spawnFx(x,y,"pooling-" + colour);
+            }
 
+            let numExplosions = 10;
+
+            const ChainExplosions = () => {
+                if (numExplosions--) {
+                    CreateExplosion();
+                    setTimeout(ChainExplosions,500);
+                }
+            }
+
+            ChainExplosions();
+        }
+
+
+
+
+    }
 
 
 
@@ -4508,7 +4547,7 @@ log("Checking " + unit.name);
                     continue;
                 }
                 abilityName = w + ": " + weapon.name;
-                action = "!DirectFire;" + unit.id + ";@{target|token_id};" + w;
+                action = "!DirectFire;@{selected|token_id};@{target|token_id};" + w;
                 AddAbility(abilityName,action,unit.charID);
             }
 
