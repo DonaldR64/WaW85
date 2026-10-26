@@ -3248,9 +3248,9 @@ log("Checking " + unit.name);
 
 
 
+        PlaySound(weapon.sound);
+        FX(weapon.sound);
 
-
-    //Sound, FX
         if (artUnit.special.includes("Offboard") === false) {
             artUnit.SetReady(false);
         }
