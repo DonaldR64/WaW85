@@ -835,7 +835,7 @@ const WaW85 = (() => {
 
             this.unloaded = false; //a flag
             this.passUnloaded = false; //flag
-            this.leaderBonusUsed = false; //flag
+            this.bonusUsed = {Leader: false, HQ: false}; //flag for direcct fire
 
             let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === id);
             if (transportID) {
@@ -1082,18 +1082,20 @@ const WaW85 = (() => {
             let stats = {
                 command: 0, //command bonus
                 morale: 0, //alt morale due to leader
+                type: "",
             }
             let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
-                if (unit2.leaderBonusUsed) {continue};
+                if (unit2.type !== "Leader" && unit2.type !== "HQ") {continue};
+                if (unit2.leaderBonusUsed && unit2.type === "Leader") {continue};
+                if (unit2.hqBonusUsed && unit2.type === "HQ") {continue};
                 let level = parseInt(unit2.token.get("currentSide"));
-                if (unit2.type === "Leader" || unit2.type === "HQ") {
-                    stats.command = Math.max(stats.command,unit2.command[level]);
-                }
+                stats.command = Math.max(stats.command,unit2.command[level]);
                 if (unit2.type === "Leader") {
                     stats.morale = unit2.morale[level];
                 }
+                stats.type = unit2.type;
             }            
             return stats;
         }
@@ -1133,11 +1135,11 @@ const WaW85 = (() => {
             if (leaderStats.morale !== 0) {
                 morale = Math.max(leaderStats.morale,morale);
             }
-            let bonus = this.Leader().command;
+            let bonus = leaderStats.command;
             let moraleRoll = randomInteger(6) + randomInteger(6) - bonus;
             let tip = "Roll: " + moraleRoll + " vs. " + morale;
             if (bonus !== 0) {
-                tip += "<br>Leader/HQ Bonus: " + bonus;
+                tip += "<br>" + leaderStats.type + " Bonus: " + bonus;
             }
             if (mods.length > 0) {
                 _.each(mods,mod => {
@@ -1146,9 +1148,6 @@ const WaW85 = (() => {
                     moraleRoll + mod.add;
                 })
             }
-
-
-
             let result = fail;
             if (moraleRoll <= morale) {
                 result = pass;
@@ -2420,11 +2419,11 @@ log("Checking " + unit.name);
         //10.6.2 HQ or Leader Bonus
         let leaderBonus = 0;
         if (weapon.type !== "Artillery") {
-            leaderBonus = shooter.Leader().command;
-            if (leaderBonus > 0) {
-                shooterTips += "<br>Leader/HQ Bonus +" + leaderBonus + "FP";
-                fp += leaderBonus;
-                shooter.leaderBonusUsed = true;
+            let stats = shooter.Leader();
+            if (stats.command > 0 && shooter.bonusUsed[stats.type] === false) {
+                shooterTips += "<br>" + stats.type + " Bonus +" + stats.command + "FP";
+                fp += stats.command;
+                shooter.bonusUsed[stats.type] = true;
             }            
         }
 
