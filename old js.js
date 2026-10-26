@@ -114,6 +114,8 @@ const WaW85 = (() => {
         longMove: "status_Advantage-or-Up::2006462",
 
         leaderBonusUsed: "status_blue",
+
+        fired: "status_Flare::5867553",
     }; 
 
 
@@ -2694,6 +2696,9 @@ log("Checking " + unit.name);
         if (shooter.Ready() === false) {
             errorMsg.push("Unit is not Ready");
         }
+        if (shooter.token.get(SM.fired)) {
+            errorMsg.push("Support Weapon has already Fired");
+        }
         if (shooter.Disrupted()) {
             errorMsg.push("Unit is Disrupted and cannot Fire");
         }
@@ -2811,6 +2816,9 @@ log("Checking " + unit.name);
         PrintCard();
         //mark shooter OPS Complete
         shooter.SetReady(false);
+        if (shooter.type === "Support") {
+            shooter.token.set(SM.fired,true);
+        }
     
     }
         
@@ -3040,44 +3048,45 @@ log("Checking " + unit.name);
     
     
     const CheckConcealment = (unit) => {
-        return false;
-
+        let concealed = true;
         if (unit.type === "Helicopter" || unit.type === "Aircraft") {
-            return false;
+            concealed = false;
         }
         //10.5.13
         let hex = HexMap[unit.hexLabel];
-        if (unit.token.get(SM.moved) === true) {
-            return false;
+        let mpRem = parseInt(unit.token.get("bar3_value")) || 0;
+        let mpMax = parseInt(unit.token.get("bar3_max")) || 0;
+        let moved = false;
+        if (mpRem < mpMax) {
+            moved = true;
         }
-        if (unit.token.get("aura1_color") === "#000000") {
-            return false;
+        if (moved) {
+            concealed = false;
+        }
+        if (unit.Ready() === false) {
+            concealed = false;
         }
         if (unit.type === "Vehicle" && hex.defenseBonus.Vehicles === 0) {
-            return false;
+            concealed = false;
         }
-        if (unit.type === "Infantry" && hex.defenseBonus.Troops === 0) {
-            return false
+        if ((unit.type === "Infantry" || unit.type === "Support" || unit.type === "Towed") && hex.defenseBonus.Troops === 0) {
+            concealed = false;
         }
 
-        if (hex.defense) {
-            return false;
-        }
         let keys = Object.keys(Units);
         for (let i=0;i<keys.length;i++) {
             let unit2 = Units[keys[i]];
-            let hex2 = HexMap[unit2.hexLabel];
-            if (unit2.player !== unit.player) {
-                let dist = hex.cube.distance(hex2.cube);
-                if (dist === 1) {
-                    return false;
+            let distance = unit.Distance(unit2);
+            if (unit2.player !== unit.player && unit2.type !== "Artillery Token") {
+                if (distance === 1) {
+                    concealed = false;
                 }
-                if (dist < 6 && unit2.special.includes("Recon")) {
-                    return false;
+                if (distance < 6 && unit2.special.includes("Recon")) {
+                    concealed = false;
                 }
             }
         }
-        return true;
+        return concealed;
     }
     
 
@@ -3796,6 +3805,7 @@ log("Checking " + unit.name);
                 unit.passUnloaded = false;
                 unit.token.set(SM.leaderBonusUsed,false);
                 unit.token.set(SM.longMove,false);
+                unit.token.set(SM.fired,false);
             } 
         })
     }
