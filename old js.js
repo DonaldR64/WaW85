@@ -4540,7 +4540,6 @@ log(weapon.sound)
         }
 
         if (unit.weapons.length > 0) {
-            let macros = [];
             for (let w=0;w<unit.weapons.length;w++) {
                 let weapon = unit.weapons[w];
                 if (weapon.notes.includes("Indirect")) {
