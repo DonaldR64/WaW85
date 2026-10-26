@@ -365,6 +365,12 @@ input[type="hidden"][value="Leader"].move-status ~ .move {
 input[type="hidden"][value="Artillery Token"].move-status ~ .move {
     display: none;
 }
+input[type="hidden"][value="Helicopter"].move-status ~ .move {
+    display: none;
+}
+input[type="hidden"][value="Aircraft"].move-status ~ .move {
+    display: none;
+}
 
 
 
@@ -391,6 +397,83 @@ input[type="hidden"][value="Artillery Token"].move-status ~ .move {
 .movepoints h3 {
   color: darkred;
 }
+
+
+input[type="hidden"][value="Support"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="HQ"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Leader"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Artillery Token"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Vehicle"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Infantry"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Towed"].move-status2 ~ .move2 {
+    display: none;
+}
+input[type="hidden"][value="Aircraft"].move-status2 ~ .move2 {
+    display: none;
+}
+
+
+.move2 {
+  grid-area: move;
+  background-color:  white;
+  align-items: center;
+}
+
+
+
+input[type="hidden"][value="Support"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="HQ"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Leader"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Artillery Token"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Vehicle"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Infantry"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Towed"].move-status3 ~ .move3 {
+    display: none;
+}
+input[type="hidden"][value="Helicopter"].move-status3 ~ .move3 {
+    display: none;
+}
+
+
+.move3 {
+  grid-area: move;
+  background-color:  white;
+  align-items: center;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
