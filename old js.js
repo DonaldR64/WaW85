@@ -2388,7 +2388,7 @@ log("Checking " + unit.name);
     }
 
 
-    const Attack = (weapon,shooter,target,aaFireMod = false) => {
+    const Attack = (weapon,shooter,target,aaFireMod = false,volley = false) => {
         let losResult = LOS(shooter,target);
         let defDice = target.armour;
         let ddT = "";
@@ -2478,7 +2478,11 @@ log("Checking " + unit.name);
             save--;
             armourTips += "<br>Composite/Reactive Armour -1 to Save";
         }
-        //10.6.10 Volley Fire - work this out in firing, inc. the weapon.fp by 1
+        //10.6.10 Volley Fire
+        if (volley === true) {
+            fp++;
+            shooterTips.push("<br>Volley Fire +1 FP");
+        }
         //10.6.11 Target is a Landed Helicopter
         if (target.type === "Helicopter" && target.HeloStatus() === "Landed") {
             fp++;
@@ -2652,7 +2656,6 @@ log("Checking " + unit.name);
         let shooterID = Tag[1];
         let targetID = Tag[2];
         let weaponNumber = Tag[3];
-        let options = Tag[4];
         let heloStatus;
 
         let shooter = Units[shooterID];
@@ -2797,7 +2800,11 @@ log("Checking " + unit.name);
             return;
         }
     
-        Attack(weapon,shooter,target,aaFireMod);
+
+
+
+
+        Attack(weapon,shooter,target,aaFireMod,options);
         PlaySound(weapon.sound);
         FX(weapon.sound);
 
@@ -2822,6 +2829,9 @@ log("Checking " + unit.name);
         //mark shooter OPS Complete
         shooter.SetReady(false);
         shooter.fired = true;
+
+
+
     
     }
         
