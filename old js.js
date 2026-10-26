@@ -1088,8 +1088,6 @@ const WaW85 = (() => {
             for (let i=0;i<attachedIDs.length;i++) {
                 let unit2 = Units[attachedIDs[i]];
                 if (unit2.type !== "Leader" && unit2.type !== "HQ") {continue};
-                if (unit2.leaderBonusUsed && unit2.type === "Leader") {continue};
-                if (unit2.hqBonusUsed && unit2.type === "HQ") {continue};
                 let level = parseInt(unit2.token.get("currentSide"));
                 stats.command = Math.max(stats.command,unit2.command[level]);
                 if (unit2.type === "Leader") {
@@ -2417,7 +2415,6 @@ log("Checking " + unit.name);
         }
 
         //10.6.2 HQ or Leader Bonus
-        let leaderBonus = 0;
         if (weapon.type !== "Artillery") {
             let stats = shooter.Leader();
             if (stats.command > 0 && shooter.bonusUsed[stats.type] === false) {
@@ -3809,7 +3806,7 @@ log("Checking " + unit.name);
             if (unit) {
                 unit.unloaded = false;
                 unit.passUnloaded = false;
-                unit.leaderBonusUsed = false;
+                unit.bonusUsed = {Leader: false, HQ: false};
                 unit.token.set(SM.longMove,false);
                 unit.fired = false;
             } 
