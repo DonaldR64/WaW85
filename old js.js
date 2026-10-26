@@ -121,29 +121,13 @@ const WaW85 = (() => {
 
     const MoveMarkers = ["https://files.d20.io/images/344441274/R0eEVMFzhYmwv6rigIA7GA/thumb.png?1685718541","https://s3.amazonaws.com/files.d20.io/images/435360245/m3tKJi3Pqb_40g75O6ouSg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360246/pXI3HBrGMZ05ldDfH-zYCQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360229/JKMY922qxhf0E3z1l10jQg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360228/YDGEQNR_qVFprdHJSjYNPg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360232/1TysQcieJ5zbgYvXV4pqiA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360240/KfCmoF5WyWTStCWOTPrkJg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360230/zjvzMFGWotZUORDeIVXrEw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360226/-TXBFvMfahwOIjXEuS0mTQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360237/gEr7oP4z0ByUKTXpvSHYQQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360241/2HAnTYlC0uVR6mqyMoaACA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360244/CDOLr8RkQ-pPhwjaOHTbEA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360243/023KSjjB8QHtrMNbuO3ENQ/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360242/xx2msq4HjqRN5dUaPl0vfA/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360236/L-iuGURhzreq2t2mKOj3Qg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360247/v2Y15K10F2qZK268wPzYyw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360239/SXny1fVCh5PeYxLGtnoPTA/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360233/EdB3z27csNyykkc2lWTefw/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360227/JpFvEVLKlKV6n6JsE8zrVg/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360234/5b2XrhzPgfgjdoI5y97LnQ/thumb.png?174356385","https://s3.amazonaws.com/files.d20.io/images/435360238/_sWU7YtYJsWT1NZC-wb80Q/thumb.png?1743563857","https://s3.amazonaws.com/files.d20.io/images/435360231/n7HVTuMwWch59Aofq1v96w/thumb.png?1743563856","https://s3.amazonaws.com/files.d20.io/images/435360235/yVtSNUPJOkxq0n2_FknMcA/thumb.png?1743563856"];
 
-    let weaponSounds = {
-        "Small Arms and Light Weapons": "Small Arms",
-        "LAW": "Handheld AT",
-        "Grenade Launcher": "Vehicle Missile",
-        "Infantry ATGM": "Vehicle Missile",       
-        "Infantry SAM": "ATG", 
-        "Vehicle MG": "Vehicle MG",
-        "Gun": "Gun",
-        "Autocannon": "Autocannon",
-        "Vehicle ATGM": "Vehicle Missile", 
-        "Vehicle SAM": "ATG",  
-
-    }
 
     let outputCard = {title: "",subtitle: "",nation: "",body: [],buttons: [],};
 
     const RedFor = ["Soviet",];
-    const BlueFor = ["US Army","US Marine Corps","British","West Germany","Canada"];
 
     const RedForFlag = ["Warpact::5862802"];
     const BlueForFlag = ["NATO::5862803"];
-
-    const squadMarkers = ["Red-01::2006626","Red-02::2006628","Red-03::2006629","Red-04::2006631","Red-05::2006633"];
 
     const Nations = {
         "Soviet": {
@@ -758,7 +742,8 @@ const WaW85 = (() => {
                 let wfp = Stats(attributes["weapon" + i + "fp"]);
                 let wtoHit = Stats(attributes["weapon" + i + "tohit"]);
                 let wnotes = attributes["weapon" + i + "notes"] || " ";
-
+                let wsound = attributes["weapon" + i + "sound"] || " ";
+                
                 let weapon = {
                     pos: (i-1),
                     name: wname,
@@ -767,6 +752,7 @@ const WaW85 = (() => {
                     range: wrange,
                     fp: wfp, //array
                     toHit: wtoHit, //array
+                    wsound: wsound,
                     notes: wnotes,
                 }
                 if (wnotes.includes("Indirect")) {
@@ -2795,7 +2781,8 @@ log("Checking " + unit.name);
         }
     
         Attack(weapon,shooter,target,aaFireMod);
-        //sound, fx
+        PlaySound(weapon.sound);
+        FX(weapon.sound);
 
         //missile ammo check
         if (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM")) {
