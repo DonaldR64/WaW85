@@ -232,7 +232,7 @@ input[type="hidden"][value="Artillery Token"].flying-status ~ .flyingstatus {
 input[type="hidden"][value="Vehicle"].flying-status ~ .flyingstatus {
     display: none;
 }
-input[type="hidden"][value="SuInfantrypport"].flying-status ~ .flyingstatus {
+input[type="hidden"][value="Infantry"].flying-status ~ .flyingstatus {
     display: none;
 }
 input[type="hidden"][value="Towed"].flying-status ~ .flyingstatus {
