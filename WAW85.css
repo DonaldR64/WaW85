@@ -431,7 +431,9 @@ input[type="hidden"][value="Aircraft"].move-status2 ~ .move2 {
   align-items: center;
 }
 
-
+.move2 h4 {
+  color: darkred;
+}
 
 input[type="hidden"][value="Support"].move-status3 ~ .move3 {
     display: none;
@@ -465,7 +467,9 @@ input[type="hidden"][value="Helicopter"].move-status3 ~ .move3 {
   align-items: center;
 }
 
-
+.move3 h4 {
+  color: darkred;
+}
 
 
 
