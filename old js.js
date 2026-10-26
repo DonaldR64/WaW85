@@ -7,7 +7,6 @@ const WaW85 = (() => {
 
     let Units = {};
     let HexMap = {}; 
-    let activeUnitID;
     let UnitIDList = []; //used in create formation
     let Scenario = {};
     let EventInfo = "";
