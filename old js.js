@@ -2682,8 +2682,20 @@ log("Checking " + unit.name);
         if (shooter.Ready() === false) {
             errorMsg.push("Unit is not Ready");
         }
+        if (target.armourType === "Heavy" && (target.type === "Vehicle" || target.type === "Aircraft")) {
+            if (weapon.notes.includes("HROF") && losResult.distance > weapon.range) {
+                errorMsg.push("HROF can only affect Armour out to Effective Range");
+            }
+            if (weapon.type === "HE" && weapon.notes.includes("HROF") === false) {
+                errorMsg.push("HE weapons cannot be used on this Unit");
+            }
+        }
+        if (weapon.type === "AP" && (target.type === "Infantry" || target.type === "Support") || target.type === "Towed") {
+            errorMsg.push("AP weapons cannot be used on this Unit");
+        }
+        //helicopters are below as based on mode, weapon
         if (shooter.fired === true) {
-            errorMsg.push("Support Weapon has already Fired");
+            errorMsg.push("Unit has already Fired");
         }
         if (shooter.Disrupted()) {
             errorMsg.push("Unit is Disrupted and cannot Fire");
@@ -2734,42 +2746,52 @@ log("Checking " + unit.name);
                 } else if (weapon.notes.includes("ATGM")) {
                     errorMsg.push("ATGMs cannot target NOE Helicopters");
                 } else if (weapon.notes.includes("AA") === false) {
-                    let maxRange = Math.min(weapon.range,10);
-                    aaFireMod = true;
-                    if (losResult.distance > maxRange) {
+                    if (losResult.distance > Math.min(weapon.range,10)) {
                         errorMsg.push("Helicopter out of Range for non-AA Weapon");
+                    } else if (weapon.type === "AP") {
+                        errorMsg.push(weapon.name + " cannot target Helicopters");
+                    } else {
+                        aaFireMod = true;
+                        weapon.sound = "Vehicle MG";
+                        weapon.name = "MGs";
                     } 
                 }
             } else if (heloStatus === "Flying" || heloStatus === "Hovering") {
                 if (weapon.notes.includes("ATGM")) {
                     errorMsg.push("ATGMs cannot target " + heloStatus +" Helicopters");
                 } else if (weapon.notes.includes("AA") === false) {
-                    let maxRange = Math.min(weapon.range,10);
-                    aaFireMod = true;
-                    if (losResult.distance > maxRange) {
+                    if (losResult.distance > Math.min(weapon.range,10)) {
                         errorMsg.push("Helicopter out of Range for non-AA Weapon");
+                    } else if (weapon.type === "AP") {
+                        errorMsg.push(weapon.name + " cannot target Helicopters");
+                    } else {
+                        aaFireMod = true;
+                        weapon.sound = "Vehicle MG";
+                        weapon.name = "MGs";
                     } 
                 }
-            } else if (heloStatus === "Landed") {
-                if (weapon.notes.includes("SAM")) {
-                    errorMsg.push("SAMs cannot target Landed Helicopters");
-                }
+            } else if (heloStatus === "Landed" && weapon.notes.includes("SAM")) {
+                errorMsg.push("SAMs cannot target Landed Helicopters");
             }
         }
         if (target.type === "Aircraft") {
             if (weapon.notes.includes("ATGM")) {
                 errorMsg.push("ATGMs cannot target Aircraft");
             } else if (weapon.notes.includes("AA") === false) {
-                let maxRange = Math.min(weapon.range,10);
-                aaFireMod = true;
-                if (losResult.distance > maxRange) {
+                if (losResult.distance > Math.min(weapon.range,10)) {
                     errorMsg.push("Aircraft out of Range for non-AA Weapon");
-                } 
+                } else if (weapon.type === "AP") {
+                    errorMsg.push(weapon.name + " cannot target Aircraft");
+                } else {
+                    aaFireMod = true;
+                    weapon.sound = "Vehicle MG";
+                    weapon.name = "MGs";
+                }             
             }
         }
 
 
-        SetupCard(shooter.name,"Direct Fire",shooter.nation);
+        SetupCard(shooter.name,weapon.name,shooter.nation);
 
         if (errorMsg.length > 0) {
             _.each(errorMsg,msg => {
