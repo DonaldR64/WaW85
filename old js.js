@@ -689,6 +689,8 @@ const WaW85 = (() => {
 
             let nation = attributes.nation;
             let player = (RedFor.includes(nation)) ? 0:1;
+            let core = attributes.core || "0";
+            this.core = core.toString() === "1" ? true:false;
 
             let type = attributes.type;
             let group;
@@ -1907,47 +1909,34 @@ const WaW85 = (() => {
     }
 
 
-    const Naming = (unit) => {
+    const Naming = (unit,coreNum) => {
         let name,init,surname;
-        let platoons = ["Vehicle","Infantry","Towed","Aircraft","Helicopter"];
-        if (unit.nation) {
-            init = FirstNameList[unit.nation][randomInteger(FirstNameList[unit.nation].length - 1)].charAt(0).toUpperCase() + ". ";
-            surname = SurnameList[unit.nation][randomInteger(SurnameList[unit.nation].length - 1)];
-        }
+        let platoons = ["1st","2nd","3rd","4th"];
 
-        if (platoons.includes(unit.type)) {
-            if (unit.special.includes("Offboard")) {
-                name = unit.charName;
-            } else if (unit.type === "Vehicle" && unit.special.includes("Transport")) {
-                name = "Sgt. " + init + surname;
+        if (unit.core) {
+            pltNum = coreNum;
+            if (unit.player === 0) {
+                let coNum = Math.ceil((coreNum + 1)/3);
+                pltNum = coreNum - ((coNum -1) * 3);
+                name = coNum + "/" + platoons[pltNum] + " Plt " + unit.charName;
             } else {
-                name = "Lt. " + init + surname;
+                name = platoons[pltNum] + " Plt " + unit.charName;
             }
-        }
-        if (unit.type === "HQ") {
-            if (RedFor.includes(unit.nation)) {
-                name = "Polkóvnik " + init + surname;
-            } else {
-                name = "Captain " + init + surname;
-            }
-        }
-        if (unit.type === "Leader") {
-            name = unit.charName;
-        }
-        if (unit.type === "Artillery Token" || unit.type === "Support") {
+            coreNum++;
+        } else {
             name = unit.charName;
         }
 
         unit.name = name;
         if (name) {
             unit.name = name;
-            unit.token.set({
-                name: name,
-            })
+            unit.token.set({name: name})
         }
         if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token" || unit.type === "Support") {
             toFront(unit.token);
         }
+
+        return coreNum;
 
     }
 
@@ -2222,6 +2211,8 @@ const WaW85 = (() => {
             }
             if (unit.type === "HQ") {
                 hqID = unitID;
+                unit.name = formation.hqName;
+                unit.token.set({name: formation.hqName})
             }
             if (formation.type === "Offboard Artillery" && unit.type !== "Artillery Token") {
                 artilleryID = unit.id;
@@ -2276,11 +2267,13 @@ const WaW85 = (() => {
             sendChat("","Pick Scenario");
             return;
         }
+
+        let coreNum = 0;
         UnitIDList= [];
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
-            Naming(unit);
+            coreNum = Naming(unit,coreNum);
             AddAbilities(unit);
             UnitIDList.push(id);
             if (unit.type !== "Artillery Token") {
