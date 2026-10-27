@@ -2392,7 +2392,7 @@ log("Checking " + unit.name);
         let losResult = LOS(shooter,target);
         let defDice = target.armour;
         let ddT = "";
-        if (weapon.type === "Artillery" && weapon.notes.includes("Mortar") === false && target.armourType === "Heavy") {
+        if (weapon.type === "Artillery" && shooter.special.includes("Mortar") === false && target.armourType === "Heavy") {
             defDice = 1;
             ddT = " [Artillery]";
         }
