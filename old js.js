@@ -1123,6 +1123,7 @@ const WaW85 = (() => {
                     left: x,
                     top: y,
                 })
+                toFront(unit2.token);
                 ChangeTokenIDs(unit2.id,unit2.hexLabel,this.hexLabel);
                 unit2.hexLabel = this.hexLabel;
             }
@@ -1918,9 +1919,9 @@ const WaW85 = (() => {
             if (unit.player === 0) {
                 let coNum = Math.ceil((coreNum + 1)/3);
                 pltNum = coreNum - ((coNum -1) * 3);
-                name = coNum + "/" + platoons[pltNum] + " Plt " + unit.charName;
+                name = platoons[pltNum] + " Plt./" + platoons[coNum - 1] + " Co.";
             } else {
-                name = platoons[pltNum] + " Plt " + unit.charName;
+                name = platoons[pltNum] + " Platoon";
             }
             coreNum++;
         } else {
@@ -4303,11 +4304,12 @@ log(weapon.sound)
             AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
         } else if (action === "Unload") {
             let errorMsg = [];
+            let passenger;
             let passengerID = state.WaW85.passengerID[unit.id] || "";
             if (!passengerID) {
                 errorMsg.push("No Passenger");
             } else {
-                let passenger = Units[passengerID];
+                passenger = Units[passengerID];
             }
 
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
@@ -4359,6 +4361,9 @@ log(weapon.sound)
             let mp = parseInt(unit.token.get("bar3_value"));
             if (unit.token.get(SM.passenger)) {
                 errorMsg.push("Already has a Passenger");
+            }
+            if (unit.formationID !== passenger.formationID) {
+                errorMsg.push("Must be in same Formation");
             }
             if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
                 errorMsg.push("Can only Load when Landed");
@@ -4458,6 +4463,23 @@ log(weapon.sound)
         toFront(passenger.token);
         transport.token.set(SM.passenger,false);
         state.WaW85.passengerID[transport.id] = "";
+
+        let attachedIDs = state.WaW85.attachedIDs[transport.id] || [];
+        let newIDs = [];
+        let newIDs2 = state.WaW85.attachedIDs[passenger.id] || [];
+        for (let i=0;i<attachedIDs.length;i++) {
+            let unit2 = Units[attachedIDs[i]];
+            if (unit2.type === "Support") {
+                newIDs.push(unit2.id);
+            } else {
+                newIDs2.push(unit2.id);
+            }
+        }
+        
+        state.WaW85.attachedIDs[transport.id] = newIDs;
+        state.WaW85.attachedIDs[passenger.id] = newIDs2;
+        passenger.MoveAttached();
+        transport.MoveAttached();
         ChangeTokenIDs(passenger.id,passenger.hexLabel,transport.hexLabel);
     }
 
@@ -4473,6 +4495,23 @@ log(weapon.sound)
             })
             transport.token.set(SM.passenger,true);
         }
+        let attachedIDs = state.WaW85.attachedIDs[passenger.id] || [];
+        let newIDs = [];
+        let newIDs2 = state.WaW85.attachedIDs[transport.id] || [];
+        for (let i=0;i<attachedIDs.length;i++) {
+            let unit2 = Units[attachedIDs[i]];
+            if (unit2.type === "Support") {
+                newIDs.push(unit2.id);
+            } else {
+                newIDs2.push(unit2.id);
+            }
+        }
+        
+        state.WaW85.attachedIDs[passenger.id] = newIDs;
+        state.WaW85.attachedIDs[transport.id] = newIDs2;
+        transport.MoveAttached();
+        passenger.MoveAttached();
+
         state.WaW85.passengerID[transport.id] = passenger.id;
     }
 
