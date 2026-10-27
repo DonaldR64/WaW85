@@ -2654,7 +2654,7 @@ log("Checking " + unit.name);
 
         let shooter = Units[shooterID];
         let target = Units[targetID];
-        if (target.type === "Leader" || target.type === "HQ") {
+        if (target.type === "Leader" || target.type === "HQ" || target.type === "Support") {
             targetID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(id));
             target = Units[targetID];
         }
@@ -3267,7 +3267,7 @@ log("Sound: " + weapon.sound)
             let targetHex = HexMap[target.hexLabel];
             for (let i=0;i<targetHex.tokenIDs.length;i++) {
                 let unit2 = Units[targetHex.tokenIDs[i]];
-                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader" || unit2.id === target.id) {continue};
+                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader" || unit2.id === target.id || unit2.type === "Support") {continue};
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
                 if (i > 0) {outputCard.body.push("[hr]")};
                 Attack(weapon,artUnit,unit2);
