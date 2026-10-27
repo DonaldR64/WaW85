@@ -4383,6 +4383,9 @@ log(weapon.sound)
             if (unit.Disrupted()) {
                 errorMsg.push("Disrupted Transports may not Load");
             }
+            if (passenger.Disrupted()) {
+                errorMsg.push("Disrupted Passengers may not Load");
+            }
             if (distance > 0) {
                 errorMsg.push("Must be in same Hex");
             }
