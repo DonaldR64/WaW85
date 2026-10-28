@@ -2534,10 +2534,10 @@ log("Checking " + unit.name);
         shooterTips = "<br>-----------------" + shooterTips;
 
         if (defDice > 0) {
-            armourTips = defDice + " Dice, " + save + "+" + "<br>-----------------" + armourTips;
+            armourTips = "<br>-----------------" + armourTips;
         }
         if (bonusTips !== "") {
-            bonusTips = "<br>" + defBonusDice + " Dice, 5+" + "<br>-----------------" + bonusTips;
+            bonusTips = "<br>-----------------" + bonusTips;
         }
 
 
@@ -2573,7 +2573,7 @@ log("Checking " + unit.name);
                     armourRolls.push(roll);
                 }
                 armourRolls.sort().reverse();
-                tip = "Rolls: " + armourRolls + " vs. " + save + "+<br>" + armourTips;
+                tip = "Rolls: " + armourRolls + " vs. " + save + "+" + armourTips;
 
                 let asText = armourSaves === 0 ? "No":armourSaves;
                 tip = '[' + asText+ '](#" class="showtip" title="' + tip + ')';
@@ -2602,12 +2602,28 @@ log("Checking " + unit.name);
             let damage = Math.max(0,hits-armourSaves-terrainSaves);
             if (HexMap[target.hexLabel].improved === true && target.type !== "Aircraft" && target.type === "Helicopter") {
                 outputCard.body.push("Improved Positions reduce Damage");
-                damage--;
+                damage = Math.max(0,damage--);
             }
+            outputCard.body.push("[hr]");
             if (damage > 0) {
-                outputCard.body.push("[#ff0000]" + target.name + " takes " + damage + " Damage[/#]");
-                //apply damage
-                //excess damage to other units in hex
+                let hp = parseInt(target.token.get("bar1_value"));
+                let dam = Math.min(hp,damage);
+                damage -= dam;
+                outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
+                //target.Damage(dam);
+                if (damage > 0 && HexMap[target.hexLabel].tokenIDs.length > 1 && weapon.type !== "Artillery") {
+                    for (let i=0;i < HexMap[target.hexLabel].tokenIDs.length;i++) {
+                        let target2 = HexMap[target.hexLabel].tokenIDs[i];
+                        if (target2.id && target2.id !== target.id) {
+                            let validTarget = ValidTarget(target2,weapon,losResult.distance);
+                            if (validTarget === true) {
+                                outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
+                                //target.Damage(dam);
+                                break;
+                            }
+                        }
+                    }
+                }
             } else {
                 outputCard.body.push("No Damage");
             }
@@ -2619,7 +2635,79 @@ log("Checking " + unit.name);
     }
 
 
+    const ValidTarget = (target,weapon,distance) => {
+        //is this a valid target for this weapon at this distance;
+        //return true if is otherwise return the reason why isnt or blank 
 
+        if (distance > (weapon.range * 2)) {
+            return "Out of Range of Weapon";
+        }
+        if (distance < weapon.minRange) {
+            return "Weapon has a Minimum Range of " + weapon.minRange;
+        }
+
+        let ignores = ["Leader","HQ","Support","Artillery Token"];
+        if (ignores.includes(target.type)) {return};
+        if (target.type === "Vehicle") {
+            if (weapon.notes.includes("HROF") && losResult.distance > weapon.range) {
+                return "HROF can only affect Armour out to Effective Range";
+            }
+            if (weapon.type === "HE" && weapon.notes.includes("HROF") === false) {
+                return "HE weapons cannot be used on this Unit";
+            }
+        }
+        if ((target.type === "Infantry" || target.type === "Towed") && weapon.type === "AP") {
+            return "AP weapons cannot be used on this Unit";
+        }
+        if (target.type === "Helicopter") {
+            heloStatus = target.HeloStatus();
+            if (heloStatus === "NOE") {
+                if (weapon.notes.includes("SAM")) {
+                    return "SAMs cannot target NOE Helicopters";
+                } else if (weapon.notes.includes("ATGM")) {
+                    return "ATGMs cannot target NOE Helicopters";
+                } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
+                    if (losResult.distance > Math.min(weapon.range,10)) {
+                        return "Helicopter out of Range for non-AA Weapon";
+                    } else if (weapon.type === "AP") {
+                        return weapon.name + " cannot target Helicopters";
+                    } 
+                }
+            } else if (heloStatus === "Flying" || heloStatus === "Hovering") {
+                if (weapon.notes.includes("ATGM")) {
+                    return "ATGMs cannot target " + heloStatus +" Helicopters";
+                } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
+                    if (losResult.distance > Math.min(weapon.range,10)) {
+                        return "Helicopter out of Range for non-AA Weapon";
+                    } else if (weapon.type === "AP") {
+                        return weapon.name + " cannot target Helicopters";
+                    }
+                }
+            } else if (heloStatus === "Landed" && weapon.notes.includes("SAM")) {
+                return "SAMs cannot target Landed Helicopters";
+            }
+        }
+
+        if (target.type === "Aircraft") {
+            if (weapon.notes.includes("ATGM")) {
+                return "ATGMs cannot target Aircraft";
+            } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
+                if (losResult.distance > Math.min(weapon.range,10)) {
+                    return "Aircraft out of Range for non-AA Weapon";
+                } else if (weapon.type === "AP") {
+                    return weapon.name + " cannot target Aircraft";
+                }             
+            }
+        }
+
+        if (weapon.notes.includes("SAM") && target.type !== "Aircraft" && target.type !== "Helicopter") {
+            return "SAMs cannot target this Unit";
+        }
+
+
+
+        return true;
+    }
 
 
 
@@ -2646,9 +2734,6 @@ log("Checking " + unit.name);
 
         let weapon = DeepCopy(shooter.weapons[weaponNumber]);
         let losResult = LOS(shooter,target);
-        if (target.armourType === "Heavy" && weapon.notes.includes("HROF")) {
-            weapon.type = "AP";
-        }
 
         //validity checks
         let errorMsg = [];
@@ -2665,18 +2750,6 @@ log("Checking " + unit.name);
             }
         }
 
-        if (target.armourType === "Heavy" && (target.type === "Vehicle" || target.type === "Aircraft")) {
-            if (weapon.notes.includes("HROF") && losResult.distance > weapon.range) {
-                errorMsg.push("HROF can only affect Armour out to Effective Range");
-            }
-            if (weapon.type === "HE" && weapon.notes.includes("HROF") === false) {
-                errorMsg.push("HE weapons cannot be used on this Unit");
-            }
-        }
-        if (weapon.type === "AP" && (target.type === "Infantry" || target.type === "Support") || target.type === "Towed") {
-            errorMsg.push("AP weapons cannot be used on this Unit");
-        }
-        //helicopters are below as based on mode, weapon
         if (shooter.fired === true) {
             errorMsg.push("Unit has already Fired");
         }
@@ -2689,18 +2762,15 @@ log("Checking " + unit.name);
         if (shooter.token.get(SM.reload) && (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM"))) {
             errorMsg.push("Unit Must Reload Missiles");
         }
-
-
+        let validTarget = ValidTarget(target,weapon,losResult.distance);
+        if (validTarget !== true) {
+            errorMsg.push(validTarget);
+        }
         if (losResult.los === false) {
             errorMsg.push("No LOS to Target");
             errorMsg.push(los.losReasons);
         }
-        if (losResult.distance > (weapon.range * 2)) {
-            errorMsg.push("Out of Range of Weapon");
-        }
-        if (losResult.distance < weapon.minRange) {
-            errorMsg.push("Weapon has a Minimum Range of " + weapon.minRange);
-        }
+
         if (HexMap[shooter.hexLabel].terrain === "Water" && shooter.type !== "Helicopter" && shooter.type !== "Aircraft") {
             errorMsg.push("Cannot Fire from Water Hex");
         }
@@ -2715,60 +2785,26 @@ log("Checking " + unit.name);
         if (weapon.notes.includes("Stabilized") === false && shooter.token.get(SM.longMove)) {
             errorMsg.push("Moved too far to fire");
         }
-        if (weapon.notes.includes("SAM") && target.type !== "Aircraft" && target.type !== "Helicopter") {
-            errorMsg.push("SAMs cannot target this Unit");
-        }
-        //AA
+
+        //AA - invalid weapons/targets already screened out by ValidTarget
         let aaFireMod = false; //this is for mods for aaFire
         if (target.type === "Helicopter") {
             heloStatus = target.HeloStatus();
-            if (heloStatus === "NOE") {
-                if (weapon.notes.includes("SAM")) {
-                    errorMsg.push("SAMs cannot target NOE Helicopters");
-                } else if (weapon.notes.includes("ATGM")) {
-                    errorMsg.push("ATGMs cannot target NOE Helicopters");
-                } else if (weapon.notes.includes("AA") === false) {
-                    if (losResult.distance > Math.min(weapon.range,10)) {
-                        errorMsg.push("Helicopter out of Range for non-AA Weapon");
-                    } else if (weapon.type === "AP") {
-                        errorMsg.push(weapon.name + " cannot target Helicopters");
-                    } else {
-                        aaFireMod = true;
-                        weapon.sound = "Vehicle MG";
-                        weapon.name = "MGs";
-                    } 
-                }
-            } else if (heloStatus === "Flying" || heloStatus === "Hovering") {
-                if (weapon.notes.includes("ATGM")) {
-                    errorMsg.push("ATGMs cannot target " + heloStatus +" Helicopters");
-                } else if (weapon.notes.includes("AA") === false) {
-                    if (losResult.distance > Math.min(weapon.range,10)) {
-                        errorMsg.push("Helicopter out of Range for non-AA Weapon");
-                    } else if (weapon.type === "AP") {
-                        errorMsg.push(weapon.name + " cannot target Helicopters");
-                    } else {
-                        aaFireMod = true;
-                        weapon.sound = "Vehicle MG";
-                        weapon.name = "MGs";
-                    } 
-                }
-            } else if (heloStatus === "Landed" && weapon.notes.includes("SAM")) {
-                errorMsg.push("SAMs cannot target Landed Helicopters");
-            }
+            if (heloStatus === "NOE" && weapon.notes.includes("AA") === false) {
+                aaFireMod = true;
+                weapon.sound = "Vehicle MG";
+                weapon.name = "MGs";
+            } else if ((heloStatus === "Flying" || heloStatus === "Hovering") && weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
+                aaFireMod = true;
+                weapon.sound = "Vehicle MG";
+                weapon.name = "MGs";
+            } 
         }
         if (target.type === "Aircraft") {
-            if (weapon.notes.includes("ATGM")) {
-                errorMsg.push("ATGMs cannot target Aircraft");
-            } else if (weapon.notes.includes("AA") === false) {
-                if (losResult.distance > Math.min(weapon.range,10)) {
-                    errorMsg.push("Aircraft out of Range for non-AA Weapon");
-                } else if (weapon.type === "AP") {
-                    errorMsg.push(weapon.name + " cannot target Aircraft");
-                } else {
-                    aaFireMod = true;
-                    weapon.sound = "Vehicle MG";
-                    weapon.name = "MGs";
-                }             
+            if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
+                aaFireMod = true;
+                weapon.sound = "Vehicle MG";
+                weapon.name = "MGs";        
             }
         }
 
