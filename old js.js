@@ -2254,7 +2254,7 @@ const WaW85 = (() => {
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
-            let sides = unit.token.get("sides").split("|").length + 1;
+            let sides = unit.token.get("sides").split("|").length;
             unit.token.set("bar1_value",sides);
             coreNum = Naming(unit,coreNum);
             AddAbilities(unit);
@@ -2609,8 +2609,18 @@ log("Checking " + unit.name);
             outputCard.body.push("[hr]");
             if (damage > 0) {
                 let hp = parseInt(target.token.get("bar1_value"));
+                if (target.Disrupted() === false) {
+                    target.SetDisrupt(true);
+                    outputCard.body.push(target.name + " is Disrupted");
+                    damage -= 1;
+                }
                 let dam = Math.min(hp,damage);
                 damage -= dam;
+
+
+
+///change below to be reduce or destroy depending
+
                 outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
                 //target.Damage(dam);
                 if (damage > 0 && HexMap[target.hexLabel].tokenIDs.length > 1 && weapon.type !== "Artillery") {
