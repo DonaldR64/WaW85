@@ -835,7 +835,7 @@ const WaW85 = (() => {
 
         }
            
-        ApplyDamage(damage,damageType) {
+        ApplyDamage(damage) {
             if (this.type === "Aircraft") {
                 if (damage >= 2) {
                     this.Eliminate();
@@ -847,64 +847,44 @@ const WaW85 = (() => {
                         outputCard.body.push(this.name + " Calls off its Run and returns to Base due to the Damage");
                         //remove card and counter, not eliminated for VP
                     }
-                    
-
-
                 }
+                return 0;
             } else {
-                damageloop1:
-                for (let i=0;i<damage;i++) {
-                    let undisrupted = this.Status();
-                    if (undisrupted === true) {
-                        this.Disrupt();
-                    } else {
-                        if (this.health === "Eliminated") {
-                            if (damageType === "Assault") {
-                                break damageloop1; //no carryover
-                            }
-                            let remaining = damage - i;
-                            //check for carryover
-    //exclude  air / helos / hq and leaders
-                            let hex = HexMap[this.hexLabel];
-                            if (hex.tokenIDs.length > 1) {
-                                for (let k=0;k<hex.tokenIDs.length;k++) {
-                                    let id2 = hex.tokenIDs[k];
-                                    if (id2 === this.id) {continue};
-                                    let unit2 = Units[id2];
-                                    if ((damageType === "AP" && (unit2.type === "Infantry" || unit2.type === "Towed")) || (damageType === "HE" && unit2.armourType === "Heavy")) {
-                                        break damageloop1;//no carryover
-                                    }
-                                    unit2.ApplyDamage(remaining);
-                                    break damageloop1;
-                                }
-                            }
-                        } else if (this.health === "Reduced" || this.steps === 1) {
-                            this.Eliminate();
-                        } else {
-                            this.Reduce();
-                        }
+                let hp = parseInt(this.token.get("bar1_value"));
+                if (this.Disrupted() === false) {
+                    this.SetDisrupt(true);
+                    damage--;
+                    if (damage < hp) {
+                        outputCard.body.push(this.name + ' is Disrupted');
                     }
                 }
-
+                if (damage >= hp) {
+                    this.SetDestroy();
+                    outputCard.body.push(this.name + " is Destroyed");
+                } else if (damage > 0) {
+                    this.SetReduce();
+                    outputCard.body.push(this.name + " is Reduced");
+                }
+                let dam = Math.min(hp,damage);
+                damage -= dam;
+                return damage;
             }
         }
 
-        Eliminate() {
-            this.token.set("status_dead");
-//move to map, will clear later from map, units and formations
-            this.health = "Eliminated"
-            outputCard.body.push(this.name + " is Eliminated");
-//if passengers, roll d6 -> 1-3 passengers reduced and disrupted, roll also for leaders/hq, 4-6 passengers eliminated + possibly leaders/hq
-//if flying or hovering helicopter, passengers eliminated + HQ and leaders
-//if landed or NOE helo see rules
-            //if aircraft, remove its card
-            //if vehicle, place a wreck if not one already there and not all water hex
 
+        SetDestroy() {
 
-
-            
-            
         }
+
+        SetReduce() {
+
+
+
+        }
+
+
+
+
         Disrupted() {
             //returns true if disrupted
             let disrupted = (this.token.get("tint_color") === "transparent") ? false:true;
@@ -2600,40 +2580,24 @@ log("Checking " + unit.name);
                 outputCard.body.push("Terrain/Other: " + tip + " Save" + ts);
             }
 
-
             let damage = Math.max(0,hits-armourSaves-terrainSaves);
             if (HexMap[target.hexLabel].improved === true && target.type !== "Aircraft" && target.type === "Helicopter") {
                 outputCard.body.push("Improved Positions reduce Damage");
                 damage = Math.max(0,damage--);
             }
             outputCard.body.push("[hr]");
-            if (damage > 0) {
-                let hp = parseInt(target.token.get("bar1_value"));
-                if (target.Disrupted() === false) {
-                    target.SetDisrupt(true);
-                    outputCard.body.push(target.name + " is Disrupted");
-                    damage -= 1;
+            if (damage > 0 && target.type !== "Aircraft") {
+                damage = target.ApplyDamage(damage); //returns remaining damage
+                if ((target.type === "Helicopter" && target.HeloStatus() !== "Landed") || target.type === "Aircraft") {
+                    damage = 0;
                 }
-                let dam = Math.min(hp,damage);
-                damage -= dam;
-
-
-
-///change below to be reduce or destroy depending
-
-                outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
-                //target.Damage(dam);
                 if (damage > 0 && HexMap[target.hexLabel].tokenIDs.length > 1 && weapon.type !== "Artillery") {
                     for (let i=0;i < HexMap[target.hexLabel].tokenIDs.length;i++) {
-                        let target2 = HexMap[target.hexLabel].tokenIDs[i];
-                        if (target2.id && target2.id !== target.id) {
+                        let target2 = Units[HexMap[target.hexLabel].tokenIDs[i]];
+                        if (target2 && target2.id !== target.id && (target2.group === "Ground" || (target2.type === "Helicopter" && target2.HeloStatus() === "Landed"))) {
                             let validTarget = ValidTarget(target2,weapon,losResult.distance);
                             if (validTarget === true) {
-                                hp = parseInt(target2.token.get("bar1_value"));
-                                dam = Math.min(hp,damage);
-                                outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
-                                //target2.Damage(dam);
-                                break;
+                                target2.ApplyDamage(damage);
                             }
                         }
                     }
