@@ -838,7 +838,7 @@ const WaW85 = (() => {
         ApplyDamage(damage) {
             if (this.type === "Aircraft") {
                 if (damage >= 2) {
-                    this.Eliminate();
+                    this.SetDestroy();
                 } else {
                     let roll = randomInteger(6);
                     if (roll < 4) {
@@ -874,6 +874,104 @@ const WaW85 = (() => {
 
         SetDestroy() {
 
+            let index = HexMap[this.hexLabel].tokenIDs.indexOf(this.id);
+            if (index > -1) {
+                HexMap[this.hexLabel].tokenIDs.splice(index,1);
+            }
+
+            if (this.type === "Vehicle") {
+                HexMap[this.hexLabel].PlaceWreck();
+                PlaySound("VehicleDeath");
+            } 
+            if (this.type === "Helicopter" && this.HeloStatus() !== "Flying") {
+                PlaySound("VehicleDeath");
+            }
+            if (this.type === "Aircraft" || this.type === "Helicopter" && this.HeloStatus() === "Flying") {
+                PlaySound("Crash");
+            }
+
+            let passengerID = state.WaW85.passengerID[this.id];
+            let passenger = Units[passengerID];
+            let roll = randomInteger(6);
+            if (this.type === "Helicopter" && (this.HeloStatus() === "Flying") || this.HeloStatus() === "Hovering") {
+                roll = 6;
+            }
+
+            if (passenger) {
+                if (roll < 4 && parseInt(passenger.token.get("bar1_value")) > 1) {
+                    outputCard.body.push(passenger.name + " is Reduced and Disrupted");
+                    passenger.SetDisrupt(true);
+                    passenger.SetReduce(true);
+                } else {
+                    outputCard.body.push(passenger.name + " is Destroyed");
+                    passenger.SetDestroy();
+                }
+            }
+ 
+            let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
+            //check for other units, unless helicopter
+            let otherUnit;
+            if (this.type !== "Helicopter" && this.type !== "Aircraft") {
+                let tokenIDs = HexMap[this.hexLabel].tokenIDs;
+                for (let j=0;j<tokenIDs.length;j++) {
+                    let unit2 = Units[tokenIDs[j]];
+                    if (unit2.id === this.id || unit2.nation !== this.nation) {continue};
+                    if (unit2.type === "Leader" || unit2.type === "HQ") {
+                        attachedIDs.push(unit2.id);
+                    } else {
+                        otherUnit = unit2;
+                    }
+                }
+            }
+
+            for (let i=0;i<attachedIDs.length;i++) {
+                let unit2 = Units[attachedIDs[i]];
+                let roll2 = randomInteger(6);
+                if (unit2) {
+                    if (unit2.type === "HQ" && unit2.formationID !== otherUnit.formationID) {
+                        roll2 = -1; //HQ cant transfer to another formation
+                    }
+                    if (unit2.type === "HQ" || unit2.type === "Leader") {
+                        if (otherUnit && roll2 === 1) {
+                            if (state.WaW85.attachedIDs[otherUnit.id].includes(unit2.id)) {
+                                //nothing happens
+                            } else  {
+                                outputCard.body.push(unit2.name + " attaches to " + otherUnit.name);
+                                let ids = state.WaW85.attachedIDs[otherUnit.id] || [];
+                                ids.push(unit2.id);
+                                state.WaW85.attachedIDs[otherUnit.id] = ids;
+                                otherUnit.MoveAttached();
+                            } 
+                        }
+                        if (otherUnit && roll2 > 1) {
+                            outputCard.body.push(unit2.name + " Is Reduced");
+                            unit2.SetReduce();
+                        }
+                        if (!otherUnit || roll2 === -1) {
+                            if (unit2.type === "HQ") {
+                                unit2.HQReduce();
+                                outputCard.body.push(unit2.name + " Is Reduced and Moved Offboard");
+                            } else {
+                                unit2.SetDestroy();
+                                outputCard.body.push(unit2.name + " is Destroyed");
+                            }
+                        }
+                    } else {
+                        unit2.SetDestroy();
+                        outputCard.body.push(unit2.name + " is Destroyed");
+                    }
+                }
+            }
+
+            if (this.type !== "HQ") {
+                this.token.set("status_death",true);
+                this.token.set("layer","map");
+                toFront(this.token);
+                delete Unit[this.id];
+            }
+
+
+
         }
 
         SetReduce() {
@@ -882,7 +980,12 @@ const WaW85 = (() => {
 
         }
 
+        HQReduce() {
 
+
+
+
+        }
 
 
         Disrupted() {
@@ -894,9 +997,9 @@ const WaW85 = (() => {
             let tint = stat === true ? "#ff0000":"transparent";
             this.token.set("tint_color",tint);
             let passengerID = state.WaW85.passengerID[this.id] || "";
-            if (passengerID && stat === false) {
+            if (passengerID) {
                 let passenger = Units[passengerID];
-                passenger.SetDisrupt(false);
+                passenger.SetDisrupt(stat);
             }
         }
         Reduced(){
