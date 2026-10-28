@@ -2254,6 +2254,8 @@ const WaW85 = (() => {
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
+            let sides = unit.token.get("sides").split("|").length + 1;
+            unit.token.set("bar1_value",sides);
             coreNum = Naming(unit,coreNum);
             AddAbilities(unit);
             UnitIDList.push(id);
@@ -2617,8 +2619,10 @@ log("Checking " + unit.name);
                         if (target2.id && target2.id !== target.id) {
                             let validTarget = ValidTarget(target2,weapon,losResult.distance);
                             if (validTarget === true) {
+                                hp = parseInt(target2.token.get("bar1_value"));
+                                dam = Math.min(hp,damage);
                                 outputCard.body.push("[#ff0000]" + target.name + " takes " + dam + " Damage[/#]");
-                                //target.Damage(dam);
+                                //target2.Damage(dam);
                                 break;
                             }
                         }
