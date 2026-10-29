@@ -1187,7 +1187,6 @@ const WaW85 = (() => {
                     top: y,
                 })
                 toFront(unit2.token);
-                ChangeTokenIDs(unit2.id,unit2.hexLabel,this.hexLabel);
                 unit2.hexLabel = this.hexLabel;
             }
         }
@@ -4699,7 +4698,7 @@ log(weapon.sound)
         state.WaW85.attachedIDs[passenger.id] = newIDs2;
         passenger.MoveAttached();
         transport.MoveAttached();
-        ChangeTokenIDs(passenger.id,passenger.hexLabel,transport.hexLabel);
+        ChangeTokenIDs(passenger,passenger.hexLabel,transport.hexLabel);
     }
 
     const Load = (passenger,transport) => {
