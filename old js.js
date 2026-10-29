@@ -614,9 +614,10 @@ const WaW85 = (() => {
             this.improved = []; //improved positions
             this.minefield = [];
             this.minefieldType = ""; //placed or random
-            this.wrecks = []; //changed in firing
-            this.rubble = [];
-            this.fire = [];
+            this.wreck = false; //alt is tokenID of wreck
+            this.rubble = false; //alt is tokenID of rubble
+            this.fire = false; //alt is the tokenID of fire token
+            this.burntOut = false; //as fire
             this.height = 0; //height of terrain itself
             this.unitHeight = {
                 "Ground": 0,
@@ -628,7 +629,7 @@ const WaW85 = (() => {
             }
             this.offboard = true;
             this.los = "Normal";
-            this.smoke = [];
+            this.smoke = false;
             this.smokeType = ""; //full or half
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
@@ -645,6 +646,17 @@ const WaW85 = (() => {
         Distance(b) {
             let dist = this.cube.distance(b.cube);
             return dist;
+        }
+
+        PlaceWreck() {
+            //graphic
+
+
+            //place the tokenID of graphic in this.wreck
+        }
+
+        PlaceFire() {
+
         }
 
 
@@ -838,7 +850,7 @@ const WaW85 = (() => {
         ApplyDamage(damage) {
             if (this.type === "Aircraft") {
                 if (damage >= 2) {
-                    this.SetDestroy();
+                    this.SetDestroyed();
                 } else {
                     let roll = randomInteger(6);
                     if (roll < 4) {
@@ -859,10 +871,10 @@ const WaW85 = (() => {
                     }
                 }
                 if (damage >= hp) {
-                    this.SetDestroy();
+                    this.SetDestroyed();
                     outputCard.body.push(this.name + " is Destroyed");
                 } else if (damage > 0) {
-                    this.SetReduce();
+                    this.SetReduced();
                     outputCard.body.push(this.name + " is Reduced");
                 }
                 let dam = Math.min(hp,damage);
@@ -872,7 +884,7 @@ const WaW85 = (() => {
         }
 
 
-        SetDestroy() {
+        SetDestroyed() {
 
             let index = HexMap[this.hexLabel].tokenIDs.indexOf(this.id);
             if (index > -1) {
@@ -890,78 +902,9 @@ const WaW85 = (() => {
                 PlaySound("Crash");
             }
 
-            let passengerID = state.WaW85.passengerID[this.id];
-            let passenger = Units[passengerID];
-            let roll = randomInteger(6);
-            if (this.type === "Helicopter" && (this.HeloStatus() === "Flying") || this.HeloStatus() === "Hovering") {
-                roll = 6;
-            }
-
-            if (passenger) {
-                if (roll < 4 && parseInt(passenger.token.get("bar1_value")) > 1) {
-                    outputCard.body.push(passenger.name + " is Reduced and Disrupted");
-                    passenger.SetDisrupt(true);
-                    passenger.SetReduce(true);
-                } else {
-                    outputCard.body.push(passenger.name + " is Destroyed");
-                    passenger.SetDestroy();
-                }
-            }
- 
-            let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
-            //check for other units, unless helicopter
-            let otherUnit;
-            if (this.type !== "Helicopter" && this.type !== "Aircraft") {
-                let tokenIDs = HexMap[this.hexLabel].tokenIDs;
-                for (let j=0;j<tokenIDs.length;j++) {
-                    let unit2 = Units[tokenIDs[j]];
-                    if (unit2.id === this.id || unit2.nation !== this.nation) {continue};
-                    if (unit2.type === "Leader" || unit2.type === "HQ") {
-                        attachedIDs.push(unit2.id);
-                    } else {
-                        otherUnit = unit2;
-                    }
-                }
-            }
-
-            for (let i=0;i<attachedIDs.length;i++) {
-                let unit2 = Units[attachedIDs[i]];
-                let roll2 = randomInteger(6);
-                if (unit2) {
-                    if (unit2.type === "HQ" && unit2.formationID !== otherUnit.formationID) {
-                        roll2 = -1; //HQ cant transfer to another formation
-                    }
-                    if (unit2.type === "HQ" || unit2.type === "Leader") {
-                        if (otherUnit && roll2 === 1) {
-                            if (state.WaW85.attachedIDs[otherUnit.id].includes(unit2.id)) {
-                                //nothing happens
-                            } else  {
-                                outputCard.body.push(unit2.name + " attaches to " + otherUnit.name);
-                                let ids = state.WaW85.attachedIDs[otherUnit.id] || [];
-                                ids.push(unit2.id);
-                                state.WaW85.attachedIDs[otherUnit.id] = ids;
-                                otherUnit.MoveAttached();
-                            } 
-                        }
-                        if (otherUnit && roll2 > 1) {
-                            outputCard.body.push(unit2.name + " Is Reduced");
-                            unit2.SetReduce();
-                        }
-                        if (!otherUnit || roll2 === -1) {
-                            if (unit2.type === "HQ") {
-                                unit2.HQReduce();
-                                outputCard.body.push(unit2.name + " Is Reduced and Moved Offboard");
-                            } else {
-                                unit2.SetDestroy();
-                                outputCard.body.push(unit2.name + " is Destroyed");
-                            }
-                        }
-                    } else {
-                        unit2.SetDestroy();
-                        outputCard.body.push(unit2.name + " is Destroyed");
-                    }
-                }
-            }
+            this.Passengers("Destroyed");
+            this.AttachedSupport("Destroyed");
+            this.AttachedHQLeaders("Destroyed");
 
             if (this.type !== "HQ") {
                 this.token.set("status_death",true);
@@ -969,23 +912,10 @@ const WaW85 = (() => {
                 toFront(this.token);
                 delete Unit[this.id];
             }
-
-
-
         }
 
-        SetReduce() {
 
 
-
-        }
-
-        HQReduce() {
-
-
-
-
-        }
 
 
         Disrupted() {
@@ -1012,9 +942,26 @@ const WaW85 = (() => {
             return reduced;
         }
         SetReduced(stat) {
-            let steps = this.token.get("sides").split("|").length;
-            let newSide = (stat === true && steps === 2) ? 1:0; 
-            this.token.set("currentSide",newSide);
+            let hp = parseInt(this.token.get("bar1_value"));
+            if (stat === true) {
+                if (hp === 1) {
+                    if (this.type === "HQ") {
+                        HQReduced();
+                    } else {
+                        outputCard.body.push(this.name + " is Destroyed");
+                        this.Destroy();
+                    }
+                } else if (hp === 2) {
+                    this.token.set("currentSide",1);
+                    this.token.set("bar1_value",1);
+                    this.Passengers("Reduced");
+                    this.AttachedSupport("Reduced");
+                    this.AttachedHQLeaders("Reduced");
+                }
+            } else {
+                this.token.set("currentSide",0);
+                this.token.set("bar1_value",2);
+            }
         }
         Active() {
             let active = (this.token.get("aura1_color") === "#00ff00") ? true:false;
@@ -1223,6 +1170,101 @@ const WaW85 = (() => {
             }
             return results;
         }
+
+        Passengers(effect) {
+            let passengerID = state.WaW85.passengerID[this.id];
+            let passenger = Units[passengerID];
+            if (!passenger) {return};
+            if (passenger.type === "HQ" || passenger.type === "Leader" || passenger.type === "Support") {return}; 
+            let roll = randomInteger(6);
+            if (this.type === "Helicopter" && (this.HeloStatus() === "Flying") || this.HeloStatus() === "Hovering") {
+                roll = 6;
+            }
+            if (effect === "Reduced" && roll < 4) {
+                //no effect
+            } else if ((effect === "Reduced" && roll > 3) || (effect === "Destroyed" && roll < 4 && parseInt(passenger.token.get("bar1_value")) > 1)) {
+                outputCard.body.push(passenger.name + " is Reduced and Disrupted");
+                passenger.SetDisrupt(true);
+                passenger.SetReduced(true);
+            } else {
+                outputCard.body.push(passenger.name + " is Destroyed");
+                passenger.SetDestroyed();
+            }
+        }
+
+        AttachedSupport(effect) {
+            let attachedIDs = state.WaW85.attachedIDs[this.id] || [];
+            if (attachedIDs.length === 0) {return};
+            for (let i=0;i<attachedIDs.length;i++) {
+                let attached = Units[attachedIDs[i]];
+                let roll = randomInteger(6);
+                if (!attached) {continue};
+                if (attached.type !== "Support") {continue};
+                if (effect === "Destroyed" || roll > 3) {
+                    outputCard.body.push(attached.name + " is Destroyed");
+                    attached.SetDestroyed();
+                } else {
+                    //no effect
+                }
+            }
+        }
+
+        AttachedHQLeaders(effect) {
+            //reduction or destruction might affect ANY HQ or Leader in Hex
+            let tokenIDs = HexMap[this.hexLabel].tokenIDs;
+            let hqlUnits = [];
+            let otherUnit; //the hex.tokenIDs shouldnt have this.id as removed before if destroyed
+            for (let i=0;i<tokenIDs.length;i++) {
+                let tokenID = tokenIDs[i];
+                let unit = Units[tokenID];
+                if ((unit.type === "HQ" || unit.type === "Leader") && unit.nation === this.nation) {
+                    hqlUnits.push(unit);
+                } else if (unit.type === "Infantry" || unit.type === "Vehicle" || unit.type === "Towed" || (unit.type === "Helicopter" && unit.HeloStatus() === "Landed")) {
+                    otherUnit = unit;
+                }
+            }
+            _.each(hqlUnits,hqlUnit => {
+                let roll = randomInteger(6)
+                if (effect === "Destroyed" && otherUnit) {
+                    roll += 2;
+                }
+                if (effect === "Reduced" || (effect === "Destroyed" && otherUnit)) {
+                    if (roll > 3) {
+                        hqlUnit.SetReduced();
+                    }
+                    //otherwise ok
+                } else {
+                    hqlUnit.SetDestroyed();
+                }
+            })
+        }
+
+
+        HQReduced() {
+            outputCard.body.push(this.name + " is Moved Offboard and is Suppressed");
+            this.token.set("currentSide",1);
+            this.token.set("bar1_value",1);
+            let name = (RedFor.includes(transport.nation)) ? "Red Card":"Blue Card"; 
+            let card = findObjs({_type:"graphic",layer: "map", name: name})[0];
+            if (!card) {
+                sendChat("","Cards not Set Up");
+            } else {
+                this.token.set({
+                    left: card.get("left"),
+                    top: card.get("top"),
+                })
+                let index = HexMap[this.hexLabel].tokenIDs.indexOf(this.id);
+                if (index > -1) {
+                    HexMap[this.hexLabel].tokenIDs.splice(index,1);
+                }
+                let newLabel = new Point(card.get("left"),card.get("top")).label();
+                this.hexLabel = newLabel;
+                if (HexMap[this.hexLabel].tokenIDs.includes(this.id) === false) {
+                    HexMap[this.hexLabel].tokenIDs.push(this.id);
+                }
+            }
+        }
+
 
 
 
@@ -1656,12 +1698,8 @@ const WaW85 = (() => {
                 let centre = new Point(token.get("left"),token.get('top'));
                 let centreLabel = centre.toCube().label();
                 let hex = HexMap[centreLabel];
-                if (name === "Smoke") {
-                    hex.smoke = true;
-                } else {
-                    hex.smoke = "Dispersed";
-                }
-                hex.smokeID = token.id;
+                hex.smoke = token.get("id");
+                hex.smokeType = name;
             }
             let terrain = TerrainInfo[name];
             if (terrain) {
@@ -2101,9 +2139,9 @@ const WaW85 = (() => {
 //log("H:" + interHex.height)
 //log("LOS: " + interHex.los)
                 //terrain
-                if (interHex.smoke.length > 0 || interHex.fire.length > 0) {
+                if (interHex.smoke !== false) {
 //log("Smoke")
-                    //1 smoke or fire hex, even if hexside, blocks LOS, unless thermal
+                    //1 smoke hex, even if hexside, blocks LOS, unless thermal
                     if (thermal === true) {
                         smokeHexes++;
                     } else {
@@ -2112,18 +2150,18 @@ const WaW85 = (() => {
                         continue;
                     }
                 }
-                if (interHex.fire.length > 0) {
+                if (interHex.fire !== false) {
                     blocked = 2;
                     blockLabel = label;
                     continue;
                 }
                 if (shooterHeight === targetHeight) {
-                    if ((interHex.los === "Blocks" || interHex.rubble.length > 0) && interHex.height > shooterHeight) {
+                    if ((interHex.los === "Blocks" || interHex.rubble !== false) && interHex.height > shooterHeight) {
 //log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
-                    } else if (interHex.los === "Obscures" || interHex.wrecks.length > 0) {
+                    } else if (interHex.los === "Obscures" || interHex.wreck !== false) {
                         obscured++;
                         blockLabel = label;
                     }
@@ -2507,12 +2545,12 @@ log("Checking " + unit.name);
             }
         }
         //10.6.6 firing into adjacent smoke hex 10.6.6
-        if (HexMap[target.hexLabel].smoke === true && losResult.distance === 1) {
+        if (HexMap[target.hexLabel].smoke !== false && losResult.distance === 1) {
             shooterTips += "<br>Smoke in Target Hex +1 TH";
             toHit++;
         }
         //10.6.7 firing out of a smoke filled hex into an adjacent hex
-        if (HexMap[shooter.hexLabel].smoke === true && losResult.distance === 1) {
+        if (HexMap[shooter.hexLabel].smoke !== false && losResult.distance === 1) {
             shooterTips += "<br>Smoke in Shooter's Hex +1 TH";
             toHit++;
         }
@@ -4826,11 +4864,11 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     cost = 1;
                 }
                 //rubble here, should override the road cost of 1 above
-                if (endHex.rubble.length > 0) {
+                if (endHex.rubble !== false) {
                     if (moveType === "Troops") {stepHexCost = 2};
                     if (moveType === "Vehicle" || moveType === "Helo NOE") {stepHexCost = 3};            
                 }
-                if (endHex.smoke.length > 0) {
+                if (endHex.smoke !== false) {
                     cost = cost++;
                 }
                 //Rivers then Water
@@ -4847,7 +4885,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     cost = totalMove;
                 } 
                 //fire hexes
-                if (endHex.fire.length > 0) {
+                if (endHex.fire !== false) {
                     cost = 100;
                 }
 
