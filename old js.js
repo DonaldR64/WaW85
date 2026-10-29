@@ -611,13 +611,20 @@ const WaW85 = (() => {
             }
             this.edges = edges;
             this.terrain = "Clear";
-            this.improved = []; //improved positions
-            this.minefield = false; //alt is tokenID of minefield, type is name
-            this.wreck = false; //alt is tokenID of wreck
-            this.rubble = false; //alt is tokenID of rubble
-            this.fire = false; //alt is the tokenID of fire token
-            this.burntOut = false; //as fire
+
+
+            //for below, false if none, tokenID of the item if true
+            this.improved = false; 
+            this.minefield = false; //type is name of token
+            this.wreck = false;
+            this.rubble = false; 
+            this.fire = false;
+            this.burntOut = false;
+            this.smoke = false; //type is name of token
+            this.cleared = false;
+
             this.height = 0; //height of terrain itself
+
             this.unitHeight = {
                 "Ground": 0,
                 "Helo Landed": 0,
@@ -628,7 +635,6 @@ const WaW85 = (() => {
             }
             this.offboard = true;
             this.los = "Normal";
-            this.smoke = false;
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
             this.road = false;
@@ -654,6 +660,22 @@ const WaW85 = (() => {
             if (this.fire !== false) {return};
             if (this.burntOut !== false) {return};
             this.fire = CreateMarker(this,"Fire");
+            if (this.wreck !== false) {
+                let wreckToken = getObj("graphic",this.wreck);
+                if (wreckToken) {wreckToken.remove};
+                this.wreck = false;
+            }
+            if (this.improved !== false) {
+                let impToken = getObj("graphic",this.improved);
+                if (impToken) {impToken.remove};
+                this.improved = false;
+            }
+            if (this.cleared !== false) {
+                let clearedToken = getObj("graphic",this.cleared);
+                if (clearedToken) {clearedToken.remove};
+                this.cleared = false;
+            }
+
             for (let i=0;i<this.tokenIDs.length;i++) {
                 let unit = Units[this.tokenIDs[i]];
                 let flag = false;
@@ -2766,6 +2788,7 @@ log("Checking " + unit.name);
         outputCard.body.push(tip + target.name);
 
         if (hits > 0) {
+            let terDamage = false;
             //Defender - armour then terrain saves
             if (defDice > 0) {
                 for (let i=0;i<defDice;i++) {
@@ -2806,6 +2829,9 @@ log("Checking " + unit.name);
                 outputCard.body.push("Improved Positions reduce Damage");
                 damage = Math.max(0,damage--);
             }
+            if (damage > 2) {
+                terDamage = true;
+            }
             outputCard.body.push("[hr]");
             if (damage > 0 && target.type !== "Aircraft") {
                 damage = target.ApplyDamage(damage); //returns remaining damage
@@ -2825,6 +2851,25 @@ log("Checking " + unit.name);
                 }
             } else {
                 outputCard.body.push("No Damage");
+            }
+
+
+            if (terDamage) {
+                let terRoll = randomInteger(6);
+                let hex = HexMap[target.hexLabel];
+                let list = ["Woods","City","Town","Jungle","Cultivated"];
+                let valid = list.some(word => hex.terrain.includes(word));
+                if (valid === true && terRoll > 4) {
+                    if (terRoll === 5 && hex.terrain.includes("Cultivated") === false && hex.rubble === false) {
+                        outputCard.body.push("[hr]");
+                        outputCard.body.push("The Terrain is turned to Rubble")
+                        hex.PlaceRubble();
+                    } else if (terRoll === 6 && hex.burntOut === false) {
+                        outputCard.body.push("[hr]");
+                        outputCard.body.push("A Major Fire starts in the Hex")
+                        hex.PlaceFire();
+                    }
+                }
             }
         } 
 
@@ -3653,6 +3698,7 @@ log(weapon.sound)
             outputCard.body.push("Game Over");
         } else {
             if (state.WaW85.turn === 0) {
+                MoveTokens();
                 InitiativePhase();
             } else {
                 LastFormation();
@@ -3684,7 +3730,23 @@ log(weapon.sound)
         }
     }
 
-
+    const MoveTokens = () => {
+        //search for player placed Improved Positions
+        let tokens = findObjs({
+            _pageid: Campaign().get("playerpageid"),
+            _type: "graphic",
+            _subtype: "token",
+            layer: "objects",
+        });
+        _.each(tokens, token => {
+            if (token.get('name') === "Improved Positions") {
+                token.set("layer","map");
+                toFront(token);
+                let hexLabel = new Point(token.get("left"),token.get("top")).label();
+                HexMap[hexLabel].improved = token.get("id");
+            }
+        })
+    }
 
 
 
