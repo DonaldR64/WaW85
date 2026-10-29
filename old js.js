@@ -640,8 +640,6 @@ const WaW85 = (() => {
             this.road = false;
             this.assaultMod = false;
 
-//a function will be needed for player to place imp. positions and minefields, while random imefields are from firing
-
 
             HexMap[this.label] = this;
         }
@@ -746,8 +744,9 @@ const WaW85 = (() => {
             let hexLabel = location.label();
             let attributes = AttributeArray(char.id);  
 
-            let nation = attributes.nation;
+            let nation = attributes.nation || "Neutral";
             let player = (RedFor.includes(nation)) ? 0:1;
+            if (nation === "Neutral") {player = 2};
             let core = attributes.core || "0";
             this.core = core.toString() === "1" ? true:false;
 
@@ -2008,6 +2007,7 @@ const WaW85 = (() => {
     
         state.WaW85 = {
             turn: 0,
+            playerIDs: ["",""], //set once a player activates their first formation in game
             phase: "Initiative",
             cards: [],
             played: [],
@@ -2026,6 +2026,8 @@ const WaW85 = (() => {
             unitInfo: {}, //ref by token ID, is the formationID of that token
             passengerID: {}, //ref by tokenID for the transport is the ID of the passenger
             attachedIDs: {}, //ref by tokenID of the main unit, is the IDs in an array of leaders, HQs attached to it
+            hiddenMinefieldLocations: [],
+            minefieldPlayer: 2,
         }
     
 
@@ -3698,7 +3700,7 @@ log(weapon.sound)
             outputCard.body.push("Game Over");
         } else {
             if (state.WaW85.turn === 0) {
-                MoveTokens();
+                MoveImproved();
                 InitiativePhase();
             } else {
                 LastFormation();
@@ -3730,7 +3732,7 @@ log(weapon.sound)
         }
     }
 
-    const MoveTokens = () => {
+    const MoveImproved = () => {
         //search for player placed Improved Positions
         let tokens = findObjs({
             _pageid: Campaign().get("playerpageid"),
@@ -3747,6 +3749,8 @@ log(weapon.sound)
             }
         })
     }
+
+
 
 
 
@@ -4069,7 +4073,13 @@ log(weapon.sound)
     const ActivateFormation = (msg) => {
         LastFormation();
         let id = msg.selected[0]._id;
+        let playerID = msg.playerid;
         let hq = Units[id];
+log(hq.player)
+        if (state.WaW85.playerIDs[hq.player] === "") {
+            state.WaW85.playerIDs[hq.player] = playerID;
+        }
+log(state.WaW85.playerIDs)
         let formation = state.WaW85.formationInfo[hq.formationID];
         state.WaW85.activeFormationID = formation.id;
         let ew = (hq.token.get(SM.EW) || hq.token.get(SM.EWReducing)) ? true:false;
@@ -4077,7 +4087,7 @@ log(weapon.sound)
         SetupCard(formation.name,"Activation",formation.nation);
         let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(hq.id));
         if (!parentID) {
-            parentID = unit.AutoAttach();
+            parentID = hq.AutoAttach();
             if (!parentID) {
                 outputCard.body.push("Needs to be Attached to a Unit in Formation");
                 PrintCard();
@@ -4838,6 +4848,83 @@ log(weapon.sound)
 
 
 
+    const PlaceMinefield = (msg) => {
+        if (!msg.selected) {return};
+        let id = msg.selected[0]._id;
+        let minefield = new Unit(id);
+        let player = minefield.player;
+        let hex = HexMap[minefield.hexLabel];
+        if (hex.terrain.includes("City") || hex.terrain.includes("Towm")) {
+            sendChat("","Minefields cant be placed in City or Town");
+            return;
+        }        
+        state.WaW85.hiddenMinefieldLocations.push(minefield.hexLabel);
+        state.WaW85.minefieldPlayer = player;
+        hex.minefield = id; //token wont be there but serves to be 'not false'
+        minefield.token.remove();
+        delete Units[id];
+        sendChat("","Minefield Hidden");
+    }
+
+    const ListMinefields = (msg) => {
+        if (!msg.playerid) {return};
+        let playerID = msg.playerid;
+        let player = state.WaW85.playerIDs[0] === playerID ? 0:1;
+        if (state.WaW85.minefieldPlayer === player) {
+            SetupCard("Minefields","","Neutral");
+            _.each(state.WaW85.hiddenMinefieldLocations,location => {
+                outputCard.body.push("Hex: " + location);
+            })
+            PrintCard(playerID);
+        } else {
+            sendChat("","Not Placing Player");
+        }
+    }
+
+    const MinefieldHit = (unit,startHex,endHex) => {
+        let startID = unit.id;
+        //is it hidden? if so, place token, announce etc
+        let index = state.WaW85.hiddenMinefieldLocations.indexOf(endHex.label);
+        if (index > -1) {
+            if (unitPlayer === state.WaW85.minefieldPlayer) {
+                return; //no effect
+            }
+            outputCard.body.push("[#ff0000]The Unit has entered a Minefield![/#]");
+            let mid = CreateMarker(endHex,"Placed Minefield");
+            endHex.minefield = mid;
+            state.WaW85.hiddenMinefieldLocations.splice(index,1);
+        }
+        let minefieldID = endHex.minefield;
+        let minefieldToken = getObj("graphic",minefieldID);        
+        let type = minefieldToken.get("name");
+        if (type === "Placed Minefield" && unit.player === state.WaW85.minefieldPlayer) {
+            return;
+        }
+        //not a friendly mine
+        let minefieldRoll = randomInteger(6);
+        if (minefieldRoll < 4) {
+            outputCard.body.push("No Mines are Set Off");
+            return;
+        } else if (minefieldRoll === 6) {
+            outputCard.body.push("The Unit sets off Mines, taking 2 Hits");
+            unit.ApplyDamage(2);
+        } else {
+            outputCard.body.push("The Unit sets off Mines, taking 1 Hit");
+            unit.ApplyDamage(1);        
+        }
+        unit = Units[startID];
+        if (unit) {
+            //survived a hit, must retreat
+            outputCard.body.push("The Unit retreats back to its last hex");
+            unit.hexLabel = startHex.label;
+            unit.token.set({
+                left: startHex.centre.x,
+                top: startHex.centre.y,
+            })
+            ChangeTokenIDs(unit,endHex.label,startHex.label);
+            unit.MoveAttached();
+        }
+    }
 
 
 
@@ -4945,6 +5032,24 @@ log(weapon.sound)
             deltaLeft = 0;
             deltaTop = 0;
             markerName = "BurntOut";
+            rotation = randomInteger(360);
+        }
+        if (type === "Placed Minefield") {
+            img = "https://files.d20.io/images/505777861/9mXv-M-ZFckh52Mr_Euztw/thumb.webp?1793302950";
+            width = 60;
+            height = 60;
+            deltaLeft = 0;
+            deltaTop = 0;
+            markerName = "Placed Minefield";
+            rotation = randomInteger(360);
+        }
+        if (type === "Random Minefield") {
+            img = "";
+            width = 60;
+            height = 60;
+            deltaLeft = 0;
+            deltaTop = 0;
+            markerName = "Random Minefield";
             rotation = randomInteger(360);
         }
 
@@ -5069,6 +5174,12 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 endHex = DeepCopy(startHex);
             } else {
                 let cost = endHex.movementCosts[moveType] || 100;
+                if (startHex.minefield !== false) {
+                    cost += 2;
+                }
+                if (endHex.minefield !== false && state.WaW85.hiddenMinefieldLocations.includes(endHex.label) === false) {
+                    cost += 1;
+                }
                 let dir = startHex.cube.whatDirection(endHex.cube);
                 let edge = startHex.edges[dir];
                 if (endHex.terrain.includes("Hill") && startHex.terrain.includes("Hill") === false) {
@@ -5175,6 +5286,14 @@ log("Not Active, Distance > 1 or Remaining move === 0")
 
         ChangeTokenIDs(unit,startHex.label,endHex.label);
         unit.MoveAttached();
+        //minefields
+        if (endHex.minefield !== false) {
+            MinefieldHit(unit,startHex,endHex);
+        }
+
+
+
+
     }
 
     const ChangeTokenIDs = (unit,startLabel,endLabel) => {
@@ -5314,7 +5433,12 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             case '!ArtCheck':
                 ArtCheck(msg);
                 break;
-
+            case '!PlaceMinefield':
+                PlaceMinefield(msg);
+                break;
+            case '!ListMinefields':
+                ListMinefields(msg);
+                break;
         }
     };
 
