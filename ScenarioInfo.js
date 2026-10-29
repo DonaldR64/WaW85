@@ -18,7 +18,7 @@ const ScenarioData = {
             1: {
                 id: 1,
                 name: "Soviet 2/247th GMR",
-                hqName: "2nd Battalion",
+                hqName: "2nd Battalion HQ",
                 morale: 6,
                 commandRange: [4,3],
                 nation: "Soviet",
@@ -41,7 +41,7 @@ const ScenarioData = {
             3: {
                 id: 3,
                 name: "US 1/11th ACR",
-                hqName: "Bravo Co",
+                hqName: "Bravo Co HQ",
                 morale: 7,
                 commandRange: [5,4],
                 nation: "US Army",

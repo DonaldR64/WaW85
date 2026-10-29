@@ -1192,14 +1192,16 @@ const WaW85 = (() => {
                 let dy = this.token.get('height')/2;
                 if (unit2.type === "HQ") {
                     //top L
-                    dx = -dx;
-                    dy = -dy;
+                    dx = 5 -dx;
+                    dy = 5 -dy;
                 } else if (unit2.type === "Leader") {
                     //bottom L
-                    dx = -dx;
+                    dx = 5 -dx;
+                    dy -= 5
                 } else {
                     //default is top R
-                    dy = -dy;
+                    dy = 5 -dy;
+                    dx -= 5
                 }
                 let x = this.token.get("left") + dx;
                 let y = this.token.get("top") + dy;
@@ -1794,19 +1796,37 @@ const WaW85 = (() => {
         //add terrain using tokens
         let tokens = findObjs({_pageid: Campaign().get("playerpageid"),_type: "graphic",_subtype: "token",layer: "map",});
         _.each(tokens,token => {
+            let centre = new Point(token.get("left"),token.get('top'));
+            let centreLabel = centre.toCube().label();
+            let hex = HexMap[centreLabel];
+            let id = token.get("id");
             let name = token.get("name");
-            if (name === "Smoke" || name === "Dispersed Smoke") {
-                let centre = new Point(token.get("left"),token.get('top'));
-                let centreLabel = centre.toCube().label();
-                let hex = HexMap[centreLabel];
-                hex.smoke = token.get("id");
-                hex.smokeType = name;
+            if (name.includes("Smoke")) {
+                hex.smoke = id;
+            }
+            if (name === "BurntOut") {
+                hex.burntOut = id;
+            }
+            if (name === "Rubble") {
+                hex.rubble = id;
+            }
+            if (name === "Fire") {
+                hex.fire = id;
+            }
+            if (name === "Wreck") {
+                hex.wreck = id;
+            }
+            if (name.includes("Mines")) {
+                hex.minefield = id;
+            }
+            if (name === "Improved Positions") {
+                hex.improved = id;
+            }
+            if (name === "Cleared") {
+                hex.cleared = id;
             }
             let terrain = TerrainInfo[name];
             if (terrain) {
-                let centre = new Point(token.get("left"),token.get('top'));
-                let centreLabel = centre.toCube().label();
-                let hex = HexMap[centreLabel];
                 let keys = Object.keys(terrain);
                 _.each(keys,key => {
                     hex[key] = terrain[key];
@@ -3432,6 +3452,37 @@ log("Sound: " + weapon.sound)
             if (hex.road === true) {
                 outputCard.body.push("Road Present");
             }
+            if (hex.improved !== false) {
+                outputCard.body.push("Improved Positions");
+            }
+            if (hex.minefield !== false) {
+                let minefield = getObj("graphic",hex.minefield);
+                if (minefield && state.WaW85.hiddenMinefieldLocations.includes(hex.label) === false) {
+                    outputCard.body.push(minefield.get("name"));
+                }
+            }
+            if (hex.wreck !== false) {
+                outputCard.body.push("Wrecks in Hex");
+            }
+            if (hex.rubble !== false) {
+                outputCard.body.push("Rubble in Hex");
+            }
+            if (hex.fire !== false) {
+                outputCard.body.push("Major Fires in Hex");
+            }
+            if (hex.burntOut !== false) {
+                outputCard.body.push("Burnt Out Fire");
+            }
+            if (hex.smoke !== false) {
+                let smoke = getObj("graphic",hex.smoke);
+                outputCard.body.push(smoke.get("name") + " in Hex");
+            }
+            if (hex.cleared !== false) {
+                outputCard.body.push("Hex is Cleared");
+            }
+
+
+
         }
         outputCard.body.push("[hr]")
         let formation = state.WaW85.formationInfo[unit.formationID];
@@ -3700,7 +3751,6 @@ log(weapon.sound)
             outputCard.body.push("Game Over");
         } else {
             if (state.WaW85.turn === 0) {
-                MoveImproved();
                 InitiativePhase();
             } else {
                 LastFormation();
@@ -3731,26 +3781,6 @@ log(weapon.sound)
             state.WaW85.turn = 1;
         }
     }
-
-    const MoveImproved = () => {
-        //search for player placed Improved Positions
-        let tokens = findObjs({
-            _pageid: Campaign().get("playerpageid"),
-            _type: "graphic",
-            _subtype: "token",
-            layer: "objects",
-        });
-        _.each(tokens, token => {
-            if (token.get('name') === "Improved Positions") {
-                token.set("layer","map");
-                toFront(token);
-                let hexLabel = new Point(token.get("left"),token.get("top")).label();
-                HexMap[hexLabel].improved = token.get("id");
-            }
-        })
-    }
-
-
 
 
 
@@ -4762,6 +4792,16 @@ log(state.WaW85.playerIDs)
             if (unit.special.includes("Alternate") && oldID) {
                 errorMsg.push("Cannot transfer Alternate Armament Support Weapons");
             }
+            if (unit2.type === "HQ" || unit2.type === "Leader" || unit2.type === "Support") {
+                let parent = unit.AutoAttach();
+                if (parent) {
+                    unit2 = Units[parent]
+                } else {
+                    errorMsg.push("Can't Attach to that Unit");
+                }
+            }
+
+
             if (errorMsg.length > 0) {
                 _.each(errorMsg,msg => {
                     outputCard.body.push(msg);
@@ -4865,6 +4905,19 @@ log(state.WaW85.playerIDs)
         delete Units[id];
         sendChat("","Minefield Hidden");
     }
+
+    const PlaceImproved = (msg) => {
+        if (!msg.selected) {return};
+        let id = msg.selected[0]._id;
+        let improved = getObj("graphic",id);
+        improved.set("layer","map");
+        toFront(improved);
+        let hexLabel = new Point(improved.get("left"),improved.get("top")).label();
+        HexMap[hexLabel].improved = id;
+        sendChat("","Improved Positions Placed");
+    }
+
+
 
     const ListMinefields = (msg) => {
         if (!msg.playerid) {return};
@@ -5220,11 +5273,11 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     let unitCount = 0;
                     _.each(endHex.tokenIDs, tokenID => {
                         if (tokenID !== unit.id) {
-                            let unit2 = Units[tokenID]
-                            if (unit2.player === unit.player && unit2.Stackable() === false) {
+                            let unit2 = Units[tokenID];
+                            if (unit2 && unit2.player === unit.player && unit2.Stackable() === false) {
                                 unitCount++;
                             }
-                            if (unit2.player !== unit.player) {
+                            if (unit2 && unit2.player !== unit.player) {
                                 //unit with no AP cant go into assault with armour
                                 if (unit.apWeapon === false && unit2.armourType === "Heavy") {
                                     unitCount = 100;
@@ -5435,6 +5488,9 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 break;
             case '!PlaceMinefield':
                 PlaceMinefield(msg);
+                break;
+            case '!PlaceImproved':
+                PlaceImproved(msg);
                 break;
             case '!ListMinefields':
                 ListMinefields(msg);
