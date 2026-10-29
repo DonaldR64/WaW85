@@ -612,8 +612,7 @@ const WaW85 = (() => {
             this.edges = edges;
             this.terrain = "Clear";
             this.improved = []; //improved positions
-            this.minefield = [];
-            this.minefieldType = ""; //placed or random
+            this.minefield = false; //alt is tokenID of minefield, type is name
             this.wreck = false; //alt is tokenID of wreck
             this.rubble = false; //alt is tokenID of rubble
             this.fire = false; //alt is the tokenID of fire token
@@ -630,7 +629,6 @@ const WaW85 = (() => {
             this.offboard = true;
             this.los = "Normal";
             this.smoke = false;
-            this.smokeType = ""; //full or half
             this.movementCosts = {"Troops": 1, "Vehicles": 1, "Helo NOE": 1, "Helo Flying": 1};
             this.defenseBonus = {"Troops": 0, "Vehicles": 0},
             this.road = false;
@@ -649,16 +647,52 @@ const WaW85 = (() => {
         }
 
         PlaceWreck() {
-            //graphic
-
-
-            //place the tokenID of graphic in this.wreck
+            if (this.wreck !== false) {return};
+            this.wreck = CreateMarker(this,"Wreck");
         }
-
         PlaceFire() {
+            if (this.fire !== false) {return};
+            if (this.burntOut !== false) {return};
+            this.fire = CreateMarker(this,"Fire");
+//check if tokens in hex
+
+
 
         }
+        PlaceRubble() {
+            if (this.rubble !== false) {return};
+            let fireToken = getObj("graphic",this.fire);
+            if (fireToken) {fireToken.remove()};
+            this.fire = false;
+            this.rubble = CreateMarker(this,"Rubble");
+        }
+        PlaceBurntOut() {
+            if (this.burntOut !== false) {return};
+            let fireToken = getObj("graphic",this.fire);
+            if (fireToken) {fireToken.remove()};
+            this.fire = false;
+            this.burntOut = CreateMarker(this,"BurntOut");
+        }
+        PlaceSmoke() {
+            if (this.smoke !== false) {return};
+            this.smoke = CreateMarker(this,"Smoke");
+        }
+        DegradeSmoke() {
+            if (this.smoke === false) {return};
+            let smokeToken = getObj("graphic",this.smoke);
+            if (smokeToken.name === "Smoke") {
+                this.smoke = CreateMarker(this,"Dispersed Smoke");
+            } else {
+                this.smoke = false;
+            }
+            smokeToken.remove();
+        }
+        BridgeCollapse() {
 
+        }
+        MinefieldDepletion() {
+
+        }
 
 
     }
@@ -4276,8 +4310,42 @@ log(weapon.sound)
         })
         state.WaW85.activeFormationID = "";
         state.WaW85.activeUnitID = "";
-        //remove smoke thinning, then all smoke to smoke thinning
-        //Fire Markers
+        _.each(HexMap, hex => {
+            //smoke
+            hex.DegradeSmoke();
+            //fire
+            if (hex.fire !== false) {
+                if (randomInteger(6) > 4) {
+                    outputCard.body.push("Fire Burns out in Hex " + hex.label);
+                    if (hex.terrain.includes("City") || hex.terrain.includes("Town")) {
+                        hex.PlaceRubble();
+                    } else {
+                        hex.PlaceBurntOut();
+                    }
+                }
+                _.each(edges,edge => {
+                    if (edge === "Bridge" && randomInteger(6) === 6) {
+                        outputCard.body.push("Bridge collapses next to Hex " + hex.label);
+                        hex.BridgeCollapse();
+                    }
+                })
+                if (hex.minefield === true && randomInteger(6) === 6) {
+                    hex.MinefieldDepletion();
+                    outputCard.body.push("Fire depletes a Minefield in Hex " + hex.label);
+                }
+                let neighbourCubes = hex.cube.neighbours();
+                _.each(neighbourCubes, cube => {
+                    let hex2 = HexMap[cube.label()];
+                    let roll = randomInteger(6);
+                    let list = ["City","Town","Woods","Jungle"];
+                    let valid = list.some(word => hex2.terrain.includes(word));
+                    if (hex2 && roll === 6 && valid) {
+                        outputCard.body.push("Fire spreads to Hex " + hex2.label);
+                        hex2.PlaceFire();
+                    }
+                })
+            }
+        })
         //remove squall marker
         if (state.WaW85.squall === true) {
             state.WaW85.squall === false;
@@ -4736,6 +4804,7 @@ log(weapon.sound)
         let c = hex.centre;
         let width,height,deltaLeft,deltaTop,markerName;
         let layer = "map";
+        let rotation = 0;
         if (type === "Move") {
             cost = Math.round(cost);
             img = getCleanImgSrc(MoveMarkers[cost]);
@@ -4745,20 +4814,44 @@ log(weapon.sound)
             deltaTop = 50;
             markerName = "Map Marker";
         }  
-        if (type === "Artillery") {
-            img = "https://files.d20.io/images/435843856/p3gB7BciMn2bAiWi0Gj0dA/thumb.webm?1743879153";
-            width = 140;
-            height = 140;
+        if (type === "Fire") {
+            img = "https://files.d20.io/images/444760310/hU74_47luSi2mkY1ejzjcQ/thumb.png?1749828980";
+            width = 70;
+            height = 80;
             deltaLeft = 0;
             deltaTop = 0;
-            markerName = "Artillery Marker"
+            rotation = randomInteger(360);
+            markerName = "Fire";
         }
+        if (type === "BurntOut") {
+            img = "https://files.d20.io/images/505755411/L0HHIoEj1V1X8s7v26a7qQ/thumb.avif?1793288319";
+            width = 60;
+            height = 70;
+            deltaLeft = 0;
+            deltaTop = 0;
+            markerName = "BurntOut";
+            rotation = randomInteger(360);
+        }
+
+
+        if (type === "Rubble") {
+            img = "https://files.d20.io/images/77961532/DcvUgeQt27Ip3NMDRhL2bQ/thumb.png?1554150576";
+            width = 70;
+            height = 80;
+            deltaLeft = 0;
+            deltaTop = 0;
+            rotation = randomInteger(360);
+            markerName = "Rubble";
+        }
+
+
         if (type === "Smoke") {
             img = "https://files.d20.io/images/196609276/u8gp3vcjYAunqphuw6tgWw/thumb.png?1611938031";
             width = 140;
             height = 140;
             deltaLeft = 0;
             deltaTop = 0;
+            rotation = randomInteger(360);
             markerName = "Smoke";
         }
         if (type === "Dispersed Smoke") {
@@ -4767,15 +4860,18 @@ log(weapon.sound)
             height = 140;
             deltaLeft = 0;
             deltaTop = 0;
+            rotation = randomInteger(360);
             markerName = "Dispersed Smoke";
         }
-        if (type === "Target") {
-            width = 70;
-            height = 70;
+        if (type === "Wreck") {
+            width = 80;
+            height = 65;
             deltaLeft = 0;
             deltaTop = 0;
-            markerName = "Target";
-            layer = "objects";
+            markerName = "Wreck";
+            layer = "map";
+            charID = "-P57Fh7Kevjh-WkzJzDy";
+            img = "https://files.d20.io/images/505754200/CPe5JvMCpBFAx79NGuhz4g/thumb.png?1793287244";
         }
 
         img = getCleanImgSrc(img);
@@ -4784,6 +4880,7 @@ log(weapon.sound)
         let newToken = createObj("graphic", {
             left: c.x + deltaLeft,
             top: c.y + deltaTop,
+            rotation: rotation,
             width: width,
             height: height, 
             name: markerName,
