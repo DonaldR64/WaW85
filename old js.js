@@ -654,10 +654,21 @@ const WaW85 = (() => {
             if (this.fire !== false) {return};
             if (this.burntOut !== false) {return};
             this.fire = CreateMarker(this,"Fire");
-//check if tokens in hex
-
-
-
+            for (let i=0;i<this.tokenIDs.length;i++) {
+                let unit = Units[this.tokenIDs[i]];
+                let flag = false;
+                if (unit) {
+                    outputCard.body.push(unit.name + " must retreat");
+                    if (unit.type === "Helicopter" && (unit.HeloStatus() === "Landed" || unit.HeloStatus() === "Hovering")) {
+                        outputCard.body.push("The Helicopter may change modes");
+                    }
+                    flag = true;
+                    unit.retreat = true;
+                }
+            }
+            if (flag === true) {
+                outputCard.body.push("No Opp Fire against Retreating Units");
+            }
         }
         PlaceRubble() {
             if (this.rubble !== false) {return};
@@ -864,6 +875,7 @@ const WaW85 = (() => {
             this.unloaded = false; //a flag
             this.passUnloaded = false; //flag
             this.bonusUsed = {Leader: false, HQ: false}; //flag for direcct fire
+            this.retreat = false; //a flag
 
             let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === id);
             if (transportID) {
@@ -4940,7 +4952,10 @@ log(weapon.sound)
         let moveTypes = ["Infantry","Towed","Vehicle","Helicopter"];
         let transportID = Object.keys(state.WaW85.passengerID).find(key => state.WaW85.passengerID[key] === unit.id);
         if (transportID) {return};
-        if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true && unit.passUnloaded === false) {
+        if (unit.retreat === true && distance > 1) {
+            unit.retreat = false;
+        }
+        if (state.WaW85.turn > 0 && moveTypes.includes(unit.type) && endHex.offboard !== true && unit.passUnloaded === false && unit.retreat === false) {
             if (unit.lastHexInfo && unit.lastHexInfo.label === endHex.label && unit.id === state.WaW85.activeUnitID) {
                 //moving back 1 hex, reset remainingMove and remove the last movemarker
                 unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
@@ -5046,7 +5061,9 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 }
             }
         }
+
         unit.passUnloaded = false;
+        unit.retreat = false;
         unit.hexLabel = endHex.label;
         unit.token.set({
             left: endHex.centre.x,
