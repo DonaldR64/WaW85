@@ -3916,15 +3916,21 @@ log(weapon.sound)
         }
 
         if (AirGone === true) {
+            outputCard.body.push("All Helicopters and Aircraft are Grounded and Leave the Map");
 //remove Helos and CAS
 
 
 
         }
         if (FireOut === true) {
-            //put out fires
-
-
+            outputCard.body.push("All Fires Burn Out")
+            _.each(HexMap,hex => {
+                if (hex.terrain.includes("City") || hex.terrain.includes("Town")) {
+                    hex.PlaceRubble();
+                } else {
+                    hex.PlaceBurntOut();
+                }
+            })
         }
 
 
