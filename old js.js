@@ -1310,7 +1310,42 @@ const WaW85 = (() => {
             }
         }
 
+        AutoAttach() {
+            let parentID;
+            let hexLabel = new Point(this.token.get("left"),this.token.get("top")).label();
+            let tokenIDs = HexMap[hexLabel].tokenIDs;
+            for (let i=0;i<tokenIDs.length;i++) {
+                let unit = Units[tokenIDs[i]];
+                if (unit && unit.nation === this.nation) {
+                    if (this.type === "Leader") {
+                        parentID = unit.id;
+                        break;
+                    }
+                    if (this.formationID !== unit.formationID) {continue};
+                    if (this.type === "HQ") {
+                        parentID = unit.id;
+                        break;
+                    }
+                    if (this.special.includes("Infantry") && unit.type === "Infantry") {
+                        parentID = unit.id;
+                        break;
+                    } 
+                    if (this.special.includes("Alternate") && unit.type !== "Infantry") {
+                        parentID = unit.id;
+                        break;
+                    }
+                }
+            }
 
+            if (parentID) {
+                let ids = state.WaW85.attachedIDs[parentID] || [];
+                ids.push(this.id);
+                state.WaW85.attachedIDs[parentID] = ids;
+                Units[parentID].MoveAttached();
+            }
+
+            return parentID;
+        }
 
 
 
@@ -3320,6 +3355,9 @@ log("Sound: " + weapon.sound)
         }
         if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(id));
+            if (!parentID) {
+                parentID = unit.AutoAttach();
+            }
             if (parentID) {
                 parent = Units[parentID];
                 outputCard.body.push("Attached to " + parent.name);
@@ -3977,9 +4015,12 @@ log(weapon.sound)
         SetupCard(formation.name,"Activation",formation.nation);
         let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(hq.id));
         if (!parentID) {
-            outputCard.body.push("Needs to be Attached to a Unit in Formation");
-            PrintCard();
-            return;
+            parentID = unit.AutoAttach();
+            if (!parentID) {
+                outputCard.body.push("Needs to be Attached to a Unit in Formation");
+                PrintCard();
+                return;
+            }
         }
 
         ResetFlags(formation);
@@ -4643,11 +4684,11 @@ log(weapon.sound)
             if (unit.special.includes("Infantry") && unit2.type !== "Infantry") {
                 errorMsg.push("This is an Infantry Support Weapon");
             }
-            if (unit.special.includes("Armour") && unit2.type === "Infantry") {
-                errorMsg.push("This is an Armour Support Weapon");
+            if (unit.special.includes("Alternate") && unit2.type === "Infantry") {
+                errorMsg.push("This is an Alternate Armament Support Weapon");
             }
-            if (unit.special.includes("Armour") && oldID) {
-                errorMsg.push("Cannot transfer Armour Support Weapons");
+            if (unit.special.includes("Alternate") && oldID) {
+                errorMsg.push("Cannot transfer Alternate Armament Support Weapons");
             }
             if (errorMsg.length > 0) {
                 _.each(errorMsg,msg => {
