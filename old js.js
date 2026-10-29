@@ -78,7 +78,7 @@ const WaW85 = (() => {
         }
     }
 
-
+    const attachedTypes = ["HQ","Leader","Support"];
 
     const SM = {
         oom: "status_MissileOut::7901720",
@@ -885,7 +885,11 @@ const WaW85 = (() => {
             }
 
             Units[id] = this;
-            HexMap[hexLabel].tokenIDs.push(id);
+            if (attachedTypes.includes(this.type) === false) {
+                if (HexMap[hexLabel].tokenIDs.includes(id) === false) {
+                    HexMap[hexLabel].tokenIDs.push(id);
+                }
+            }
 
 
 
@@ -1133,6 +1137,9 @@ const WaW85 = (() => {
                     st = true;
                 }
             }
+            if (this.type === "Aircraft") {
+                st = true;
+            }
             return st;
         }
 
@@ -1258,31 +1265,33 @@ const WaW85 = (() => {
         AttachedHQLeaders(effect) {
             //reduction or destruction might affect ANY HQ or Leader in Hex
             let tokenIDs = HexMap[this.hexLabel].tokenIDs;
-            let hqlUnits = [];
+            let otherIDs = state.WaW85.attachedIDs[this] || [];
             let otherUnit; //the hex.tokenIDs shouldnt have this.id as removed before if destroyed
             for (let i=0;i<tokenIDs.length;i++) {
-                let tokenID = tokenIDs[i];
-                let unit = Units[tokenID];
-                if ((unit.type === "HQ" || unit.type === "Leader") && unit.nation === this.nation) {
-                    hqlUnits.push(unit);
-                } else if (unit.type === "Infantry" || unit.type === "Vehicle" || unit.type === "Towed" || (unit.type === "Helicopter" && unit.HeloStatus() === "Landed")) {
-                    otherUnit = unit;
+                let unit2 = Units[tokenIDs[i]];
+                if (unit2.nation === this.nation) {
+                    otherUnit = unit2;
+                    let attIDs = state.WaW85.attachedIDs[unit2.id] || [];
+                    otherIDs = otherIDs.concat(attIDs);
+                    break;
                 }
             }
-            _.each(hqlUnits,hqlUnit => {
+            for (let i=0;i<otherIDs.length;i++) {
+                let unit2 = Units[otherIDs[i]];
+                if (unit2.type === "Support") {continue};
                 let roll = randomInteger(6)
                 if (effect === "Destroyed" && otherUnit) {
                     roll += 2;
                 }
                 if (effect === "Reduced" || (effect === "Destroyed" && otherUnit)) {
                     if (roll > 3) {
-                        hqlUnit.SetReduced();
+                        unit2.SetReduced();
                     }
                     //otherwise ok
                 } else {
-                    hqlUnit.SetDestroyed();
+                    unit2.SetDestroyed();
                 }
-            })
+            }
         }
 
 
@@ -1299,15 +1308,6 @@ const WaW85 = (() => {
                     left: card.get("left"),
                     top: card.get("top"),
                 })
-                let index = HexMap[this.hexLabel].tokenIDs.indexOf(this.id);
-                if (index > -1) {
-                    HexMap[this.hexLabel].tokenIDs.splice(index,1);
-                }
-                let newLabel = new Point(card.get("left"),card.get("top")).label();
-                this.hexLabel = newLabel;
-                if (HexMap[this.hexLabel].tokenIDs.includes(this.id) === false) {
-                    HexMap[this.hexLabel].tokenIDs.push(this.id);
-                }
             }
         }
 
@@ -3026,6 +3026,8 @@ log("Sound: " + weapon.sound)
     //cant move a unit without an assault value or where assault = 0 into a hex (unless is HQ/Leader/Support) - in move hex
     //could be a defender with no AP being attacked, its damage vs Heavy Armour will just 'bounce'
 
+
+//rewrite below 
     const Assault = (msg) => {
         if (!msg.selected) {return}
         let id = msg.selected[0]._id;
@@ -3448,7 +3450,6 @@ log("Sound: " + weapon.sound)
             let targetHex = HexMap[target.hexLabel];
             for (let i=0;i<targetHex.tokenIDs.length;i++) {
                 let unit2 = Units[targetHex.tokenIDs[i]];
-                if (!unit2 || unit2.type === "HQ" || unit2.type === "Leader" || unit2.id === target.id || unit2.type === "Support") {continue};
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
                 if (i > 0) {outputCard.body.push("[hr]")};
                 Attack(weapon,artUnit,unit2);
@@ -3477,13 +3478,9 @@ log(weapon.sound)
     const Scatter = (target) => {
         let directionRoll = randomInteger(6) - 1;
         let direction = DIRECTIONS[directionRoll];
-        let startHex = HexMap[target.hexLabel];
-        let index = startHex.tokenIDs.indexOf(target.id);
-        if (index > -1) {
-            startHex.tokenIDs.splice(target.id);
-        }
-
-        let neighbourCube = HexMap[target.hexLabel].cube.neighbour(direction);
+        let hexLabel = new Point(target.token.get("left"),target.token.get("top")).label();
+        let startHex = HexMap[hexLabel];
+        let neighbourCube = startHex.cube.neighbour(direction);
         let newLabel = neighbourCube.label();
         let newHex = HexMap[newLabel];
         if (newHex) {
@@ -3491,8 +3488,6 @@ log(weapon.sound)
                 left: newHex.centre.x,
                 top: newHex.centre.y,
             })
-            target.hexLabel = newLabel;
-            newHex.tokenIDs.push(target.id);
         } else {
             target.token.remove();
             delete Units[target];
@@ -5076,19 +5071,20 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             top: endHex.centre.y,
         })
 
-        ChangeTokenIDs(unit.id,startHex.label,endHex.label);
+        ChangeTokenIDs(unit,startHex.label,endHex.label);
         unit.MoveAttached();
     }
 
-    const ChangeTokenIDs = (id,startLabel,endLabel) => {
+    const ChangeTokenIDs = (unit,startLabel,endLabel) => {
+        if (attachedTypes.includes(unit.type)) {return};
         let startHex = HexMap[startLabel];
         let endHex = HexMap[endLabel]
-        let index = startHex.tokenIDs.indexOf(id);
+        let index = startHex.tokenIDs.indexOf(unit.id);
         if (index > -1) {
             startHex.tokenIDs.splice(index,1);
         }
-        if (!endHex.tokenIDs.includes(id)) {
-            endHex.tokenIDs.push(id);
+        if (!endHex.tokenIDs.includes(unit.id)) {
+            endHex.tokenIDs.push(unit.id);
         }
     }
 
