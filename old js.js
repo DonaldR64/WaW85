@@ -5044,7 +5044,7 @@ log(state.WaW85.playerIDs)
             rotation = randomInteger(360);
         }
         if (type === "Random Minefield") {
-            img = "";
+            img = "https://files.d20.io/images/505793211/A1kfn3sCzAg-FkV8YY0RpQ/thumb.png?1793312501";
             width = 60;
             height = 60;
             deltaLeft = 0;
