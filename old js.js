@@ -5057,6 +5057,7 @@ log(state.WaW85.playerIDs)
             unit2 = Units[id];
             if (unit2) {surviving = true};
         }
+        outputCard.body.push("Units entering the Hex pay +2 MP but are otherwise unaffected");
     }
 
     const ListMinefields = (msg) => {
