@@ -5038,7 +5038,7 @@ log(state.WaW85.playerIDs)
             outputCard.body.push("Units moving out of a minefield use +2MP but are not subject to attack by the minefield");
         }
     }
-/////
+
     const ChemicalAttack = (hex) => {
         let surviving = false;
         for (let i=0;i<hex.tokenIDs.length;i++) {
@@ -5046,28 +5046,18 @@ log(state.WaW85.playerIDs)
             let unit2 = Units[id];
             if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
             if (i > 0) {outputCard.body.push("[hr]")};
-            let roll = randomInteger(6);
-            if (roll < 4) {
-                outputCard.body.push(unit2.name + " - no effect");
-            } else if (roll > 3 && roll < 6) {
-                outputCard.body.push(unit2.name + " - takes 1 Hit");
+            let fail = (unit2.type === "Vehicle") ? "1 Hit":"2 Hits";
+            let result = unit2.CommandTest(fail,"No Effect");
+            outputCard.body.push(unit2.name + " - " + result.tip);
+            if (result.success === fail && unit2.type === Vehicle) {
                 unit2.ApplyDamage(1);        
-            } else if (roll === 6) {
-                outputCard.body.push(unit2.name + " - takes 2 Hits");
+            } else if (result.success === fail && unit2.type !== "Vehicle") {
                 unit2.ApplyDamage(2); 
             }
             unit2 = Units[id];
             if (unit2) {surviving = true};
         }
-        if (surviving === true) {
-            outputCard.body.push("Units moving out of a minefield use +2MP but are not subject to attack by the minefield");
-        }
-
-
-
     }
-
-
 
     const ListMinefields = (msg) => {
         if (!msg.playerid) {return};
@@ -5394,6 +5384,9 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 }
                 if (endHex.minefield !== false && state.WaW85.hiddenMinefieldLocations.includes(endHex.label) === false) {
                     cost += 1;
+                }
+                if (endHex.chemical !== false) {
+                    cost += 2;
                 }
                 let dir = startHex.cube.whatDirection(endHex.cube);
                 let edge = startHex.edges[dir];
