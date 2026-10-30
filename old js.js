@@ -622,6 +622,7 @@ const WaW85 = (() => {
             this.burntOut = false;
             this.smoke = false; //type is name of token
             this.cleared = false;
+            this.chemical = false;
 
             this.height = 0; //height of terrain itself
 
@@ -704,9 +705,11 @@ const WaW85 = (() => {
             this.fire = false;
             this.burntOut = CreateMarker(this,"BurntOut");
         }
-        PlaceSmoke() {
-            if (this.smoke !== false) {return};
-            this.smoke = CreateMarker(this,"Smoke");
+        PlaceSmoke(layer) {
+            let id = CreateMarker(this,"Smoke",layer);
+            if (layer === "map" && this.smoke === false) {
+                this.smoke = id;
+            }
         }
         DegradeSmoke() {
             if (this.smoke === false) {return};
@@ -724,6 +727,17 @@ const WaW85 = (() => {
         MinefieldDepletion() {
 
         }
+        PlaceADM(layer) {
+            id = CreateMarker(this,"Random Minefield",layer);
+            if (layer === "map" && this.minefield === false) {
+                this.minefield = id;
+            }
+        }
+        PlaceChemical() {
+            if (this.chemical !== false) {return};
+            this.chemical = CreateMarker(this,"Wreck");
+        }
+
 
 
     }
@@ -3579,10 +3593,12 @@ log("Sound: " + weapon.sound)
             }
         } 
         outputCard.body.push("[hr]");
+        let targetHex = HexMap[target.hexLabel];
 
         //Resolve FFE
+        let strikeReduction = randomInteger(6) + randomInteger(6);
+
         if (type === "HE") {
-            let targetHex = HexMap[target.hexLabel];
             for (let i=0;i<targetHex.tokenIDs.length;i++) {
                 let unit2 = Units[targetHex.tokenIDs[i]];
                 if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
@@ -3591,9 +3607,76 @@ log("Sound: " + weapon.sound)
             }
         }
         if (type === "Smoke") {
-            //place smoke, # based on unit and offboard/onboard
+            //place 1 smoke
+            targetHex.PlaceSmoke("map");
+            //if not mortar or spm, then place 2 more and allow player to move
+            if (artUnit.special.includes("Mortar") === false) {
+                targetHex.PlaceSmoke("objects");
+                targetHex.PlaceSmoke("objects");
+                outputCard.body.push("Place 2 smoke so they are adjacent to another");
+                outputCard.body.push("Then use the token macro to finalize");
+            }
         }
-        //other types
+        if (type === "MRLS") {
+            if (strikeReduction === 2 || strikeReduction === 12) {
+                weapon.fp = Math.max(1,weapon.fp - 1);
+                outputCard.body.push("Strike Reduction");
+                outputCard.body.push("[hr]");
+            }
+            let cubes = targetHex.cube.neighbours();
+            cubes.push(targetHex.cube);
+            for (let i=0;i<cubes.length;i++) {
+                let hex = HexMap[cube.label()];
+                if (!hex) {continue};
+                for (let j=0;j<hex.tokenIDs.length;j++) {
+                    if (i !== 0 || j !== 0) {
+                        outputCard.body.push("[hr]");
+                    }
+                    let unit2 = Units[hex.tokenIDs[j]];
+                    if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+                    Attack(weapon,artUnit,unit2);
+                }
+            }
+        }
+        if (type === "DPICM") {
+            let sr = [2,3,11,12]
+            if (sr.includes(strikeReduction)) {
+                weapon.fp = Math.max(1,weapon.fp - 1);
+                outputCard.body.push("Strike Reduction");
+                outputCard.body.push("[hr]");
+            }
+            for (let i=0;i<targetHex.tokenIDs.length;i++) {
+                let unit2 = Units[targetHex.tokenIDs[i]];
+                if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+                if (i > 0) {outputCard.body.push("[hr]")};
+                Attack(weapon,artUnit,unit2);
+            }
+        }
+        if (type === 'ADM') {
+            targetHex.PlaceADM("map");
+            ADMAttack(targetHex);
+            targetHex.PlaceADM("objects");
+            targetHex.PlaceADM("objects");
+            outputcard.body.push("[hr]")
+            outputCard.body.push("Place 2 other Markers so they are adjacent to another");
+            outputCard.body.push("Then use the token macro to finalize and conduct remaining attacks if any");
+        }
+        if (type === "Chemical") {
+            let cubes = targetHex.cube.neighbours();
+            cubes.push(targetHex.cube);
+            for (let i=0;i<cubes.length;i++) {
+                let hex = HexMap[cube.label()];
+                if (!hex) {continue};
+                ChemicalAttack(hex);
+            }
+
+
+
+        }
+
+
+
+
 
 
 
@@ -4654,7 +4737,7 @@ log(state.WaW85.playerIDs)
             //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
             unit.token.set("bar3_value",0);
             unit.token.set("bar3_max",0);
-            let targetID = CreateMarker(HexMap[unit.hexLabel],"Target",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
+            let targetID = CreateMarker(HexMap[unit.hexLabel],"Target","map",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
             let target = new Unit(targetID);
             AddAbilities(target); //clears the old abilities
             AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
@@ -4906,15 +4989,82 @@ log(state.WaW85.playerIDs)
         sendChat("","Minefield Hidden");
     }
 
-    const PlaceImproved = (msg) => {
+    const PlaceMarker = (msg) => {
         if (!msg.selected) {return};
         let id = msg.selected[0]._id;
-        let improved = getObj("graphic",id);
-        improved.set("layer","map");
-        toFront(improved);
-        let hexLabel = new Point(improved.get("left"),improved.get("top")).label();
-        HexMap[hexLabel].improved = id;
-        sendChat("","Improved Positions Placed");
+        let marker = getObj("graphic",id);
+        marker.set("layer","map");
+        toFront(marker);
+        let hexLabel = new Point(marker.get("left"),marker.get("top")).label();
+        let hex = HexMap[hexLabel];
+        marker.set({
+            left: hex.centre.x,
+            top: hex.centre.y,
+        })
+        if (marker.get("name") === "Improved Positions") {
+            hex.improved = id;
+            sendChat("","Improved Positions on Map");
+        } else if (marker.get("name") === "Smoke") {
+            hex.smoke = id;
+            sendChat("","Smoke Placed");
+        } else if (marker.get('name') === "Random Minefield") {
+            hex.minefield = id;
+            ADMAttack(hex);
+        }
+    }
+
+    const ADMAttack = (hex) => {
+        //air dropped minelets attack on hex
+        let surviving = false;
+        for (let i=0;i<hex.tokenIDs.length;i++) {
+            let id = hex.tokenIDs[i]
+            let unit2 = Units[id];
+            if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+            if (i > 0) {outputCard.body.push("[hr]")};
+            let roll = randomInteger(6);
+            if (roll < 4) {
+                outputCard.body.push(unit2.name + " - no effect");
+            } else if (roll > 3 && roll < 6) {
+                outputCard.body.push(unit2.name + " - takes 1 Hit");
+                unit2.ApplyDamage(1);        
+            } else if (roll === 6) {
+                outputCard.body.push(unit2.name + " - takes 2 Hits");
+                unit2.ApplyDamage(2); 
+            }
+            unit2 = Units[id];
+            if (unit2) {surviving = true};
+        }
+        if (surviving === true) {
+            outputCard.body.push("Units moving out of a minefield use +2MP but are not subject to attack by the minefield");
+        }
+    }
+/////
+    const ChemicalAttack = (hex) => {
+        let surviving = false;
+        for (let i=0;i<hex.tokenIDs.length;i++) {
+            let id = hex.tokenIDs[i]
+            let unit2 = Units[id];
+            if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
+            if (i > 0) {outputCard.body.push("[hr]")};
+            let roll = randomInteger(6);
+            if (roll < 4) {
+                outputCard.body.push(unit2.name + " - no effect");
+            } else if (roll > 3 && roll < 6) {
+                outputCard.body.push(unit2.name + " - takes 1 Hit");
+                unit2.ApplyDamage(1);        
+            } else if (roll === 6) {
+                outputCard.body.push(unit2.name + " - takes 2 Hits");
+                unit2.ApplyDamage(2); 
+            }
+            unit2 = Units[id];
+            if (unit2) {surviving = true};
+        }
+        if (surviving === true) {
+            outputCard.body.push("Units moving out of a minefield use +2MP but are not subject to attack by the minefield");
+        }
+
+
+
     }
 
 
@@ -5055,10 +5205,9 @@ log(state.WaW85.playerIDs)
 
     }
 
-    const CreateMarker = (hex,type,cost,img,charID) => {
+    const CreateMarker = (hex,type,layer = "map",cost = 0,img,charID) => {
         let c = hex.centre;
         let width,height,deltaLeft,deltaTop,markerName;
-        let layer = "map";
         let rotation = 0;
         if (type === "Move") {
             cost = Math.round(cost);
@@ -5120,21 +5269,24 @@ log(state.WaW85.playerIDs)
 
         if (type === "Smoke") {
             img = "https://files.d20.io/images/196609276/u8gp3vcjYAunqphuw6tgWw/thumb.png?1611938031";
-            width = 140;
-            height = 140;
+            width = 80;
+            height = 80;
             deltaLeft = 0;
             deltaTop = 0;
             rotation = randomInteger(360);
             markerName = "Smoke";
+            charID = "-P5CWq0Pa22hd7EqjqZ7";
+            layer = "foreground";
         }
         if (type === "Dispersed Smoke") {
             img = "https://files.d20.io/images/196609296/i7Z60RNt9RLwdAuC911UBw/thumb.png?1611938037";
-            width = 140;
-            height = 140;
+            width = 80;
+            height = 80;
             deltaLeft = 0;
             deltaTop = 0;
             rotation = randomInteger(360);
             markerName = "Dispersed Smoke";
+            layer = "foreground";
         }
         if (type === "Wreck") {
             width = 80;
@@ -5143,9 +5295,19 @@ log(state.WaW85.playerIDs)
             deltaTop = 0;
             markerName = "Wreck";
             layer = "map";
-            charID = "-P57Fh7Kevjh-WkzJzDy";
             img = "https://files.d20.io/images/505754200/CPe5JvMCpBFAx79NGuhz4g/thumb.png?1793287244";
         }
+        if (type === "Chemical") {
+            width = 80;
+            height = 80;
+            deltaLeft = 0;
+            deltaTop = 0;
+            markerName = "Chemical";
+            layer = "foreground";
+            img = "https://files.d20.io/images/505859483/caBaVUt0iwODzkh1cGKZmg/thumb.webp?1793379338";
+        }
+
+
 
         img = getCleanImgSrc(img);
 
@@ -5489,12 +5651,13 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             case '!PlaceMinefield':
                 PlaceMinefield(msg);
                 break;
-            case '!PlaceImproved':
-                PlaceImproved(msg);
+            case '!PlaceMarker':
+                PlaceMarker(msg);
                 break;
             case '!ListMinefields':
                 ListMinefields(msg);
                 break;
+
         }
     };
 
