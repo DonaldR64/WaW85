@@ -3669,9 +3669,6 @@ log("Sound: " + weapon.sound)
                 if (!hex) {continue};
                 ChemicalAttack(hex);
             }
-
-
-
         }
 
 
