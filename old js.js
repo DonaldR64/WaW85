@@ -5203,12 +5203,21 @@ log(state.WaW85.playerIDs)
                 }
                 mode += "}";
             }
-            let action = "!Activate;Move" + mode;
+            let orders = "?{Order|Move|";
+            if (unit.weapons.length > 0) {
+                orders += "|Move and Direct Fire|Direct Fire";
+            }
+            if (unit.artWeapon !== "") {
+                orders += "|Indirect Fire";
+            }
+            if (unit.assaultFP) {
+                orders += "|Assault"
+            }
+            orders += "}";
+            let action = "!Activate;" + orders + mode;
             AddAbility("Move",action,unit.charID);
         }
-        if (unit.artWeapon !== "") {
-            AddAbility("0: Indirect Fire","!Activate;Indirect Fire;",unit.charID);
-        }
+
         if (unit.special.includes("Transport")) {
             AddAbility("Load","!Misc;Load;@{target|Passenger|token_id}",unit.charID);
         }
