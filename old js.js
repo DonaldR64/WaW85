@@ -4666,7 +4666,7 @@ log(state.WaW85.playerIDs)
                 Move(unit,"Fire");
                 break;
             case 'Direct Fire':
-                Fire(unit);
+                outputCard.body.push("Unit may fire one Weapon");
                 break;
             case 'Indirect Fire':
                 IndirectFire(unit);
@@ -4676,112 +4676,8 @@ log(state.WaW85.playerIDs)
                 break;
         }
 
-
-
-
-////////
-
-if (action === "Unload") {
-            
-
-                Unload(passenger,unit);
-                outputCard.body.push("Unloading can trigger Opp Fire");       
-                outputCard.body.push("The Passenger can move into an adjacent hex or stay put as part of the Unload");
-                passenger.passUnloaded = true;
-                
-                if (mpMax > 0) {
-                    outputCard.body.push("Transport's activation is Done");
-                    unit.SetReady(false);
-                } else {
-                    outputCard.body.push("After Unloading, the Transport can Move");
-                }
-
-                if (unit.type === "Helicopter" && unit.CommandTest().success) {
-                    outputCard.body.push("Helicopter can make a Combat Lift-Off and Move Again");
-                } else {
-                    unit.SetReady(false);
-                }
-                unit.unloaded = true;
-            }
-
-
-
-
-} else if (action === "Load") {
-
-                outputCard.body.push("Loading can trigger Opp Fire");
-                Load(passenger,unit);
-                if (mpMax > 0) {
-                    outputCard.body.push("Transport's activation is Done");
-                    unit.SetReady(false);
-                } else{
-                    if (unit.type !== "Helicopter") {
-                        outputCard.body.push("After Loading, the Transport can Move");
-                    } else {
-                        if (unit.CommandTest().success) {
-                            outputCard.body.push("Helicopter can make a Combat Lift-Off and Move Again");
-                        }
-                    }
-                }
-                unit.unloaded = true;
-            }
-
-
-} else if (action === "Attach") {
-            let unit2 = Units[mode];
-            let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
-
-            let errorMsg = [];
-            if (unit2.formationID !== unit.formationID && unit2.type !== "Leader") {
-                errorMsg.push("Must be in same Formation");
-            }
-            let distance = unit2.Distance(unit);
-            if (HexMap[unit2.hexLabel].offboard || HexMap[unit.hexLabel].offboard) {
-                distance = 0;
-            }
-            if (unit2.Distance(unit) > 0 && (unit2.type === "Support" || unit2.type === "Leader")) {
-                errorMsg.push("Can only transfer in same Hex");
-            }
-            if (unit.special.includes("Infantry") && unit2.type !== "Infantry") {
-                errorMsg.push("This is an Infantry Support Weapon");
-            }
-            if (unit.special.includes("Alternate") && unit2.type === "Infantry") {
-                errorMsg.push("This is an Alternate Armament Support Weapon");
-            }
-            if (unit.special.includes("Alternate") && oldID) {
-                errorMsg.push("Cannot transfer Alternate Armament Support Weapons");
-            }
-            if (unit2.type === "HQ" || unit2.type === "Leader" || unit2.type === "Support") {
-                let parent = unit.AutoAttach();
-                if (parent) {
-                    unit2 = Units[parent]
-                } else {
-                    errorMsg.push("Can't Attach to that Unit");
-                }
-            }
-
-
-            if (errorMsg.length > 0) {
-                _.each(errorMsg,msg => {
-                    outputCard.body.push(msg);
-                })
-            } else {
-                outputCard.body.push(unit.name + " is now Attached to " + unit2.name);
-                //remove from old parent if any
-                if (oldID) {
-                    let ids = state.WaW85.attachedIDs[oldID];
-                    let index = ids.indexOf(unit.id);
-                    ids.splice(index,1);
-                    state.WaW85.attachedIDs[oldID] = ids;
-                }
-                //add to new parent
-                let ids = state.WaW85.attachedIDs[unit2.id] || [];
-                ids.push(unit.id);
-                state.WaW85.attachedIDs[unit2.id] = ids;
-                unit2.MoveAttached();
-            }
-        }
         PrintCard();
+
     }
 
     const Move = (unit,extra = false) => {
@@ -4870,6 +4766,140 @@ if (action === "Unload") {
 
     }
 
+    const Misc = (msg) => {
+        //Load, Unload, Attach
+        let Tag = msg.content.split(";");
+        let id = msg.selected[0]._id;
+        let action = Tag[1];
+        let id2 = Tag[2];
+        let unit = Units[id]; //transport or the HQ/Leader/Support unit
+        let mpMax = parseInt(unit.token.get("bar3_max")) || 0;
+        let mp = parseInt(unit.token.get("bar3_value")) || 0;
+        let unit2 = Units[id2]; //passenger or the main unit being attached to
+        let unit2MPMax = parseInt(unit2.token.get("bar3_max")) || 0;
+        let unit2MP = parseInt(unit2.token.get("bar3_value")) || 0;
+        let distance = unit.Distance(unit2);
+        if (HexMap[unit.hexLabel].offboard && HexMap[unit2.hexLabel].offboard) {
+            distance = 0;
+        }    
+        let errorMsg = [];
+
+        if (action === "Unload") {
+            if (unit.id !== activeUnitID) {
+                errorMsg.push("Not Active Unit");
+            };
+            if (!unit2) {
+                errorMsg.push("No Passenger");
+            };
+            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
+                errorMsg.push("Can only Unload when Landed");
+            };
+            if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
+                errorMsg.push("Transport has moved too far to Load this turn");
+            };
+            if (unit.unloaded === true) {
+                errorMsg.push("Already Loaded or Unloaded this Activation");
+            };
+        };
+        if (action === "Load") {
+            if (unit.id !== activeUnitID) {
+                errorMsg.push("Not Active Unit");
+            };
+            if (unit.token.get(SM.passenger)) {
+                errorMsg.push("Already has a Passenger");
+            };
+            if (unit.formationID !== unit2.formationID) {
+                errorMsg.push("Must be in same Formation");
+            };
+            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
+                errorMsg.push("Can only Load when Landed");
+            };
+            if (unit.unloaded === true) {
+                errorMsg.push("Already Loaded or Unloaded this Activation");
+            };
+            if (unit2MPMax > 0 && (unit2MPMax - unit2MP) > 1) {
+                errorMsg.push("Passenger has moved too far to be Loaded");
+            };
+            if (mpMax > 0 && mp < Math.floor(mpMax/2)) {
+                errorMsg.push("Transport has moved too far to Load this turn");
+            };
+            if (mp > 0 && unit2MP > 0 && unit2.type === "Towed") {
+                errorMsg.push("Towed Weapons and Transports have to start in same Hex to Load");
+            };
+            if (unit.Disrupted()) {
+                errorMsg.push("Disrupted Transports may not Load");
+            };
+            if (unit2.Disrupted()) {
+                errorMsg.push("Disrupted Passengers may not Load");
+            };
+            if (distance > 0) {
+                errorMsg.push("Must be in same Hex");
+            };
+        };
+        if (action === "Attach") {
+            let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
+
+            if (unit2.formationID !== unit.formationID && unit2.type !== "Leader") {
+                errorMsg.push("Must be in same Formation");
+            };
+            if (unit2.Distance(unit) > 0 && (unit2.type === "Support" || unit2.type === "Leader")) {
+                errorMsg.push("Can only transfer in same Hex");
+            };
+            if (unit.special.includes("Infantry") && unit2.type !== "Infantry") {
+                errorMsg.push("This is an Infantry Support Weapon");
+            };
+            if (unit.special.includes("Alternate") && unit2.type === "Infantry") {
+                errorMsg.push("This is an Alternate Armament Support Weapon");
+            };
+            if (unit.special.includes("Alternate") && oldID) {
+                errorMsg.push("Cannot transfer Alternate Armament Support Weapons");
+            };
+            if (unit2.type === "HQ" || unit2.type === "Leader" || unit2.type === "Support") {
+                errorMsg.push("Can't Attach to that Unit");
+            };
+        };
+
+        if (errorMsg.length > 0) {
+            _.each(errorMsg,msg => {
+                outputCard.body.push(msg);
+            });
+        } else {
+            switch(action) {
+                case 'Attach':
+                    Attach(unit,unit2);
+                    break;
+                case 'Unload':
+                    Unload(unit2,unit);
+                    break;
+                case 'Load':
+                    Load(unit2,unit);
+                    break;
+            }
+        }
+        PrintCard();
+    }
+
+
+    const Attach = (unit,unit2) => {
+        //remove from old parent if any
+        let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
+        if (oldID) {
+            let ids = state.WaW85.attachedIDs[oldID];
+            let index = ids.indexOf(unit.id);
+            ids.splice(index,1);
+            state.WaW85.attachedIDs[oldID] = ids;
+        }
+        //add to new parent
+        let ids = state.WaW85.attachedIDs[unit2.id] || [];
+        ids.push(unit.id);
+        state.WaW85.attachedIDs[unit2.id] = ids;
+        unit2.MoveAttached();
+        outputCard.body.push(unit.name + " is now Attached to " + unit2.name);
+    }
+
+
+
+
     const IndirectFire = (unit) => {
             //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
             unit.token.set("bar3_value",0);
@@ -4883,7 +4913,7 @@ if (action === "Unload") {
     }
 
 
-    const Unload = (passenger,transport) => {
+    const Unload = (passenger,transport,forced = false) => {
         passenger.token.set({
             left: transport.token.get("left"),
             top: transport.token.get("top"),
@@ -4908,7 +4938,37 @@ if (action === "Unload") {
         state.WaW85.attachedIDs[passenger.id] = newIDs2;
         passenger.MoveAttached();
         transport.MoveAttached();
+
+        let MPMax = parseInt(transport.token.get("bar3_max")) || 0;
+        let MP =  parseInt(transport.token.get("bar3_value")) || 0;
+        let used = MPMax - MP;
+
         ChangeTokenIDs(passenger,passenger.hexLabel,transport.hexLabel);
+
+        if (forced === false) {
+            outputCard.body.push("Unloading triggers Opp Fire");       
+            outputCard.body.push("The Passenger can move into an adjacent hex or stay put as part of the Unload");
+            if (transport.type === "Helicopter") {
+                if (unit.CommandTest().success) {
+                    outputCard.body.push("Helicopter can make a Combat Lift-Off and Choose a Move Activation Again if desired");
+                } else {
+                    outputCard.body.push(transport.name + "'s activation is Done");
+                    transport.SetReady(false);
+                }
+            } else {
+                if (used > 0) {
+                    outputCard.body.push(transport.name + "'s activation is Done");
+                    transport.SetReady(false);
+                } else {
+                    let MPMax = Math.floor(MPMax/2);
+                    transport.token.set("bar3_max",MPMax);
+                    outputCard.body.push("After Loading, the Transport can Move with " + MPMax + "MP");
+                }
+            }
+        }
+
+        passenger.passUnloaded = true;
+        transport.unloaded = true;
     }
 
     const Load = (passenger,transport) => {
@@ -5123,7 +5183,7 @@ if (action === "Unload") {
             AddAbility("Activate Formation","!ActivateFormation",unit.charID);
         }
         if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
-            AddAbility("Attach","!Activate;Attach;@{target|Attach To|token_id}",unit.charID);
+            AddAbility("Attach","!Misc;Attach;@{target|Attach To|token_id}",unit.charID);
         }
         if (unit.type !== "HQ" && unit.type !== "Leader") {
             mode = "";
@@ -5141,10 +5201,10 @@ if (action === "Unload") {
             AddAbility("0: Indirect Fire","!Activate;Indirect Fire;",unit.charID);
         }
         if (unit.special.includes("Transport")) {
-            AddAbility("Load","!Activate;Load;@{target|Passenger|token_id}",unit.charID);
+            AddAbility("Load","!Misc;Load;@{target|Passenger|token_id}",unit.charID);
         }
         if (unit.special.includes("Transport")) {
-            AddAbility("Unload","!Activate;Unload",unit.charID);
+            AddAbility("Unload","!Misc;Unload",unit.charID);
         }
 
         if (unit.weapons.length > 0) {
@@ -5157,10 +5217,6 @@ if (action === "Unload") {
                 action = "!DirectFire;@{selected|token_id};@{target|token_id};" + w;
                 AddAbility(abilityName,action,unit.charID);
             }
-
-
-
-
         }
 
 
@@ -5588,12 +5644,16 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             case '!DirectFire':
                 DirectFire(msg);
                 break;
-            case '!Assault':
+            case '!RunAssault':
                 Assault(msg);
                 break;
             case '!Activate':
                 Activate(msg);
                 break;
+            case '!Misc':
+                Misc(msg);
+                break;
+
             case '!Test':
 
                 break;
