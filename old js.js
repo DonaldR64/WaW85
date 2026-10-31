@@ -5193,8 +5193,7 @@ log(state.WaW85.playerIDs)
         }
         if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             AddAbility("Attach","!Misc;Attach;@{target|Attach To|token_id}",unit.charID);
-        }
-        if (unit.type !== "HQ" && unit.type !== "Leader") {
+        } else {
             mode = "";
             if (unit.type === "Helicopter") {
                 mode = ";?{Mode|Flying|NOE|Hovering}";
