@@ -3912,7 +3912,7 @@ log(weapon.sound)
             WeatherChange();
         }
         if (roll === 5) {
-            outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Fire Actions, with only 1/2 their MPs.");
+            outputCard.body.push("[B]Cautious Approach[/b]<br> Activate one " + side + " formation for a modified Impulse. Units in the Activated Formation may only execute Move or Move & Direct Fire Actions, with only 1/2 their MPs.");
             outputCard.nation = side;
             EventInfo = "Cautious Approach";
         }
@@ -3925,7 +3925,7 @@ log(weapon.sound)
             BattlefieldFriction();
         }
         if (roll === 8) {
-            outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire, Indirect Fire or On-Board Artillery Strikes (not Move & Fire)");
+            outputCard.body.push("[B]High Rate of Fire[/b]<br>" + side + " Troops intensify their fire. Activate one " + side + " Formation for a modified Impulse. Units in the Activated Formation may only execute Direct Fire or Indirect Fire Strikes (not Move & Fire)");
             outputCard.nation = side;
             EventInfo = "High Rate of Fire";
         }
@@ -4256,6 +4256,7 @@ log(state.WaW85.playerIDs)
                 unit.bonusUsed = {Leader: false, HQ: false};
                 unit.token.set(SM.longMove,false);
                 unit.fired = false;
+                unit.action = "";
             } 
         })
     }
@@ -4604,7 +4605,7 @@ log(state.WaW85.playerIDs)
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
-        let mode = Tag[2]; //helicopter mode or passengerID if Load
+        let extra = Tag[2]; //helicopter mode or passengerID if Load
         let unit = Units[id];
         let errorMsg = [];
         RemoveMoveMarkers();
@@ -4613,17 +4614,28 @@ log(state.WaW85.playerIDs)
             lastUnit.SetReady(false);
         } 
 
-        if (unit.Active() === false && state.WaW85.turn > 0 && action !== "Attach") {
+        if (unit.Active() === false && state.WaW85.turn > 0) {
             if (unit.OOC()) {
                 errorMsg.push("Unit is Out of Command");
             } else {
                 errorMsg.push("Unit is not Active");
             }
         }
-        if (unit.Disrupted() && action === "Indirect Fire") {
+        if (unit.Disrupted() && action.includes("Fire")) {
             errorMsg.push("Disrupted Units may not Fire");
         }
-
+        if (unit.Disrupted() && action === "Assault") {
+            errorMsg.push("Disrupted Units may not Assault");
+        }
+        if (EventInfo === "Cautious Approach" && (action === "Direct Fire" || action === "Indirect Fire" || action === "Assault")) {
+            errorMsg.push("May not take this Action under a Cautious Approach Event")
+        }
+        if (EventInfo === "High Rate of Fire" && (action.includes("Move") || action === "Assault")) {
+            errorMsg.push("May not take this Action under a High Rate of Fire Event")
+        }
+        if (EventInfo === "High Speed Approach" && (action === "Direct Fire" || action === "Indirect Fire" || action === "Assault")) {
+            errorMsg.push("May not take this Action under a Cautious Approach Event")
+        }
 
         state.WaW85.activeUnitID = unit.id;
         SetupCard(unit.name,action,unit.nation);
@@ -4635,137 +4647,43 @@ log(state.WaW85.playerIDs)
             return;
         }
 
-        if (action === "Move") {
-            //move, move & fire, fire only or move to assault
-            //calculate max MP based on weather, mud
-            //display how far can move and still fire based on abilities
-            //if transport note re load/unload
-            if (unit.Disrupted()) {
-                let inLOS = false;
-                let keys = Object.keys(Units);
-                for (let i=0;i<keys.length;i++) {
-                    let unit2 = Units[keys[i]];
-                    if (unit2.nation !== unit.nation) {
-                        let los = LOS(unit,unit2);
-                        if (los.los === true) {
-                            inLOS = true;
-                            break;
-                        }
-                    }
-                }
-                if (inLOS === true) {
-                    outputCard.body.push("The Unit may not move closer to an enemy unit in LOS");
-                } else {
-                    outputCard.body.push("The Unit must stop when entering a hex in LOS of an enemy and cannot end adjacent to an enemy unit");
-                }
-                outputCard.body.push("Disrupted Units may not Fire");
+        if (unit.type === "Helicopter") {
+            let oldMode = unit.HeloStatus();
+            if (oldMode !== extra) {
+                outputCard.body.push("Changing Flying Mode triggers Opp Fire");
             }
-            unit.passUnloaded = false;
-            let mp = unit.movement;
-            if (EventInfo === "Cautious Approach") {
-                mp = Math.ceil(mp/2);
-                outputCard.body.push("Cautious Approach - MP Halved ⬆️")
-            }
-            if (state.WaW85.weatherLevel === 4) {
-                outputCard.body.push("Extreme Weather - MP Halved ⬆️")
-                mp = Math.ceil(mp/2);
-            }
-            if (unit.unloaded === true) {
-                outputCard.body.push("Transport Loaded/Unloaded - MP halved ⬇️");
-                mp = Math.floor(mp/2);
-            }
-            if (state.WaW85.mud && unit.movementType.includes("Ground")) {
-                mp = Math.max(1,mp - 1);
-                outputCard.body.push("Mud -1 MP");
-            }
-            if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
-                mp = 100;
-            }
-            if (unit.type === "Helicopter") {
-                let oldMode = unit.HeloStatus();
-                if (oldMode !== mode) {
-                    outputCard.body.push("Changing Flying Mode can trigger Opp Fire");
-                }
-                unit.SetHeloStatus(mode);
-                if (mode === "Flying") {mp = 1000};
-                if (mode === "NOE") {mp = 12};
-                if (mode === "Landed" || mode === "Hovering") {
-                    mp = 0;
-                }
-            }
-            if (EventInfo === "High Rate of Fire") {
-                outputCard.body.push("High Rate of Fire");
-                mp = 0;
-            }
-            unit.token.set("bar3_value",mp);
-            unit.token.set("bar3_max",mp);
-            if (mp === 1000) {
-                outputCard.body.push("The Unit may move anywhere on the Map");
-            } else if (mp === 100) {
-                outputCard.body.push("The Unit must move with its Parent Unit");
-            } else if (mp > 0) {
-                outputCard.body.push("The Unit has " + mp + " MP");
-            } else if (mp === 0) {
-                outputCard.body.push("The Unit is Stationary");
-            }
+            unit.SetHeloStatus(extra);
+        }
 
-            //firepower/stabilization notes here
-            if (unit.type !== "Helicopter" && mp > 1 && unit.weapons.length > 0) {
-                let halfMP = Math.floor(mp/2);
-                if (unit.stabilizedWeapons) {
-                    if (RedFor.includes(unit.nation)) {
-                        outputCard.body.push("Using up to " + halfMP + "MP may fire with a -1FP penalty");
-                        outputCard.body.push("More than that is a -2FP penalty");
+        unit.action = action;
+        activeUnitID = unit.id;
 
-                    } else {
-                        outputCard.body.push("Using up to " + halfMP + "MP may fire without penalty");
-                        outputCard.body.push("More than that is a -1FP penalty");
-                    }
-                } else {
-                    outputCard.body.push("May move up to " + halfMP + "MP and fire with a -2FP penalty");
-                    outputCard.body.push("More than that may not fire");
-                }
-            }
-            if (unit.type === "Helicopter" && mode === "Flying") {
-                outputCard.body.push("Moving 12 hexes or less allows fire without penalty");
-                outputCard.body.push("More than that may not fire");
-            }
-        } else if (action === "Indirect Fire") {
-            //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
-            unit.token.set("bar3_value",0);
-            unit.token.set("bar3_max",0);
-            let targetID = CreateMarker(HexMap[unit.hexLabel],"Target","map",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
-            let target = new Unit(targetID);
-            AddAbilities(target); //clears the old abilities
-            AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
-            outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
-            AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
-        } else if (action === "Unload") {
-            let errorMsg = [];
-            let passenger;
-            let passengerID = state.WaW85.passengerID[unit.id] || "";
-            if (!passengerID) {
-                errorMsg.push("No Passenger");
-            } else {
-                passenger = Units[passengerID];
-            }
+        switch(action) {
+            case 'Move':
+                Move(unit);
+                break;
+            case 'Move and Direct Fire':
+                Move(unit,"Fire");
+                break;
+            case 'Direct Fire':
+                Fire(unit);
+                break;
+            case 'Indirect Fire':
+                IndirectFire(unit);
+                break;
+            case 'Assault':
+                Move(unit,"Assault");
+                break;
+        }
 
-            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
-                errorMsg.push("Can only Unload when Landed");
-            }            
-            let mpMax = parseInt(unit.token.get("bar3_max"));
-            let mp = parseInt(unit.token.get("bar3_value"));
-            if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
-                errorMsg.push("Transport has moved too far to Load this turn");
-            }
-            if (unit.unloaded === true) {
-                errorMsg.push("Already Loaded or Unloaded this Activation");
-            }
-            if (errorMsg.length > 0) {
-                _.each(errorMsg,msg => {
-                    outputCard.body.push(msg);
-                })
-            } else {
+
+
+
+////////
+
+if (action === "Unload") {
+            
+
                 Unload(passenger,unit);
                 outputCard.body.push("Unloading can trigger Opp Fire");       
                 outputCard.body.push("The Passenger can move into an adjacent hex or stay put as part of the Unload");
@@ -4785,53 +4703,12 @@ log(state.WaW85.playerIDs)
                 }
                 unit.unloaded = true;
             }
-        } else if (action === "Load") {
-            let passengerID = mode; //just a rename
-            let passenger = Units[passengerID];
-            let errorMsg = [];
-            let distance = unit.Distance(passenger);
-            if (HexMap[unit.hexLabel].offboard && HexMap[passenger.hexLabel].offboard) {
-                distance = 0;
-            }
-            let passMPMax = parseInt(passenger.token.get("bar3_max"));
-            let passMP = parseInt(passenger.token.get("bar3_value"));
-            let mpMax = parseInt(unit.token.get("bar3_max"));
-            let mp = parseInt(unit.token.get("bar3_value"));
-            if (unit.token.get(SM.passenger)) {
-                errorMsg.push("Already has a Passenger");
-            }
-            if (unit.formationID !== passenger.formationID) {
-                errorMsg.push("Must be in same Formation");
-            }
-            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {
-                errorMsg.push("Can only Load when Landed");
-            }
-            if (unit.unloaded === true) {
-                errorMsg.push("Already Loaded or Unloaded this Activation");
-            }
-            if (passMPMax > 0 && (passMPMax - passMP) > 1) {
-                errorMsg.push("Passenger has moved too far to be Loaded");
-            }
-            if (mpMax > 0 && mp > Math.floor(mpMax/2)) {
-                errorMsg.push("Transport has moved too far to Load this turn");
-            }
-            if (mp > 0 && passMP > 0 && passenger.type === "Towed") {
-                errorMsg.push("Towed Weapons and Transports have to start in same Hex to Load");
-            }
-            if (unit.Disrupted()) {
-                errorMsg.push("Disrupted Transports may not Load");
-            }
-            if (passenger.Disrupted()) {
-                errorMsg.push("Disrupted Passengers may not Load");
-            }
-            if (distance > 0) {
-                errorMsg.push("Must be in same Hex");
-            }
-            if (errorMsg.length > 0) {
-                _.each(errorMsg,msg => {
-                    outputCard.body.push(msg);
-                })
-            } else {
+
+
+
+
+} else if (action === "Load") {
+
                 outputCard.body.push("Loading can trigger Opp Fire");
                 Load(passenger,unit);
                 if (mpMax > 0) {
@@ -4848,7 +4725,9 @@ log(state.WaW85.playerIDs)
                 }
                 unit.unloaded = true;
             }
-        } else if (action === "Attach") {
+
+
+} else if (action === "Attach") {
             let unit2 = Units[mode];
             let oldID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(unit.id));
 
@@ -4903,6 +4782,104 @@ log(state.WaW85.playerIDs)
             }
         }
         PrintCard();
+    }
+
+    const Move = (unit,extra = false) => {
+        if (unit.Disrupted()) {
+            let inLOS = false;
+            let keys = Object.keys(Units);
+            for (let i=0;i<keys.length;i++) {
+                let unit2 = Units[keys[i]];
+                if (unit2.nation !== unit.nation) {
+                    let los = LOS(unit,unit2);
+                    if (los.los === true) {
+                        inLOS = true;
+                        break;
+                    }
+                }
+            }
+            if (inLOS === true) {
+                outputCard.body.push("The Unit may not move closer to an enemy unit in LOS");
+            } else {
+                outputCard.body.push("The Unit must stop when entering a hex in LOS of an enemy and cannot end adjacent to an enemy unit");
+            }
+        }
+
+        unit.passUnloaded = false;
+        let mp = unit.movement;
+        if (EventInfo === "Cautious Approach") {
+            mp = Math.ceil(mp/2);
+            outputCard.body.push("Cautious Approach - MP Halved ⬆️")
+        }
+        if (state.WaW85.weatherLevel === 4) {
+            outputCard.body.push("Extreme Weather - MP Halved ⬆️")
+            mp = Math.ceil(mp/2);
+        }
+        if (unit.unloaded === true) {
+            outputCard.body.push("Transport Loaded/Unloaded - MP halved ⬇️");
+            mp = Math.floor(mp/2);
+        }
+        if (state.WaW85.mud && unit.movementType.includes("Ground")) {
+            mp = Math.max(1,mp - 1);
+            outputCard.body.push("Mud -1 MP");
+        }
+        if (unit.type === "Helicopter") {
+            let mode = unit.HeloStatus();
+            if (mode === "Flying") {
+                if (extra === "Fire") {
+                    mp = 12;
+                    outputCard.body.push("The Unit may move up to 12 hexes before Firing");
+                } else {
+                    mp = 1000;
+                    outputCard.body.push("The Unit may move anywhere on the Map");
+                }
+                mp = 1000;
+
+            };
+            if (mode === "NOE") {mp = 12};
+            if (mode === "Landed" || mode === "Hovering") {
+                outputCard.body.push("The Unit is Stationary");
+                mp = 0;
+            }
+        }
+        if (unit.type !== "Helicopter") {
+            if (extra === "Fire" && unit.stabilizedWeapons === false) {
+                mp = Math.floor(mp/2);
+            }
+            outputCard.body.push("The Unit has " + mp + " MP");
+            if (extra === "Fire" && unit.stabilizedWeapons) {
+                let halfMP = Math.floor(mp/2);
+                if (RedFor.includes(unit.nation)) {
+                    let halfMP = Math.floor(mp/2);
+                    outputCard.body.push("Using up to " + halfMP + "MP, it may fire with a -1FP penalty");
+                    outputCard.body.push("More than that is a -2FP penalty");
+                } else {
+                    outputCard.body.push("Using up to " + halfMP + "MP, it may fire without penalty");
+                    outputCard.body.push("More than that is a -1FP penalty");
+                }
+            } 
+        }
+
+        if (extra === "Assault") {
+            outputCard.body.push("Once all Assaulting Units assaulting this hex have moved, run the Assault Macro");
+        }
+
+        unit.token.set("bar3_value",mp);
+        unit.token.set("bar3_max",mp);
+
+
+    }
+
+    const IndirectFire = (unit) => {
+            //create a token on top of unit, then move it, can check LOS/Range which will search for spotter - so modify FFE
+            unit.token.set("bar3_value",0);
+            unit.token.set("bar3_max",0);
+            let targetID = CreateMarker(HexMap[unit.hexLabel],"Target","map",0,Nations[unit.nation].targetImg,Nations[unit.nation].targetID);
+            let target = new Unit(targetID);
+            AddAbilities(target); //clears the old abilities
+            AddAbility("FFE","!FFE;" + target.id + ";" + unit.id + ";?{Type|HE|Smoke};Onboard",target.charID);
+            outputCard.body.push("Place Target, FFE to Fire, Check to Check for Spotter/Range");
+            AddAbility("Check","!ArtCheck;Onboard;" + target.id + ";" + unit.id,target.charID); 
     }
 
 
