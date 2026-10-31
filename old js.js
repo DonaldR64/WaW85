@@ -3667,6 +3667,7 @@ log("Sound: " + weapon.sound)
             for (let i=0;i<cubes.length;i++) {
                 let hex = HexMap[cube.label()];
                 if (!hex) {continue};
+                if (i > 0) {outputCard.body.push("[hr]")}
                 ChemicalAttack(hex);
             }
         }
@@ -5074,22 +5075,30 @@ log(state.WaW85.playerIDs)
     }
 
     const ChemicalAttack = (hex) => {
-        let surviving = false;
+        outputCard.body.push("Hex " + hex.label);
+        let affected = [];
+        let unit;
         for (let i=0;i<hex.tokenIDs.length;i++) {
             let id = hex.tokenIDs[i]
-            let unit2 = Units[id];
-            if (unit2.type === "Helicopter" && unit2.HeloStatus() !== "Landed") {continue};
-            if (i > 0) {outputCard.body.push("[hr]")};
-            let fail = (unit2.type === "Vehicle") ? "1 Hit":"2 Hits";
-            let result = unit2.CommandTest(fail,"No Effect");
-            outputCard.body.push(unit2.name + " - " + result.tip);
-            if (result.success === fail && unit2.type === Vehicle) {
-                unit2.ApplyDamage(1);        
-            } else if (result.success === fail && unit2.type !== "Vehicle") {
-                unit2.ApplyDamage(2); 
+            unit = Units[id];
+            if (unit.type === "Helicopter" && unit.HeloStatus() !== "Landed") {continue};
+            affected.push(unit);
+            let passengerID = state.WaW85.passengerID[id];
+            if (passengerID) {
+                affected.push(unit);
             }
-            unit2 = Units[id];
-            if (unit2) {surviving = true};
+        }
+        for (let i=0;i<affected.length;i++) {
+            if (i > 0) {outputCard.body.push("[hr]")};
+            unit = affected[i];
+            let fail = (unit.type === "Vehicle") ? "1 Hit":"2 Hits";
+            let result = unit.CommandTest(fail,"No Effect");
+            outputCard.body.push(unit.name + " - " + result.tip);
+            if (result.success === fail && unit.type === Vehicle) {
+                unit.ApplyDamage(1);        
+            } else if (result.success === fail && unit.type !== "Vehicle") {
+                unit.ApplyDamage(2); 
+            }
         }
         outputCard.body.push("Units entering the Hex pay +2 MP but are otherwise unaffected");
     }
