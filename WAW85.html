@@ -385,7 +385,7 @@
                 </div>
 
                 <input type="hidden" name="attr_weapon2equipped" class="weapon2-status" value="Off">
-                <input type="hidden" name="attr_wpn2colour" class="wpn2colour" value="Off">
+                <input type="hidden" name="attr_wpn2colour" class="wpn2colour" value="white">
 
                 <div class="weapon2">
                     <h4><span name="attr_weapon2name"></span></h4>
@@ -398,7 +398,7 @@
                
 
                 <input type="hidden" name="attr_weapon3equipped" class="weapon3-status" value="Off">
-                <input type="hidden" name="attr_wpn3colour" class="wpn3colour" value="Off">
+                <input type="hidden" name="attr_wpn3colour" class="wpn3colour" value="white">
                 <div class="weapon3">
                     <h4><span name="attr_weapon3name"></span></h4>
                     <h4><span name="attr_weapon3type"></span></h4>
@@ -410,7 +410,7 @@
 
 
                 <input type="hidden" name="attr_weapon4equipped" class="weapon4-status" value="Off">
-                <input type="hidden" name="attr_wpn4colour" class="wpn4colour" value="Off">
+                <input type="hidden" name="attr_wpn4colour" class="wpn4colour" value="white">
                 <div class="weapon4">
                     <h4><span name="attr_weapon4name"></span></h4>
                     <h4><span name="attr_weapon4type"></span></h4>
@@ -500,11 +500,11 @@
             let w4name = values.weapon4name;
 
             let w2c = "white";
-            if (!w2name) {w2c = "lightgrey"};
+            if (!w2name || w2name === "") {w2c = "lightgrey"};
             let w3c = (w2c === "white") ? "lightgrey":"white";
-            if (!w3name) {w3c = w2c};
+            if (!w3name || w3name === "") {w3c = w2c};
             let w4c = (w3c === "white") ? "lightgrey":"white";
-            if (!w4name) {w4c = w3c};
+            if (!w4name || w3name === "") {w4c = w3c};
 
 log(w2c)
 log(w3c)
