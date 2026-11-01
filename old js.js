@@ -799,7 +799,13 @@ const WaW85 = (() => {
             for (let i=1;i<4;i++) {
                 let equip = attributes["weapon" + i + "equipped"] || "Off";
                 let wname = attributes["weapon" + i + "name"];
-                if (equip === "Off" || wname === "" || wname === undefined) {continue};
+                if (equip === "Off") {continue};
+                if (wname) {
+                    wname = wname.trim();
+                }
+                if (!wname || wname === "") {
+                    wname = attributes["weapon" + (i-1) + "name"];
+                }
                 let wtype = attributes["weapon" + i + "type"] || "AP";
                 let wrange = attributes["weapon" + i + "range"];
                 let wminrange = 0;
@@ -841,6 +847,9 @@ const WaW85 = (() => {
 
                 weapons.push(weapon);
             }
+log(weapons)
+
+
             let special = attributes.special;
 //things to special
 
@@ -2628,7 +2637,7 @@ log("Checking " + unit.name);
     }
 
 
-    const Attack = (weapon,shooter,target,aaFireMod = false,volley = false) => {
+    const Attack = (weapon,shooter,target,volley = false) => {
         let losResult = LOS(shooter,target);
         let defDice = target.armour;
         let ddT = "";
@@ -2648,11 +2657,8 @@ log("Checking " + unit.name);
         let bonusTips = "";
 
         //10.6.1 AA Fire Mods, fed in from Direct Fire, true if a non-AA Weapon
-        if (aaFireMod) {
-            fp -= 2;
-            toHit = 6;
-            shooterTips += "<br>Non-AA Weapon -2 FP/TH 6";
-        }
+        //factored into character sheet now
+        let aaFire = (target.type === "Aircraft" || (target.type === "Helicopter") && target.HeloStatus() !== "Landed") ? true:false;
 
         //10.6.2 HQ or Leader Bonus
         if (weapon.type !== "Artillery") {
@@ -2666,7 +2672,7 @@ log("Checking " + unit.name);
 
         //10.6.3 - minimum range for ATGM already done above
         //10.6.4 Point Blank Range, 10.6.5 Long Range
-        if (weapon.type !== "Artillery" && shooter.type !== "Aircraft" && aaFireMod === false) {
+        if (weapon.type !== "Artillery" && shooter.type !== "Aircraft" && weapon.notes.includes("AAMG") === false) {
             if (losResult.distance > weapon.range || losResult.distance > 1 && Scenario.night === true) {
                 if (state.WaW85.weatherLevel > 0 || state.WaW85.squall) {
                     toHit += 2;
@@ -2705,7 +2711,7 @@ log("Checking " + unit.name);
         if (target.type === "Vehicle" || target.type === "Helicopter" && target.HeloStatus() === "Landed") {
             terBonus = HexMap[target.hexLabel].defenseBonus.Vehicles
         }
-        if (losResult.delta < 0 && aaFireMod === false) {
+        if (losResult.delta < 0 && aaFire === false) {
             terBonus += 1;
         }
         if (terBonus !== 0) {
@@ -2952,21 +2958,13 @@ log("Checking " + unit.name);
                 } else if (weapon.notes.includes("ATGM")) {
                     return "ATGMs cannot target NOE Helicopters";
                 } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                    if (losResult.distance > Math.min(weapon.range,10)) {
-                        return "Helicopter out of Range for non-AA Weapon";
-                    } else if (weapon.type === "AP") {
-                        return weapon.name + " cannot target Helicopters";
-                    } 
+                    return weapon.name + " cannot target Helicopters";
                 }
             } else if (heloStatus === "Flying" || heloStatus === "Hovering") {
                 if (weapon.notes.includes("ATGM")) {
                     return "ATGMs cannot target " + heloStatus +" Helicopters";
                 } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                    if (losResult.distance > Math.min(weapon.range,10)) {
-                        return "Helicopter out of Range for non-AA Weapon";
-                    } else if (weapon.type === "AP") {
-                        return weapon.name + " cannot target Helicopters";
-                    }
+                    return weapon.name + " cannot target Helicopters";
                 }
             } else if (heloStatus === "Landed" && weapon.notes.includes("SAM")) {
                 return "SAMs cannot target Landed Helicopters";
@@ -2977,11 +2975,7 @@ log("Checking " + unit.name);
             if (weapon.notes.includes("ATGM")) {
                 return "ATGMs cannot target Aircraft";
             } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                if (distance > Math.min(weapon.range,10)) {
-                    return "Aircraft out of Range for non-AA Weapon";
-                } else if (weapon.type === "AP") {
-                    return weapon.name + " cannot target Aircraft";
-                }             
+                return weapon.name + " cannot target Aircraft";          
             }
         }
 
@@ -3002,7 +2996,7 @@ log("Checking " + unit.name);
         let Tag = msg.content.split(";");
         let shooterID = Tag[1];
         let targetID = Tag[2];
-        let weaponNumber = Tag[3];
+        let weaponName = Tag[3];
         let heloStatus;
 
         let shooter = Units[shooterID];
@@ -3017,10 +3011,22 @@ log("Checking " + unit.name);
             return;
         }
 
-        let weapon = DeepCopy(shooter.weapons[weaponNumber]);
-        let losResult = LOS(shooter,target);
+        let weapons = DeepCopy(shooter.weapons.filter(weapon => weapon.name === weaponName));
+        let weapon;
+        //some weapons will have both AP and HE, this should pick one, which may still fail valid target due to range etc
+        for (let i=0;i<weapons.length;i++) {
+            weapon = weapons[i];
+            if (weapon.type === "AP" && target.type === "Vehicle" || target.type === "Aircraft") {
+                break;
+            }
+            if (weapon.type === "HE" && (target.type === "Infantry" || target.type === "Towed")) {
+                break;
+            }
+        }
 
         //validity checks
+        let losResult = LOS(shooter,target);
+
         let errorMsg = [];
         if (shooter.Ready() === false) {
             if (shooter.type === "Support") {
@@ -3072,24 +3078,17 @@ log("Checking " + unit.name);
         }
 
         //AA - invalid weapons/targets already screened out by ValidTarget
-        let aaFireMod = false; //this is for mods for aaFire
         if (target.type === "Helicopter") {
             heloStatus = target.HeloStatus();
             if (heloStatus === "NOE" && weapon.notes.includes("AA") === false) {
-                aaFireMod = true;
-                weapon.sound = "Vehicle MG";
-                weapon.name = "MGs";
+                errorMsg.push("Moved too far to fire");
             } else if ((heloStatus === "Flying" || heloStatus === "Hovering") && weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                aaFireMod = true;
-                weapon.sound = "Vehicle MG";
-                weapon.name = "MGs";
+               errorMsg.push("Cannot Fire this Weapon at the Helicopter");
             } 
         }
         if (target.type === "Aircraft") {
             if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                aaFireMod = true;
-                weapon.sound = "Vehicle MG";
-                weapon.name = "MGs";        
+                errorMsg.push("Cannot Fire this Weapon at the Aircraft");
             }
         }
 
@@ -3108,7 +3107,7 @@ log("Checking " + unit.name);
 
 
 
-        Attack(weapon,shooter,target,aaFireMod);
+        Attack(weapon,shooter,target);
 log("Sound: " + weapon.sound)
         PlaySound(weapon.sound);
 
@@ -4769,7 +4768,7 @@ log(state.WaW85.playerIDs)
         }
 
         if (extra === "Assault") {
-            outputCard.body.push("Once all Assaulting Units assaulting this hex have moved, run the Assault Macro");
+            outputCard.body.push("Once all Assaulting Units assaulting the target hex have moved, run the Assault Macro");
         }
 
         unit.token.set("bar3_value",mp);
@@ -5266,7 +5265,7 @@ log(state.WaW85.playerIDs)
                 }
                 mode += "}";
             }
-            let orders = "?{Order|Move|";
+            let orders = "?{Order|Move";
             if (unit.weapons.length > 0) {
                 orders += "|Move and Direct Fire|Direct Fire";
             }
@@ -5278,7 +5277,7 @@ log(state.WaW85.playerIDs)
             }
             orders += "}";
             let action = "!Activate;" + orders + mode;
-            AddAbility("Move",action,unit.charID);
+            AddAbility("Activate",action,unit.charID);
         }
 
         if (unit.special.includes("Transport")) {
@@ -5288,20 +5287,23 @@ log(state.WaW85.playerIDs)
             AddAbility("Unload","!Misc;Unload",unit.charID);
         }
 
+
+        let weapons = [];
         if (unit.weapons.length > 0) {
             for (let w=0;w<unit.weapons.length;w++) {
-                let weapon = unit.weapons[w];
-                if (weapon.notes.includes("Indirect")) {
-                    continue;
-                }
-                abilityName = w + ": " + weapon.name;
-                action = "!DirectFire;@{selected|token_id};@{target|token_id};" + w;
-                AddAbility(abilityName,action,unit.charID);
+                if (unit.weapons[w].notes.includes("Indirect")) {continue};
+                weapons.push(unit.weapons[w].name);
             }
         }
+        weapons = [...new Set(weapons)];
 
-
-
+        let w = 1;
+        _.each(weapons,weapon => {
+            abilityName = w + ": " + weapon
+            action = "!DirectFire;@{selected|token_id};@{target|token_id};" + weapon;
+            AddAbility(abilityName,action,unit.charID);
+            w++;
+        })
 
 
 
