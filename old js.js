@@ -1038,7 +1038,7 @@ log(weapons)
             } 
             return reduced;
         }
-        SetReduced(stat) {
+        SetReduced(stat = true) {
             let hp = parseInt(this.token.get("bar1_value"));
             if (stat === true) {
                 if (hp === 1) {
@@ -1057,7 +1057,13 @@ log(weapons)
                 }
             } else {
                 this.token.set("currentSide",0);
-                this.token.set("bar1_value",2);
+                let hp = 1;
+                let sides = this.token.get("sides");
+                if (sides !== "") {
+                    sides = sides.split("|");
+                    hp = sides.length;
+                }
+                this.token.set("bar1_value",hp);
             }
         }
         Active() {
@@ -3048,7 +3054,7 @@ log("Checking " + unit.name);
             }
         }
 
-        if (shooter.id === activeUnitID && shooter.action.includes("Fire") === false) {
+        if (shooter.id === state.WaW85.activeUnitID && shooter.action.includes("Fire") === false) {
             errorMsg.push("Unit did not Select an Order with Fire");
         }
 
@@ -3111,7 +3117,7 @@ log("Checking " + unit.name);
             return;
         }
     
-        if (shooter.id !== activeUnitID) {
+        if (shooter.id !== state.WaW85.activeUnitID) {
             outputCard.body.push("Opp Fire");
             outputCard.body.push("[hr]");
         }
@@ -4685,7 +4691,6 @@ log(state.WaW85.playerIDs)
         }
 
         unit.action = action;
-        activeUnitID = unit.id;
 
         switch(action) {
             case 'Move':
@@ -4814,7 +4819,7 @@ log(state.WaW85.playerIDs)
         let errorMsg = [];
 
         if (action === "Unload") {
-            if (unit.id !== activeUnitID) {
+            if (unit.id !== state.WaW85.activeUnitID) {
                 errorMsg.push("Not Active Unit");
             };
             if (!unit2) {
@@ -4831,7 +4836,7 @@ log(state.WaW85.playerIDs)
             };
         };
         if (action === "Load") {
-            if (unit.id !== activeUnitID) {
+            if (unit.id !== state.WaW85.activeUnitID) {
                 errorMsg.push("Not Active Unit");
             };
             if (unit.token.get(SM.passenger)) {
