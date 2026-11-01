@@ -25,6 +25,9 @@
             </select>
             <br>
             <label>Core Unit:</label><input type="checkbox" name="attr_core" value="1">   
+            <label>1 Side:</label><input type="checkbox" name="attr_singlestep" value="1">   
+
+
             <br>
             <label for="attr_nation">Nation:</label>
             <select name="attr_nation">
@@ -337,7 +340,7 @@
 
 
           <section class = "special">
-            <h3><u>Special</u></h3>
+            <h3><u>Notes</u></h3>
             <div class="specialinfo">
                 <h3><span name="attr_specials1"></span></h3>
                 <h3><span name="attr_specials2"></span></h3>
@@ -444,7 +447,7 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["nation","movementtype","type","special","character_name","weapon2name","weapon3name","weapon4name",], function(values) {
+        getAttrs(["nation","movementtype","type","special","character_name","weapon2name","weapon3name","weapon4name","singlestep"], function(values) {
             let nation = values.nation || "Neutral";
             let charName = values.character_name || " ";
             charName = charName.split("//")[0];
@@ -473,10 +476,14 @@
 
             let special = values.special || " ";
             special = special.split(",");
+            if (values.singlestep === "1") {
+                special.push("Single Step Unit");
+            }
             let specials = ["","","",""];
             for (let i=0;i<special.length;i++) {
                 specials[i] = special[i].trim();
             }
+
 
             let type = values.type;
             let movetext0,movetext1,movetext2,movetext3;
