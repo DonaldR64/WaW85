@@ -979,6 +979,7 @@ const WaW85 = (() => {
             if (this.type === "Vehicle") {
                 HexMap[this.hexLabel].PlaceWreck();
                 PlaySound("VehicleDeath");
+                this.token.remove();
             } 
             if (this.type === "Helicopter" && this.HeloStatus() !== "Flying") {
                 PlaySound("VehicleDeath");
@@ -991,10 +992,12 @@ const WaW85 = (() => {
             this.AttachedSupport("Destroyed");
             this.AttachedHQLeaders("Destroyed");
 
-            if (this.type !== "HQ") {
-                this.token.set("status_death",true);
-                this.token.set("layer","map");
-                toFront(this.token);
+            if (this.type !== "HQ" && this.type !== "Vehicle") {
+                if (this.type !== "Vehicle") {
+                    this.token.set("status_death",true);
+                    this.token.set("layer","map");
+                    toFront(this.token);
+                }
                 delete Unit[this.id];
             }
         }
@@ -1647,6 +1650,8 @@ const WaW85 = (() => {
         if (outputCard.title.length > 12) {
             titlefontsize = "1em";
         }
+
+        
 
         output += `font-size: ` + titlefontsize + `; `;
         output += `line-height: 1.2em; font-weight: strong; `;
@@ -2700,7 +2705,7 @@ log("Checking " + unit.name);
         if (target.type === "Vehicle" || target.type === "Helicopter" && target.HeloStatus() === "Landed") {
             terBonus = HexMap[target.hexLabel].defenseBonus.Vehicles
         }
-        if (losResult.delta < 0 && aaFlag === false) {
+        if (losResult.delta < 0 && aaFireMod === false) {
             terBonus += 1;
         }
         if (terBonus !== 0) {
@@ -2972,7 +2977,7 @@ log("Checking " + unit.name);
             if (weapon.notes.includes("ATGM")) {
                 return "ATGMs cannot target Aircraft";
             } else if (weapon.notes.includes("AA") === false && weapon.notes.includes("SAM") === false) {
-                if (losResult.distance > Math.min(weapon.range,10)) {
+                if (distance > Math.min(weapon.range,10)) {
                     return "Aircraft out of Range for non-AA Weapon";
                 } else if (weapon.type === "AP") {
                     return weapon.name + " cannot target Aircraft";
@@ -3128,8 +3133,11 @@ log("Sound: " + weapon.sound)
 
         PrintCard();
         //mark shooter OPS Complete
-        shooter.SetReady(false);
-        shooter.fired = true;
+        if (shooter.type !== "Aircraft") {
+            shooter.SetReady(false);
+            shooter.fired = true;
+        }
+
 
 
 
@@ -3875,7 +3883,7 @@ log(weapon.sound)
         if (card.name === "End Operations") {
             state.WaW85.endOps++;
         } else {
-            if (!state.WaW85.played.includes(card.name)) {
+            if (!state.WaW85.played.includes(card.name) && card.type === "Formation") {
                 state.WaW85.played.push(card.name);
             }
         }
@@ -5175,7 +5183,7 @@ log(state.WaW85.playerIDs)
             sendChat("","Not in Formation Info");
             return;
         }
-        casUnit.token.SetActive();
+        casUnit.SetActive();
 
         if (roll === 1) {
             outputCard.body.push("The Strike achieves Surprise!");
@@ -5196,7 +5204,7 @@ log(state.WaW85.playerIDs)
             outputCard.body.push("Two other units may contribute AA Fire (+1FP)");
         }
         if (roll !== 6) {
-            outputCard.body.push("If the CAS Unit survives any AA Fire, it may conduct its attacks, then fly off board");
+            outputCard.body.push("If the CAS Unit survives any AA Fire, it may conduct an attack on every unit in the Hex, then fly off board");
         }
     }
 
@@ -5416,8 +5424,11 @@ log(state.WaW85.playerIDs)
             pageid: Campaign().get("playerpageid"),
             imgsrc: img,
             layer: layer,
-            represents: charID,
         })
+
+        if (charID && newToken) {
+            newToken.set("represents",charID);
+        }
 
         if (newToken) {
             toFront(newToken);
