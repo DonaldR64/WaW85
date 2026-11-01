@@ -562,7 +562,6 @@ input[type="hidden"][value="Off"].weapon3-status ~ .weapon3{
   grid-gap: 1px;
   grid-template-columns: 3fr 1fr 1fr 1fr 1fr 2fr;
   grid-template-rows: 1;
-  background-color: white;
   text-align: center;
   align-items: center;
   padding: 3px;
@@ -588,7 +587,6 @@ input[type="hidden"][value="Off"].weapon4-status ~ .weapon4{
   grid-gap: 1px;
   grid-template-columns: 3fr 1fr 1fr 1fr 1fr 2fr;
   grid-template-rows: 1;
-  background-color: white;
   text-align: center;
   align-items: center;
   padding: 3px;
