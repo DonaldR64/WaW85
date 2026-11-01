@@ -1070,7 +1070,7 @@ const WaW85 = (() => {
             }
             return ready;
         }
-        SetReady(ready) {
+        SetReady(ready = true) {
             let aura = (ready === true) ? "#ff00ff":"#000000";
             if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
                 aura = "transparent";
@@ -3819,9 +3819,8 @@ log(weapon.sound)
         if (Scenario.designatedFormation && Scenario.designatedFormation.turns.includes(state.WaW85.turn)) {
             cards.push({name: "Designated Formation"});
         }
-
-
-        //others based on scenario
+        //EQ here
+        //CAS is a formation card
 
         state.WaW85.cards = cards;
     }
@@ -3889,6 +3888,10 @@ log(weapon.sound)
                 BattleFieldEvent();
             } else if (card.type && card.type === "Formation") {
                 FormationEvent(card);
+            } else if (card.type === "CAS") {
+                CAS(card);
+            } else if (card.type === "EW") {
+                EW(card);
             } else if (card.name === "Designated Formation") {
                 card = Scenario.formations[Scenario.designatedFormation.formationID];
                 outputCard.body.push(card.name);
@@ -5162,6 +5165,59 @@ log(state.WaW85.playerIDs)
             unit.MoveAttached();
         }
     }
+
+    const CAS = (card) => {
+        let formationInfo = state.WaW85.formationInfo[card.id];
+        outputCard.nation = card.nation;
+        let roll = randomInteger(6);
+        let casUnit = Units[formationInfo.unitIDs[0]];
+        if (!casUnit) {
+            sendChat("","Not in Formation Info");
+            return;
+        }
+        casUnit.token.SetActive();
+
+        if (roll === 1) {
+            outputCard.body.push("The Strike achieves Surprise!");
+            outputCard.body.push("Move the CAS unit to its target hex");
+            outputCard.body.push("Only one unit can do AA OppFire");
+        } else if (roll === 6) {
+            outputCard.body.push("The Strike was Intercepted!");
+            outputCard.body.push("The CAS Unit is Out of this game");
+            let index = Scenario.formations.indexOf(card);
+            if (index > -1) {
+                Scenario.formations.splice(index,1);
+            }
+            casUnit.token.remove();
+            delete Units[casUnit.id]
+        } else {
+            outputCard.body.push("Move the CAS unit to its target hex");
+            outputCard.body.push("One unit may conduct AA OppFire");
+            outputCard.body.push("Two other units may contribute AA Fire (+1FP)");
+        }
+        if (roll !== 6) {
+            outputCard.body.push("If the CAS Unit survives any AA Fire, it may conduct its attacks, then fly off board");
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

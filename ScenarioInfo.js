@@ -10,6 +10,8 @@ const ScenarioData = {
             formationID: 1,
             turns: [2,3],
         },
+        eq: false,
+        eqAdvantage: "",
         thirdEndOps: false,
         night: false,
         Red: "Soviet",
@@ -49,7 +51,18 @@ const ScenarioData = {
                 type: "Formation",
                 opsDeck: true,
             },
-
+            //temp
+            4: {
+                id: 4,
+                name: "CAS US A-10 Warthog",
+                hqName: "",
+                morale: 0,
+                commandRange: [0,0],
+                nation: "US Army",
+                cards: 1,
+                type: "CAS",
+                opsDeck: true,
+            }
 
 
 
