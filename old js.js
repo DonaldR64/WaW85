@@ -1814,7 +1814,13 @@ log(weapons)
         AddTokens();        
         DefineMap();
         if (state.WaW85.scenario !== "") {
-            Scenario = ScenarioData[state.WaW85.scenario]
+            Scenario = DeepCopy(ScenarioData[state.WaW85.scenario]);
+            _.each(state.WaW85.removeFormations,id => {
+                let index = Scenario.formations.indexOf(card);
+                if (index > -1) {
+                    Scenario.formations.splice(index,1);
+                }
+            })
         }
         let elapsed = Date.now()-startTime;
         log("Hex Map Built in " + elapsed/1000 + " seconds");
@@ -2076,6 +2082,7 @@ log(weapons)
             attachedIDs: {}, //ref by tokenID of the main unit, is the IDs in an array of leaders, HQs attached to it
             hiddenMinefieldLocations: [],
             minefieldPlayer: 2,
+            removeFormations: [], //ids of any formations no longer in game, mainly CAS
         }
     
 
@@ -2552,7 +2559,7 @@ log(weapons)
     const PickScenario = (msg) => {
         let Tag = msg.content.split(";");
         state.WaW85.scenario = "Scenario " + Tag[1];
-        Scenario = ScenarioData[state.WaW85.scenario];
+        Scenario = DeepCopy(ScenarioData[state.WaW85.scenario]);
         state.WaW85.eventCard = Tag[2] === "Yes" ? true:false;
         let line = (Tag[2] === "Yes") ? "":"No ";
         line += "Event Card Added";
@@ -4138,9 +4145,18 @@ log(weapon.sound)
 
         if (AirGone === true) {
             outputCard.body.push("All Helicopters and Aircraft are Grounded and Leave the Map");
-//remove Helos and CAS
-
-
+            //remove CAS
+            _.each(Scenario.formations, formation => {
+                if (formation.type === "CAS") {
+                    let casUnit = Units[formation.unitIDs[0]];
+                    casUnit.token.remove();
+                    delete Units[casUnit.id]
+                    state.WaW.removeFormations.push(formation.id);
+                    let index = Scenario.formations.indexOf(formation);
+                    Scenario.formations.splice(index,1);
+                }
+            })
+            //remove Helos
 
         }
         if (FireOut === true) {
@@ -5193,6 +5209,7 @@ log(state.WaW85.playerIDs)
         } else if (roll === 6) {
             outputCard.body.push("The Strike was Intercepted!");
             outputCard.body.push("The CAS Unit is Out of this game");
+            state.WaW.removeFormations.push(card.id);
             let index = Scenario.formations.indexOf(card);
             if (index > -1) {
                 Scenario.formations.splice(index,1);
