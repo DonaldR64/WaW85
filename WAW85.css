@@ -238,7 +238,9 @@ input[type="hidden"][value="Infantry"].flying-status ~ .flyingstatus {
 input[type="hidden"][value="Towed"].flying-status ~ .flyingstatus {
     display: none;
 }
-
+input[type="hidden"][value="Aircraft"].flying-status ~ .flyingstatus {
+    display: none;
+}
 
 
 
