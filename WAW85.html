@@ -438,7 +438,7 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["nation","movementtype","type","special","character_name"], function(values) {
+        getAttrs(["nation","movementtype","type","special","character_name","weapon2name","weapon3name","weapon4name",], function(values) {
             let nation = values.nation || "Neutral";
             let charName = values.character_name || " ";
             charName = charName.split("//")[0];
@@ -489,11 +489,19 @@
                 }
             }
 
+            let w2name = values.weapon2name;
+            let w3name = values.weapon3name;
+            let w4name = values.weapon4name;
+
+            let w2c = "white";
+            if (!w2name) {w2c = "lightgrey"};
+            let w3c = (w2c === "white") ? "lightgrey":"white";
+            if (!w3name) {w3c = w2c};
+            let w4c = (w3c === "white") ? "lightgrey":"white";
+            if (!w4name) {w4c = w3c};
 
 
-
-
-
+            
 
             setAttrs({
                 "flag": flag,
@@ -506,6 +514,12 @@
                 "specials3": specials[2],
                 "specials4": specials[3],
                 "displayname": charName,
+                "wpn2colour": w2c,
+                "wpn3colour": w3c,
+                "wpn4colour": w4c,
+
+
+
             });
         });    
     });  
