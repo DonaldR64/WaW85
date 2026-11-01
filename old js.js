@@ -94,7 +94,6 @@ const WaW85 = (() => {
         EWReducing: "status_ew2::7901718", 
 
         passenger: "status_letters_and_numbers0266::5982386",
-        longMove: "status_Advantage-or-Up::2006462",
 
     }; 
 
@@ -893,6 +892,7 @@ log(weapons)
             this.movement = movement;
             this.movementType = movementType;
             this.action = "";
+            this.longMove = false;
 
             this.special = special || " ";
 
@@ -2774,14 +2774,14 @@ log("Checking " + unit.name);
         if (shooter.type !== "Helicopter" && weapon.type !== "Artillery" && parseInt(shooter.token.get("bar3_max")) > 0 ) {
             if (weapon.notes.includes("Stabilized")) {
                 if (shooter.player === 0) {
-                    if (shooter.token.get(SM.longMove)) {
+                    if (shooter.longMove) {
                         fp -= 2;
                         shooterTips += "<br>Movement -2 FP";
                     } else {
                         fp--;
                         shooterTips += "<br>Movement -1 FP";
                     }
-                } else if (shooter.player === 1 && shooter.token.get(SM.longMove)) {
+                } else if (shooter.player === 1 && shooter.longMove) {
                     //if Nato and under half MP, then no effect
                     fp--;
                     shooterTips += "<br>Movement -1 FP";
@@ -3041,6 +3041,10 @@ log("Checking " + unit.name);
             }
         }
 
+        if (shooter.id === activeUnitID && shooter.action.includes("Fire") === false) {
+            errorMsg.push("Unit did not Select an Order with Fire");
+        }
+
         if (shooter.fired === true) {
             errorMsg.push("Unit has already Fired");
         }
@@ -3073,9 +3077,6 @@ log("Checking " + unit.name);
                 errorMsg.push("Cannot Fire ATGM while Landed");
             }    
         }
-        if (weapon.notes.includes("Stabilized") === false && shooter.token.get(SM.longMove)) {
-            errorMsg.push("Moved too far to fire");
-        }
 
         //AA - invalid weapons/targets already screened out by ValidTarget
         if (target.type === "Helicopter") {
@@ -3103,9 +3104,10 @@ log("Checking " + unit.name);
             return;
         }
     
-
-
-
+        if (shooter.id !== activeUnitID) {
+            outputCard.body.push("Opp Fire");
+            outputCard.body.push("[hr]");
+        }
 
         Attack(weapon,shooter,target);
 log("Sound: " + weapon.sound)
@@ -4265,9 +4267,9 @@ log(state.WaW85.playerIDs)
                 unit.unloaded = false;
                 unit.passUnloaded = false;
                 unit.bonusUsed = {Leader: false, HQ: false};
-                unit.token.set(SM.longMove,false);
                 unit.fired = false;
                 unit.action = "";
+                unit.longMove = false;
             } 
         })
     }
@@ -5591,12 +5593,12 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 }
 
                 if (usedMove > Math.floor(totalMove/2)  && moveTypes.includes(unit.type)) {
-                    unit.token.set(SM.longMove,true);
+                    unit.longMove = true;
                 } else {
-                    unit.token.set(SM.longMove,false);
+                    unit.longMove = false;
                 }
                 if (unit.type === "Helicopter" && usedMove > 12) {
-                    unit.token.set(SM.longMove,true);
+                    unit.longMove = true;
                 }
             }
         }
