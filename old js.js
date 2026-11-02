@@ -724,7 +724,11 @@ const WaW85 = (() => {
 
         }
         MinefieldDepletion() {
-
+            let minefieldToken = getObj("graphic",this.minefield);
+            if (minefieldToken) {
+                minefieldToken.remove();
+                this.minefield = "";
+            }
         }
         PlaceADM(layer) {
             id = CreateMarker(this,"Random Minefield",layer);
@@ -4596,7 +4600,7 @@ log(state.WaW85.playerIDs)
                 })
                 if (hex.minefield === true && randomInteger(6) === 6) {
                     hex.MinefieldDepletion();
-                    outputCard.body.push("Fire depletes a Minefield in Hex " + hex.label);
+                    outputCard.body.push("Fire depletes the Minefield in Hex " + hex.label);
                 }
                 let neighbourCubes = hex.cube.neighbours();
                 _.each(neighbourCubes, cube => {
@@ -5188,6 +5192,13 @@ log(state.WaW85.playerIDs)
             ChangeTokenIDs(unit,endHex.label,startHex.label);
             unit.MoveAttached();
         }
+        //minefield depletion
+        let depRoll = randomInteger(6);
+        if (depRoll === 6) {
+            endHex.MinefieldDepletion();
+            outputCard.body.push("The Minefield is Depleted");
+        }
+
     }
 
     const CAS = (card) => {
