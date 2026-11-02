@@ -85,6 +85,12 @@ const Assault = (msg) => {
                 notes += "<br>Night Time -1TH";
             }
             toHit = Math.min(toHit,6);
+            fp = Math.max(0,fp);
+
+            if (fp === 0) {
+                outputCard.body.push(unit.name + " has No FP");
+                continue;
+            }
 
             let assaultRolls = [];
             let hits = 0;
@@ -107,8 +113,30 @@ const Assault = (msg) => {
     outputCard.body.push("[B]Damage[/b]")
     outputCard.body.push("[hr]");
 
-    //now apply hits evenly
+    //now apply hits
+    for (let p=start; direction === 1 ? p <= end: p >= end; p += direction) {
+        let q = (p==0) ? 1:0;
+        let rnd = randomInteger(6);
+        for (let i=0;i<involved[p].length;i++) {
+            let unit = involved[p][i];
+            let hits = Math.floor(totalDamage[q] / involved[p].length);
+            let rem = totalDamage[q] - (hits * involved[p].length);
+            if ((i===0 && rnd < 4) || (i===1 && rnd < 4)){
+                hits += rem;
+            } 
+            
 
+
+        }
+
+
+
+
+
+
+
+
+    }
 
 
 
