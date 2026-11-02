@@ -2120,7 +2120,7 @@ log(weapons)
         });
         if (type) {
             if (type === "All") {
-                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield"]; //names of tokens to remove
+                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield","Move Marker"]; //names of tokens to remove
             } else {
                 list = [type];
             }
@@ -3199,7 +3199,7 @@ log("Sound: " + weapon.sound)
             sendChat("","No Opposing Units");
             return;
         }
-
+        PlaySound("Assault");
 
         SetupCard("Assault","",activeUnit.nation);
         let totalDamage = [0,0];
@@ -3342,7 +3342,20 @@ log("Sound: " + weapon.sound)
             outputCard.body.push("[#ff0000]All Attackers Eliminated[/#]");
         } else if (winningPlayer === defendingPlayer || winningPlayer === 2) {
             outputCard.body.push("[#ff0000]Defender's Win[/#]");
-            outputCard.body.push("Surviving Attackers must retreat back to their last Hex");
+            outputCard.body.push("Surviving Attackers Retreat back to their last Hex");
+            for (let i = 0;i < involved[attackingPlayer].length;i ++) {
+                let id = involved[attackingPlayer][i];
+                let unit = Units[id];
+                if (unit && unit.token) {
+                    let lastHex = HexMap[unit.lastHexInfo.label];
+                    unit.token.set({
+                        left: lastHex.centre.x,
+                        top: lastHex.centre.y,
+                    })
+                    ChangeTokenIDs(unit,unit.hexLabel,lastHex.label);
+                    unit.hexLabel = lastHex.label;
+                }
+            }
         } else {
             outputCard.body.push("[#ff0000]Attacker's Win[/#]");
             blitz = true;
@@ -3350,6 +3363,13 @@ log("Sound: " + weapon.sound)
             outputCard.body.push("Subject to Stacking Limits, Prohibited Movement, Enemy-occupied Hexes or Hexes adjacent to Undisrupted Enemies with weapons");
             outputCard.body.push("No Opp Fire is triggered");
             outputCard.body.push("A unit unable to retreat is eliminated");
+            for (let i = 0;i < involved[defendingPlayer].length;i ++) {
+                let id = involved[defendingPlayer][i];
+                let unit = Units[id];
+                if (unit && unit.token) {
+                    unit.retreat = true;
+                }
+            }
         };
         
         if (blitz === true && blitzFlag === true) {
@@ -5025,7 +5045,10 @@ log(state.WaW85.playerIDs)
         state.WaW85.attachedIDs[transport.id] = newIDs2;
         transport.MoveAttached();
         passenger.MoveAttached();
-
+        let index = HexMap[transport.hexLabel].tokenIDs.indexOf(passenger.id);
+        if (index > -1) {
+            HexMap[transport.hexLabel].tokenIDs.splice(index,1);
+        }
         state.WaW85.passengerID[transport.id] = passenger.id;
     }
 
@@ -5513,6 +5536,7 @@ log(state.WaW85.playerIDs)
                 unit.token.set("bar3_value",unit.lastHexInfo.remainingMove);
                 let mmToken = getObj("graphic",unit.lastHexInfo.markerID);
                 if (mmToken) {mmToken.remove()};
+                unit.lastHexInfo = {};
             } else if (distance > 1 || remainingMove === 0 || unit.id !== state.WaW85.activeUnitID) {
 log("Not Active, Distance > 1 or Remaining move === 0")
                 endHex = DeepCopy(startHex);
@@ -5682,8 +5706,12 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             log(unit.name + " moving")
             MoveHex(unit,prevHex,newHex);
         }
-
-
+        if (tok.get("height") !== prev.height || tok.get("width") !== prev.width && state.WaW85.turn > 0) {
+            tok.set({
+                height: prev.height,
+                width: prev.width,
+            })
+        }
 
     }
 
