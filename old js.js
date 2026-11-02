@@ -738,7 +738,7 @@ const WaW85 = (() => {
         }
         PlaceChemical() {
             if (this.chemical !== false) {return};
-            this.chemical = CreateMarker(this,"Wreck");
+            this.chemical = CreateMarker(this,"Chemical");
         }
 
 
