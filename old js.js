@@ -897,6 +897,7 @@ log(weapons)
             this.movementType = movementType;
             this.action = "";
             this.longMove = false;
+            this.crossing = false;
 
             this.special = special || " ";
 
@@ -5576,6 +5577,12 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 if (endHex.fire !== false) {
                     cost = 100;
                 }
+                //bridge or river crossing
+                if (edge === "Bridge" || edge === "River") {
+                    unit.crossing = true;
+                } else {
+                    unit.crossing = false;
+                }
 
                 //Stacking and Enemy issues
                 if (endHex.tokenIDs.length > 0 && unit.Stackable() === false) {
@@ -5635,6 +5642,10 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 if (unit.type === "Helicopter" && usedMove > 12) {
                     unit.longMove = true;
                 }
+
+
+
+
             }
         }
 
