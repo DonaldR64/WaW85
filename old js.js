@@ -843,7 +843,7 @@ const WaW85 = (() => {
                 if (wnotes.includes("Stabilized")) {
                     stabilizedWeapons = true;
                 } 
-                if (wtype === "AP" && wminrange > 0) {
+                if (wtype === "AP" && wminrange === 0) {
                     apWeapon = true;
                 }
 
@@ -3183,7 +3183,7 @@ log("Sound: " + weapon.sound)
 
         for (let i=0;i<hex.tokenIDs.length;i++) {
             let unit2 = Units[hex.tokenIDs[i]]; 
-            involved[unit2.player] = unit2;
+            involved[unit2.player].push(unit2.id);
             if (unit2.type === "Infantry") {
                 noInfantry[unit2.player] = false;
             };
@@ -3201,7 +3201,7 @@ log("Sound: " + weapon.sound)
         }
 
 
-        SetupCard("Assault","",attackers[0].nation);
+        SetupCard("Assault","",activeUnit.nation);
         let totalDamage = [0,0];
 
         //configure the for loop to go forwards if RedFor Assaulting, otherwise backwards (player 0 is RedFor)
@@ -3217,7 +3217,8 @@ log("Sound: " + weapon.sound)
             let q = (p===0) ? 1:0;
             for (let i=0;i<involved[p].length;i++) {
                 let notes = "";
-                let unit = involved[p][i];
+                let id = involved[p][i];
+                let unit = Units[id];
                 let fp = unit.assaultFP || 0;
                 let toHit = unit.assaultToHit || 6;
                 if (unit.apWeapon === false && heavyArmourOnly[q]) {
@@ -3277,7 +3278,7 @@ log("Sound: " + weapon.sound)
                 assaultRolls.sort().reverse();
                 let tip = "Rolls: " + assaultRolls.toString() + " vs. " + toHit + "+" + "<br>Assault FP: " + fp + notes;
                 tip = '[' + hits + '](#" class="showtip" title="' + tip + ')';
-                outputCard.body(unit.name + " gets " + tip + " hits")
+                outputCard.body.push(unit.name + " gets " + tip + " hits")
                 totalDamage[p] += hits;
                 outputCard.body.push("[hr]");
             };
@@ -3295,8 +3296,8 @@ log("Sound: " + weapon.sound)
             let q = (p==0) ? 1:0;
             let rnd = randomInteger(6);
             for (let i=0;i<involved[p].length;i++) {
-                let unit = involved[p][i];
-                let id = unit.id;
+                let id = involved[p][i];
+                let unit = Units[id];
                 unit.SetReady(false);
                 let hits = Math.floor(totalDamage[q] / involved[p].length);
                 let rem = totalDamage[q] - (hits * involved[p].length);
@@ -4884,6 +4885,7 @@ log(state.WaW85.playerIDs)
                 outputCard.body.push(msg);
             });
         } else {
+            SetupCard(action,"",unit.nation);
             switch(action) {
                 case 'Attach':
                     Attach(unit,unit2);
