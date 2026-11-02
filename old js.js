@@ -977,6 +977,10 @@ log(weapons)
                     outputCard.body.push(this.nation + " " + this.name + " is Reduced");
                 }
                 let dam = Math.min(hp,damage);
+                hp = Math.max(hp - dam,0);
+                if (this.token) {
+                    this.token.set("bar1_value",hp);
+                }
                 damage -= dam;
                 return damage;
             }
@@ -3304,7 +3308,7 @@ log("Sound: " + weapon.sound)
                 unit.SetReady(false);
                 let hits = Math.floor(totalDamage[q] / involved[p].length);
                 let rem = totalDamage[q] - (hits * involved[p].length);
-                if ((i===0 && rnd < 4) || (i===1 && rnd < 4)){
+                if ((i===0 && rnd < 4) || (i===1 && rnd > 3)){
                     hits += rem;
                 };
                 if (hex.improved === true && unit.type !== "Helicopter" && unit.player === defendingPlayer) {
@@ -3314,9 +3318,10 @@ log("Sound: " + weapon.sound)
                 if (hits > 0) {
                     unit.ApplyDamage(hits);
                 } else {
-                    outputCard.body.push(unit.nation + " " + unit.name + " - no Damage Taken");
+                    outputCard.body.push(unit.nation + " " + unit.name + " - No Damage Taken");
                 };
-                if (Units[id] && Units[id].token) {
+                unit = Units[id];
+                if (unit && unit.token && unit.token.get("bar1_value") > 0) {
                     if (unit.player === defendingPlayer) {
                         defendersRemainFlag = true;
                     } else {
