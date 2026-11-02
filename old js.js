@@ -727,7 +727,7 @@ const WaW85 = (() => {
             let minefieldToken = getObj("graphic",this.minefield);
             if (minefieldToken) {
                 minefieldToken.remove();
-                this.minefield = "";
+                this.minefield = false;
             }
         }
         PlaceADM(layer) {
@@ -4622,7 +4622,15 @@ log(state.WaW85.playerIDs)
             outputCard.body.push("The " + squall + " ends");
         }        
         //remove chemical strike markers
-
+        _.each(HexMap,hex => {
+            if (hex.chemical !== false) {
+                let chemMarker = getObj("graphic",hex.chemical);
+                if (chemMarker) {
+                    chemMarker.remove();
+                }
+                hex.chemical = false;
+            }  
+        })
 
         //Victory Determination
         outputCard.body.push("Check Victory Conditions");
