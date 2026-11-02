@@ -5419,9 +5419,9 @@ log(state.WaW85.playerIDs)
             rotation = randomInteger(360);
         }
         if (type === "Collapsed Bridge") {
-            img = "";
-            width = HexInfo.height/2;
-            height = 10;
+            img = "https://files.d20.io/images/506243513/gEK1bAG5_Q-yUjoiVZX-2A/thumb.png?1793658390";
+            width = 70;
+            height = 20;
 //change delta based on which edge
             deltaLeft = 0;
             deltaTop = 0;
