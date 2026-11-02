@@ -953,9 +953,9 @@ log(weapons)
                 } else {
                     let roll = randomInteger(6);
                     if (roll < 4) {
-                        outputCard.body.push(this.name + " Circles Back");
+                        outputCard.body.push(this.nation + " " + this.name + " Circles Back");
                     } else {
-                        outputCard.body.push(this.name + " Calls off its Run and returns to Base due to the Damage");
+                        outputCard.body.push(this.nation + " " + this.name + " Calls off its Run and returns to Base due to the Damage");
                         //remove card and counter, not eliminated for VP
                     }
                 }
@@ -966,15 +966,15 @@ log(weapons)
                     this.SetDisrupt(true);
                     damage--;
                     if (damage < hp) {
-                        outputCard.body.push(this.name + ' is Disrupted');
+                        outputCard.body.push(this.nation + " " + this.name + ' is Disrupted');
                     }
                 }
                 if (damage >= hp) {
                     this.SetDestroyed();
-                    outputCard.body.push(this.name + " is Destroyed");
+                    outputCard.body.push(this.nation + " " + this.name + " is Destroyed");
                 } else if (damage > 0) {
                     this.SetReduced();
-                    outputCard.body.push(this.name + " is Reduced");
+                    outputCard.body.push(this.nation + " " + this.name + " is Reduced");
                 }
                 let dam = Math.min(hp,damage);
                 damage -= dam;
@@ -3219,10 +3219,12 @@ log("Sound: " + weapon.sound)
                 let notes = "";
                 let id = involved[p][i];
                 let unit = Units[id];
-                let fp = unit.assaultFP || 0;
-                let toHit = unit.assaultToHit || 6;
+                let side = parseInt(unit.token.get("currentSide"));
+                let fp = unit.assaultFP[side] || 0;
+                let toHit = unit.assaultToHit[side] || 6;
                 if (unit.apWeapon === false && heavyArmourOnly[q]) {
                     outputCard.body.push(unit.name + " has no AP Weapons");
+                    outputCard.body.push("[hr]");
                     continue;
                 };
                 if (unit.Disrupted()) {
@@ -3262,7 +3264,8 @@ log("Sound: " + weapon.sound)
                 fp = Math.max(0,fp);
 
                 if (fp === 0) {
-                    outputCard.body.push(unit.name + " has No FP");
+                    outputCard.body.push(unit.nation + " " + unit.name + " has No FP");
+                    outputCard.body.push("[hr]");
                     continue;
                 };
 
@@ -3278,7 +3281,7 @@ log("Sound: " + weapon.sound)
                 assaultRolls.sort().reverse();
                 let tip = "Rolls: " + assaultRolls.toString() + " vs. " + toHit + "+" + "<br>Assault FP: " + fp + notes;
                 tip = '[' + hits + '](#" class="showtip" title="' + tip + ')';
-                outputCard.body.push(unit.name + " gets " + tip + " hits")
+                outputCard.body.push(unit.nation + " " + unit.name + " gets " + tip + " hits")
                 totalDamage[p] += hits;
                 outputCard.body.push("[hr]");
             };
@@ -3305,13 +3308,13 @@ log("Sound: " + weapon.sound)
                     hits += rem;
                 };
                 if (hex.improved === true && unit.type !== "Helicopter" && unit.player === defendingPlayer) {
-                    outputCard.body.push(unit.name + " - Imp. Positions");
+                    outputCard.body.push(unit.nation + " " + unit.name + " - Imp. Positions");
                     hits--
                 };
                 if (hits > 0) {
                     unit.ApplyDamage(hits);
                 } else {
-                    outputCard.body.push(unit.name + " - no Damage");
+                    outputCard.body.push(unit.nation + " " + unit.name + " - no Damage Taken");
                 };
                 if (Units[id] && Units[id].token) {
                     if (unit.player === defendingPlayer) {
@@ -3327,6 +3330,7 @@ log("Sound: " + weapon.sound)
             };
         };
         outputCard.body.push("[hr]");
+
         let blitz = false;
         let winningPlayer = totalDamage[0] > totalDamage[1] ? 0:totalDamage[0] < totalDamage[1] ? 1:2;
         if (defendersRemainFlag === false) {
