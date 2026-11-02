@@ -5,6 +5,7 @@
         let defendingPlayer = (attackingPlayer === 0) ? 1:0;
 
         let hex = HexMap[activeUnit.hexLabel];
+        
 
         let noInfantry = [true,true];
         let undisruptedDefenders = false;
