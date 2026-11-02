@@ -3161,10 +3161,6 @@ log("Sound: " + weapon.sound)
     
     }
         
-    //in movement - when move units into other hex then is an assault
-    //cant move a unit with no AP into a hex with a unit with AP - so flag that in movehex
-    //cant move a unit without an assault value or where assault = 0 into a hex (unless is HQ/Leader/Support) - in move hex
-    //could be a defender with no AP being attacked, its damage vs Heavy Armour will just 'bounce'
 
 
 //rewrite below 
