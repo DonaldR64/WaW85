@@ -935,7 +935,7 @@ log(weapons)
                 }
             }
 
-
+            log(this)
 
 
 
@@ -2043,11 +2043,9 @@ log(weapons)
             _subtype: "token",
             layer: "objects",
         })
-       
-
+    
         tokens.forEach((token) => {
             if (token.get("name").includes("Objective") === true) {return};
-    
 
             token.set({
                 name: "",
@@ -2096,7 +2094,7 @@ log(weapons)
 
 
 
-        //CleanMap("All");
+        CleanMap("All");
         BuildMap();
 
         sendChat("","Cleared State/Arrays");
@@ -2112,16 +2110,12 @@ log(weapons)
         _.each(mapTokenArray,token => {
             let id = token.get("id");
             if (token.get("status_dead") === true) {
-                let unit = Formations[id];
-                let hex = HexMap[unit.hexLabel];
-                if (unit) {delete Formations[id]};
                 token.remove();
-                ArrangeTokens(hex);
             }
         });
         if (type) {
             if (type === "All") {
-                list = []; //names of tokens to remove
+                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield"]; //names of tokens to remove
             } else {
                 list = [type];
             }
@@ -2952,12 +2946,12 @@ log("Checking " + unit.name);
 
         let ignores = ["Leader","HQ","Support","Artillery Token"];
         if (ignores.includes(target.type)) {return};
-        if (target.type === "Vehicle") {
+        if (target.armourType === "Heavy" ) {
             if (weapon.notes.includes("HROF") && losResult.distance > weapon.range) {
-                return "HROF can only affect Armour out to Effective Range";
+                return "HROF can only affect Heavy Armour out to Effective Range";
             }
             if (weapon.type === "HE" && weapon.notes.includes("HROF") === false) {
-                return "HE weapons cannot be used on this Unit";
+                return "HE weapons are ineffective vs. this target";
             }
         }
         if ((target.type === "Infantry" || target.type === "Towed") && weapon.type === "AP") {
@@ -4157,7 +4151,7 @@ log(weapon.sound)
                     let casUnit = Units[formation.unitIDs[0]];
                     casUnit.token.remove();
                     delete Units[casUnit.id]
-                    state.WaW.removeFormations.push(formation.id);
+                    state.WaW85.removeFormations.push(formation.id);
                     let index = Scenario.formations.indexOf(formation);
                     Scenario.formations.splice(index,1);
                 }
@@ -5210,11 +5204,11 @@ log(state.WaW85.playerIDs)
         if (roll === 1) {
             outputCard.body.push("The Strike achieves Surprise!");
             outputCard.body.push("Move the CAS unit to its target hex");
-            outputCard.body.push("Only one unit can do AA OppFire");
+            outputCard.body.push("No AA Fire/OppFire allowed");
         } else if (roll === 6) {
             outputCard.body.push("The Strike was Intercepted!");
             outputCard.body.push("The CAS Unit is Out of this game");
-            state.WaW.removeFormations.push(card.id);
+            state.WaW85.removeFormations.push(card.id);
             let index = Scenario.formations.indexOf(card);
             if (index > -1) {
                 Scenario.formations.splice(index,1);
@@ -5223,8 +5217,7 @@ log(state.WaW85.playerIDs)
             delete Units[casUnit.id]
         } else {
             outputCard.body.push("Move the CAS unit to its target hex");
-            outputCard.body.push("One unit may conduct AA OppFire");
-            outputCard.body.push("Two other units may contribute AA Fire (+1FP)");
+            outputCard.body.push("OppFire/AA Fire can be conducted by a single unit");
         }
         if (roll !== 6) {
             outputCard.body.push("If the CAS Unit survives any AA Fire, it may conduct an attack on every unit in the Hex, then fly off board");
