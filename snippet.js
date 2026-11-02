@@ -1,54 +1,24 @@
    const Assault = (msg) => {
-
-        let id = state.WaW85.activeUnitID;
-
-
-        let initial = Units[id];
-        if (!initial) {return};
-        let attackingPlayer = initial.player;
+        let activeUnit = Units[state.WaW85.activeUnitID];
+        let involved = [[],[]]
+        let attackingPlayer = activeUnit.player;
         let defendingPlayer = (attackingPlayer === 0) ? 1:0;
-        let involved = [[],[]];
-        let hex = HexMap[initial.hexLabel];
+
+        let hex = HexMap[activeUnit.hexLabel];
+
         let noInfantry = [true,true];
         let undisruptedDefenders = false;
         let crossRiver = false;
 
         for (let i=0;i<hex.tokenIDs.length;i++) {
-            let a = Units[hex.tokenIDs[i]];
-            a.token.set("aura1_color","#000000");
-            a.assaultDamage = 0;
-            a.assaultCB = 0;
-            if (a.type === "Infantry") {
-                noInfantry[a.player] === false;
-            }
-////needs rework due to change to group meaning            
-            if (a.group === "Support") {
-                //skip all support type, but get HQ bonus
-                if (a.type === "HQ") {
-                    Units[a.attachedID].assaultCB = a.commandBonus;
-                }
-                continue;
-            };
-            if (a.token.get("tint_color") !== "#ff0000" && a.player === defendingPlayer) {
-                undisruptedDefenders = true;
-            }
-            involved[a.player].push(a);
-            if (a.player === attackingPlayer) {
-                let edge = edgeCrossed(unit);
-                if (edge === "Bridge" || edge === "River") {
-                    crossRiver = true;                  
-                }
-            }
-            if (a.player === defendingPlayer && a.token.get("tint_color") !== "#ff0000") {
-                undisruptedDefenders = true;
-            }
+            let unit2 = Units[hex.tokenIDs[i]]; 
+            involved[unit2.player] = unit2;
         }
     
-
-        SetupCard("Assault","",initial.nation);
+        SetupCard("Assault","",attackers[0].nation);
         let output = [[],[]];
         let totalDamage = [0,0];
-
+/////
         for (let p=0;p<2;p++) {
             let q = (p===0) ? 1:0;
             for (let u=0;u<involved[p].length;u++) {
