@@ -2889,7 +2889,7 @@ log("Checking " + unit.name);
             }
 
             let damage = Math.max(0,hits-armourSaves-terrainSaves);
-            if (HexMap[target.hexLabel].improved === true && target.type !== "Aircraft" && target.type === "Helicopter") {
+            if (HexMap[target.hexLabel].improved === true && target.type !== "Aircraft" && target.type !== "Helicopter") {
                 outputCard.body.push("Improved Positions reduce Damage");
                 damage = Math.max(0,damage--);
             }
@@ -3161,225 +3161,203 @@ log("Sound: " + weapon.sound)
 
     
     }
-        
+            
 
-
-//rewrite below 
-    const Assault = (msg) => {
-        if (!msg.selected) {return}
-        let id = msg.selected[0]._id;
-        let initial = Units[id];
-        if (!initial) {return};
-        let attackingPlayer = initial.player;
-        let defendingPlayer = (attackingPlayer === 0) ? 1:0;
+    const Assault = () => {
+        let activeUnit = Units[state.WaW85.activeUnitID];
+        if (!activeUnit) {
+            sendChat("","No Active Unit");
+            return;
+        }
         let involved = [[],[]];
-        let hex = HexMap[initial.hexLabel];
+        let attackingPlayer = activeUnit.player;
+        let defendingPlayer = (attackingPlayer === 0) ? 1:0;
+
+        let hex = HexMap[activeUnit.hexLabel];
+        
         let noInfantry = [true,true];
-        let undisruptedDefenders = false;
-        let crossRiver = false;
+        let heavyArmourOnly = [true,true];
+        let crossBridge = false;
+
+        let city = (hex.terrain.includes("City") || hex.terrain.includes("Town")) ? true:false;
 
         for (let i=0;i<hex.tokenIDs.length;i++) {
-            let a = Units[hex.tokenIDs[i]];
-            a.token.set("aura1_color","#000000");
-            a.assaultDamage = 0;
-            a.assaultCB = 0;
-            if (a.type === "Infantry") {
-                noInfantry[a.player] === false;
-            }
-////needs rework due to change to group meaning            
-            if (a.group === "Support") {
-                //skip all support type, but get HQ bonus
-                if (a.type === "HQ") {
-                    Units[a.attachedID].assaultCB = a.commandBonus;
-                }
-                continue;
+            let unit2 = Units[hex.tokenIDs[i]]; 
+            involved[unit2.player] = unit2;
+            if (unit2.type === "Infantry") {
+                noInfantry[unit2.player] = false;
             };
-            if (a.token.get("tint_color") !== "#ff0000" && a.player === defendingPlayer) {
-                undisruptedDefenders = true;
-            }
-            involved[a.player].push(a);
-            if (a.player === attackingPlayer) {
-                let edge = edgeCrossed(unit);
-                if (edge === "Bridge" || edge === "River") {
-                    crossRiver = true;                  
-                }
-            }
-            if (a.player === defendingPlayer && a.token.get("tint_color") !== "#ff0000") {
-                undisruptedDefenders = true;
-            }
-        }
-    
+            if (unit2.armourType !== "Heavy") {
+                heavyArmourOnly[unit2.player] = false;
+            };
+            if (unit2.crossing === true) {
+                crossBridge = true;
+            };
+        };
 
-        SetupCard("Assault","",initial.nation);
-        let output = [[],[]];
+        if (involved[0].length === 0 || involved[1].length === 0) {
+            sendChat("","No Opposing Units");
+            return;
+        }
+
+
+        SetupCard("Assault","",attackers[0].nation);
         let totalDamage = [0,0];
 
-        for (let p=0;p<2;p++) {
+        //configure the for loop to go forwards if RedFor Assaulting, otherwise backwards (player 0 is RedFor)
+        let direction = -1;
+        if (attackingPlayer === 0) {
+            direction = 1;
+        };
+        let start = (direction === 1) ? 0 : 1;
+        let end = (direction === 1) ? 1 : 0;
+        outputCard.body.push("[B]Hits[/b]");
+        //go through each player, roll hits
+        for (let p=start; direction === 1 ? p <= end: p >= end; p += direction) {
             let q = (p===0) ? 1:0;
-            for (let u=0;u<involved[p].length;u++) {
-                let unit = involved[p][u];
-                let tips = "";
-                let fp = unit.assaultFP[0] || 0;
-                if (fp === 0) {continue};
-                let toHit = unit.assaultToHit[0];
-                if (unit.health === "Reduced") {
-                    fp = unit.assaultFP[1];
-                    toHit = unit.assaultToHit[1];
-                }
-                
-                let mods = 0;
-                let apFlag = false;
-                for (let w=0;w<unit.weapons.length;w++) {
-                    if (unit.weapons[w].type === "AP") {apFlag = true};
-                    if (unit.weapons[w].notes.includes("ATGM") && unit.token.get(SM.oom) === true) {
-                        apFlag = false;
-                    }
-                    if (unit.weapons[w].notes.includes("HROF")) {apFlag === true};
-                }
-
-                //13.1.1
-                if (unit.assaultCB > 0) {
-                    tips += "<br>HQ Command Bonus +" + unit.assaultCB;
-                    mods -= unit.assaultCB;
-                }
-                //13.1.2
-                if (unit.type === "Infantry" && noInfantry[q] === true) {
-                    mods--;
-                    tips += "<br>Infantry vs Unsupported Vehicle +1 to Hit";
-                    if (hex.terrain.includes("City")) {
-                        fp++;
-                        tips += "<br>Infantry vs Unsupported Vehicle in City +1 Dice";
-                    }
-                }
-                //13.1.3
-                if (undisruptedDefenders === true && crossRiver === true) {
-                    if (unit.player === attackingPlayer) {
-                        fp--;
-                        tips += "<br>Cross River/Bridge Assault -1 FP";
-                        mods++;
-                        tips += "<br>Cross River/Bridge Assault -1 to Hit";   
-                    }
-                    if (unit.player === defendingPlayer) {
-                        mods--;
-                        tips += "<br>Cross River/Bridge Assault +1 to Hit";   
-                    }
-                }
-
-                //13.1.4
-                if (state.WaW85.daytime === false && unit.token.get("tint_color") !== "#ff0000") {
-                    mods--;
-                    tips += "<br>Night Assault +1 to Hit";
-                }
-                toHit = Math.min(6,toHit + mods);
-                if (unit.token.get("tint_color") === "#ff0000") {
+            for (let i=0;i<involved[p].length;i++) {
+                let notes = "";
+                let unit = involved[p][i];
+                let fp = unit.assaultFP || 0;
+                let toHit = unit.assaultToHit || 6;
+                if (unit.apWeapon === false && heavyArmourOnly[q]) {
+                    outputCard.body.push(unit.name + " has no AP Weapons");
+                    continue;
+                };
+                if (unit.Disrupted()) {
+                    notes += "<br>Disrupted TH = 6";
                     toHit = 6;
-                    tips = "<br>Disrupted To Hit = 6";
-                }
-                let rolls = [];
-                let damage = 0;
-                for (let i=0;i<fp;i++) {
-                    let roll = randomInteger(6);
-                    rolls.push(roll);
-                    if (roll >= toHit) {
-                        damage++;
-                    }
-                }
-                let appliedDamage = 0;
-                dper = Math.floor(damage/involved[q].length);
-                _.each(involved[q],uni => {
-                    if (apFlag === true || uni.armourType !== "Heavy") {
-                        uni.assaultDamage = dper;
-                        totalDamage[p] += dper;
-                        appliedDamage += dper;
+                };
+                //13.1.1 HQ
+                let leaderInfo = unit.Leader();
+                if (leaderInfo.type === "HQ") {
+                    fp += leaderInfo.command;
+                    notes += "<br>HQ +" + leaderInfo.command + "FP";
+                };
+                //13.1.2 Vehicles with No Infantry
+                if (unit.type === "Infantry" && noInfantry[q] && unit.Disrupted() === false) {
+                    toHit--;
+                    notes += "<br>No Opposing Infantry -1 TH";
+                    if (city) {
+                        fp++;
+                        notes += "<br>In a City +1FP";
+                    };
+                };
+                //13.1.3 Cross Bridge or Cross River
+                if (crossBridge === true && unit.Disrupted() === false) {
+                    if (p === attackingPlayer) {
+                        toHit++;
+                        notes += "<br>Assault Crossing -1FP, +1TH";
                     } else {
-                        tips += "<br>" + uni.name + " unaffected by HE";
-                    }
-                })
-                rem = damage - (dper * involved[q].length);
-                if (rem === 1) {
-                    //will only occur if odd # of hits and even # of units taking hits
-                    let u = randomInteger(2);
-                    if (apFlag === true || involved[q][u].armourType !== "Heavy") {
-                        involved[q][u].assaultDamage++;
-                        totalDamage[p]++;
-                        appliedDamage++;
-                    }
-                }
+                        toHit--;
+                        notes += "<br>Defending Crossing -1TH";
+                    };
+                };
+                if (Scenario.night && unit.Disrupted() === false) {
+                    toHit--;
+                    notes += "<br>Night Time -1TH";
+                };
+                toHit = Math.min(toHit,6);
+                fp = Math.max(0,fp);
 
-                tips = "Rolls: " + rolls.toString() + " vs. " + toHit + "+" + tips;
-                tips = '[🎲](#" class="showtip" title="' + tips + ')';
-                let line = tips + " " + unit.name + " causes " + appliedDamage + " Damage";
-                output[unit.player].push(line);
-            }
+                if (fp === 0) {
+                    outputCard.body.push(unit.name + " has No FP");
+                    continue;
+                };
+
+                let assaultRolls = [];
+                let hits = 0;
+                for (let h=0;h<fp;h++) {
+                    let roll = randomInteger(6);
+                    assaultRolls.push(roll);
+                    if (roll >= toHit) {
+                        hits++;
+                    };
+                };
+                assaultRolls.sort().reverse();
+                let tip = "Rolls: " + assaultRolls.toString() + " vs. " + toHit + "+" + "<br>Assault FP: " + fp + notes;
+                tip = '[' + hits + '](#" class="showtip" title="' + tip + ')';
+                outputCard.body(unit.name + " gets " + tip + " hits")
+                totalDamage[p] += hits;
+                outputCard.body.push("[hr]");
+            };
+        };
+
+        outputCard.body.push("[hr]");
+        outputCard.body.push("[B]Damage[/b]")
+        outputCard.body.push("[hr]");
+
+        //now apply hits
+        let defendersRemainFlag = false;
+        let attackersRemainFlag = false;
+        let blitzFlag = false;
+        for (let p=start; direction === 1 ? p <= end: p >= end; p += direction) {
+            let q = (p==0) ? 1:0;
+            let rnd = randomInteger(6);
+            for (let i=0;i<involved[p].length;i++) {
+                let unit = involved[p][i];
+                let id = unit.id;
+                unit.SetReady(false);
+                let hits = Math.floor(totalDamage[q] / involved[p].length);
+                let rem = totalDamage[q] - (hits * involved[p].length);
+                if ((i===0 && rnd < 4) || (i===1 && rnd < 4)){
+                    hits += rem;
+                };
+                if (hex.improved === true && unit.type !== "Helicopter" && unit.player === defendingPlayer) {
+                    outputCard.body.push(unit.name + " - Imp. Positions");
+                    hits--
+                };
+                if (hits > 0) {
+                    unit.ApplyDamage(hits);
+                } else {
+                    outputCard.body.push(unit.name + " - no Damage");
+                };
+                if (Units[id] && Units[id].token) {
+                    if (unit.player === defendingPlayer) {
+                        defendersRemainFlag = true;
+                    } else {
+                        attackersRemainFlag = true;
+                        if (unit.Disrupted() === false && unit.type === "Vehicle") {
+                            blitzFlag = true;
+                        }
+                    };
+                };
+                outputCard.body.push("[hr]");
+            };
+        };
+        outputCard.body.push("[hr]");
+        let blitz = false;
+        let winningPlayer = totalDamage[0] > totalDamage[1] ? 0:totalDamage[0] < totalDamage[1] ? 1:2;
+        if (defendersRemainFlag === false) {
+            blitz = true;
+            outputCard.body.push("[#ff0000]Attacker's Win[/#]");
+            outputCard.body.push("[#ff0000]All Defenders Eliminated[/#]");
+        } else if (attackersRemainFlag === false) {
+            outputCard.body.push("[#ff0000]Defender's Win[/#]");
+            outputCard.body.push("[#ff0000]All Attackers Eliminated[/#]");
+        } else if (winningPlayer === defendingPlayer || winningPlayer === 2) {
+            outputCard.body.push("[#ff0000]Defender's Win[/#]");
+            outputCard.body.push("Surviving Attackers must retreat back to their last Hex");
+        } else {
+            outputCard.body.push("[#ff0000]Attacker's Win[/#]");
+            blitz = true;
+            outputCard.body.push("Surviving Defenders must retreat to one of the 3 hexes away from the hex side the attacker came in from");
+            outputCard.body.push("Subject to Stacking Limits, Prohibited Movement, Enemy-occupied Hexes or Hexes adjacent to Undisrupted Enemies with weapons");
+            outputCard.body.push("No Opp Fire is triggered");
+            outputCard.body.push("A unit unable to retreat is eliminated");
+        };
+        
+        if (blitz === true && blitzFlag === true) {
+            outputCard.body.push("Undisrupted Attacking Vehicles MAY move 1 more hex");
+            outputCard.body.push("This hex must be empty or friendly-occupied (stacking applies) and not Prohibited");
         }
 
-        //display attacks
-        outputCard.body.push("[U]Attacks[/u]");
-        for (let i=0;i<output[attackingPlayer].length;i++) {
-            outputCard.body.push(output[attackingPlayer][i]);
-        }
-        for (let i=0;i<output[defendingPlayer].length;i++) {
-            outputCard.body.push(output[defendingPlayer][i]);
-        }
-        //apply damage results and display while doing so
-        outputCard.body.push("[hr]");
-        outputCard.body.push("[U]Damage[/u]");
-        let attackersLeft = 0;
-        let advancingVehicles = [];
-        let defendersLeft = 0;
-        for (let i=0;i<involved[attackingPlayer].length;i++) {
-            let damage = involved[attackingPlayer][i].assaultDamage;
-            if (damage > 0) {
-                involved[attackingPlayer][i].ApplyDamage(damage,"Assault");
-            };
-            if (involved[attackingPlayer][i].health !== "Eliminated") {
-                attackersLeft++;
-                if (involved[attackingPlayer][i].type === "Vehicle" && involved[attackingPlayer][i].token.get("tint_color") !== "#ff0000") {
-                    advancingVehicles.push(involved[attackingPlayer][i].name);
-                }
-            }
-        }
-        for (let i=0;i<involved[defendingPlayer].length;i++) {
-            let damage = involved[defendingPlayer][i].assaultDamage;
-            if (hex.improved === true) {
-                outputCard.body.push("Improved Positions Protects " +involved[defendingPlayer][i].name);
-                damage--;
-            }
-            if (damage > 0) {
-                involved[defendingPlayer][i].ApplyDamage(damage,"Assault");
-            };
-            if (involved[defendingPlayer][i].health !== "Eliminated") {
-                defendersLeft++;
-            }
-        }
-        //final results
-        outputCard.body.push("[hr]");
-        outputCard.body.push("[U]Results[/u]");
-        let defendersLost = false;
-        if (defendersLeft === 0 && attackersLeft === 0) {
-            outputCard.body.push("No Survivors, Draw");
-        }
-        if (attackersLeft > 0 && defendersLeft > 0 && totalDamage[attackingPlayer] <= totalDamage[defendingPlayer]) {
-            outputCard.body.push("Surviving Attackers must retreat to their previous Hex");
-        }
-        if (defendersLeft > 0 && totalDamage[attackingPlayer] > totalDamage[defendingPlayer]) {
-            outputCard.body.push("Surviving Defenders must retreat 1 Hex (13.2.2)");
-            defendersLost = true;
-        }
-        if (defendersLeft === 0 && attackersLeft > 0) {
-            outputCard.body.push("The Attackers Take the Hex!");
-            defendersLost = true;
-        }
-        if (attackersLeft === 0 && defendersLeft > 0) {
-            outputCard.body.push("The Defenders Hold the Hex!");
-        }
-        if (defendersLost === true && advancingVehicles.length > 0) {
-            _.each(advancingVehicles,name => {
-                outputCard.body.push(name + " may advance into an adjacent Hex, subject to Rule 13.1.5");
-            })
-        }
         PrintCard();
-    }
+    };
+
+
+
+
 
 
 
@@ -5779,7 +5757,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 DirectFire(msg);
                 break;
             case '!RunAssault':
-                Assault(msg);
+                Assault();
                 break;
             case '!Activate':
                 Activate(msg);
