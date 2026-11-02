@@ -1,6 +1,8 @@
    const Assault = (msg) => {
-        if (!msg.selected) {return}
-        let id = msg.selected[0]._id;
+
+        let id = state.WaW85.activeUnitID;
+
+
         let initial = Units[id];
         if (!initial) {return};
         let attackingPlayer = initial.player;
