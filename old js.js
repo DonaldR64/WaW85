@@ -721,6 +721,16 @@ const WaW85 = (() => {
             smokeToken.remove();
         }
         BridgeCollapse() {
+            let dir = Object.keys(hex.edges).find(edge => edge === "Bridge");
+            //use dir to determine centre point
+            //create a marker on that point
+            //change edge on hex to be collapsed bridge 
+            //in buildmap also need to do this when see the marker on the map
+            //and in move hex, collapsed bridge means same as river for cost and movement and .crossing - done
+            //and in clearstate remove the marker - done
+
+
+
 
         }
         MinefieldDepletion() {
@@ -1891,7 +1901,7 @@ log(weapons)
         let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
 
         _.each(paths,path => {
-            let types = {"#0000ff": "River","#000000": "Bridge"};
+            let types = {"#0000ff": "River","#000000": "Bridge","#ff0000": "Collapsed Bridge"};
             let type = types[path.get("stroke").toLowerCase()];
             if (type) {
                 let vertices = translatePoly(path);
@@ -2124,7 +2134,7 @@ log(weapons)
         });
         if (type) {
             if (type === "All") {
-                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield","Move Marker"]; //names of tokens to remove
+                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield","Move Marker","Collapsed Bridge"]; //names of tokens to remove
             } else {
                 list = [type];
             }
@@ -5408,7 +5418,17 @@ log(state.WaW85.playerIDs)
             markerName = "Random Minefield";
             rotation = randomInteger(360);
         }
-
+        if (type === "Collapsed Bridge") {
+            img = "";
+            width = HexInfo.height/2;
+            height = 10;
+//change delta based on which edge
+            deltaLeft = 0;
+            deltaTop = 0;
+            markerName = "Collapsed Bridge";
+            rotation = 0
+//change rotation based on which edge - use cost for this
+        }
 
         if (type === "Rubble") {
             img = "https://files.d20.io/images/77961532/DcvUgeQt27Ip3NMDRhL2bQ/thumb.png?1554150576";
@@ -5574,8 +5594,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     cost = cost++;
                 }
                 //Rivers then Water
-                if (edge === "River") {
-    log("River")
+                if (edge === "River" || edge === "Collapsed Bridge") {
                     if (unit.special.includes("Amphibious")) {
                         cost = totalMove;
                     } else {
@@ -5583,7 +5602,6 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     }
                 }
                 if (endHex.terrain.includes("Water") && unit.special.includes("Amphibious")) {
-    log("Water / Amphibious")
                     cost = totalMove;
                 } 
                 //fire hexes
@@ -5591,7 +5609,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                     cost = 100;
                 }
                 //bridge or river crossing
-                if (edge === "Bridge" || edge === "River") {
+                if (edge.includes("Bridge") || edge === "River") {
                     unit.crossing = true;
                 } else {
                     unit.crossing = false;
