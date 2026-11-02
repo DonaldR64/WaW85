@@ -2539,7 +2539,12 @@ log(weapons)
             let id = selected._id;
             let unit = new Unit(id);
             let sides = unit.token.get("sides").split("|").length;
-            unit.token.set("bar1_value",sides);
+            unit.token.set({
+                bar1_value: sides,
+                disableSnapping: true,
+                disableTokenMenu: true,
+            })
+
             coreNum = Naming(unit,coreNum);
             AddAbilities(unit);
             UnitIDList.push(id);
