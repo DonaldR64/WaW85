@@ -3142,16 +3142,50 @@ log("Checking " + unit.name);
             return;
         }
     
+        //? Volley Fire
+        let volley = false;
+        let volleyUnit;
+
+        if (shooter.player === 0 && shooter.armourType === "Heavy" && shooter.type === "Vehicle" && shooter.id === state.WaW85.activeUnitID) {
+            let ids = HexMap[shooter.hexLabel].tokenIDs;
+            _.each(ids,id2 => {
+                let unit2 = Units[id2];
+                let targetHex = HexMap[target.hexLabel];
+                if (id2 !== shooter.id && unit2.formationID === shooter.formationID && unit2.Disrupted() === false && unit2.Ready() && unit2.armourType === "Heavy" && unit2.type === "Vehicle") {
+                    if (target.armourType === "Heavy" && target.type === "Vehicle") {
+                        volley = true;
+                        volleyUnit = unit2;
+                    }   
+                    if (targetHex.improved !== false) {
+                        volley = true;
+                        volleyUnit = unit2;
+                    }
+                    if (targetHex.defenseBonus["Troops"] > 0 && (target.type === "Infantry" || target.type === "Towed")) {
+                        volley = true;
+                        volleyUnit = unit2;
+                    }
+                    if (targetHex.defenseBonus["Vehicles"] > 0 && target.type === "Vehicle") {
+                        volley = true;
+                        volleyUnit = unit2;
+                    }
+                }
+            })
+        }
+
+
+        if (volley) {
+            outputCard.body.push("Volley Fire");
+            outputCard.body.push("[hr]");
+        }
+
         if (shooter.id !== state.WaW85.activeUnitID) {
             outputCard.body.push("Opp Fire");
             outputCard.body.push("[hr]");
         }
 
-        Attack(weapon,shooter,target);
+        Attack(weapon,shooter,target,volley);
 log("Sound: " + weapon.sound)
         PlaySound(weapon.sound);
-
-
 
         //missile ammo check
         if (weapon.notes.includes("ATGM") || weapon.notes.includes("SAM")) {
@@ -3176,11 +3210,12 @@ log("Sound: " + weapon.sound)
             shooter.SetReady(false);
             shooter.fired = true;
         }
+        if (volley) {
+            volleyUnit.SetReady(false);
+            volleyUnit.fired = true;
+        }
 
 
-
-
-    
     }
             
 
