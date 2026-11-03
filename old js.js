@@ -2765,13 +2765,13 @@ log("Checking " + unit.name);
         //10.6.10 Volley Fire
         if (volley === true) {
             fp++;
-            shooterTips.push("<br>Volley Fire +1 FP");
+            shooterTips += "<br>Volley Fire +1 FP";
         }
         //10.6.11 Target is a Landed Helicopter
         if (target.type === "Helicopter" && target.HeloStatus() === "Landed") {
             fp++;
             toHit--;
-            shooterTips.push("<br>Landed Helicopter -1TH & +1 FP");
+            shooterTips += "<br>Landed Helicopter -1TH & +1 FP";
         }
         //10.6.12 ATGM at a target in blocking terrain
         if (weapon.notes.includes("ATGM") && HexMap[target.hexLabel].los === "Blocks") {
