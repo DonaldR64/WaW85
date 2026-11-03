@@ -609,6 +609,7 @@ const WaW85 = (() => {
                 edges[DIRECTIONS[i]] = "Open";
             }
             this.edges = edges;
+            this.bridgeIDs = {}; //ref by direction, gives id of path
             this.terrain = "Clear";
 
 
@@ -721,17 +722,14 @@ const WaW85 = (() => {
             smokeToken.remove();
         }
         BridgeCollapse() {
-            let dir = Object.keys(hex.edges).find(edge => edge === "Bridge");
-            //use dir to determine centre point
-            //create a marker on that point
-            //change edge on hex to be collapsed bridge 
-            //in buildmap also need to do this when see the marker on the map
-            //and in move hex, collapsed bridge means same as river for cost and movement and .crossing - done
-            //and in clearstate remove the marker - done
-
-
-
-
+            let dir = Object.keys(this.edges).find(edge => edge === "Bridge");
+            CreateMarker(this,"Collapsed Bridge","map",dir);
+            this.edges[dir] = "Collapsed Bridge";
+            let bridgeID = this.bridgeIDs[dir];
+            let bridgePath = getObj("pathv2", bridgeID);
+            if (bridgePath) {
+                bridgePath.set("stroke","#ff0000");
+            }
         }
         MinefieldDepletion() {
             let minefieldToken = getObj("graphic",this.minefield);
@@ -1927,9 +1925,15 @@ log(weapons)
                         if (intersect) {
                             if (hex1.edges[DIRECTIONS[j]] !== "Bridge") {
                                 hex1.edges[DIRECTIONS[j]] = type;
+                                if (type === "Bridge") {
+                                    hex1.bridgeIDs[DIRECTIONS[j]] = path.get("id");
+                                }
                             }
                             if (hex2.edges[DIRECTIONS[k]] !== "Bridge") {
                                 hex2.edges[DIRECTIONS[k]] = type;
+                                if (type === "Bridge") {
+                                    hex2.bridgeIDs[DIRECTIONS[k]] = path.get("id");
+                                }                            
                             }
                         }
                     }
@@ -2108,10 +2112,13 @@ log(weapons)
             removeFormations: [], //ids of any formations no longer in game, mainly CAS
         }
     
-
-
-
-
+        //Collapsed Bridge to Bridge
+        let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
+        _.each(paths,path => {
+            if (path.get("stroke").toLowerCase() === "#ff0000") {
+                path.set("stroke","#000000");
+            }
+        })
 
         CleanMap("All");
         BuildMap();
@@ -5422,12 +5429,14 @@ log(state.WaW85.playerIDs)
             img = "https://files.d20.io/images/506243513/gEK1bAG5_Q-yUjoiVZX-2A/thumb.png?1793658390";
             width = 70;
             height = 20;
-//change delta based on which edge
-            deltaLeft = 0;
-            deltaTop = 0;
+
+            let deltas = {"North": [0,-35], "Northeast": [25,-25],"Southeast": [25,25], "South": [0,35], "Southwest": [-25,25],"Northwest": [-25,-25]};
+            let rotations = {"North": 0,"Northeast": 45, "Southeast": -45, "South": 0, "Southwest": 45, "Northwest": -45};
+
+            deltaLeft = deltas[cost][0];
+            deltaTop = deltas[cost][1];
             markerName = "Collapsed Bridge";
-            rotation = 0
-//change rotation based on which edge - use cost for this
+            rotation = rotations[cost];
         }
 
         if (type === "Rubble") {
