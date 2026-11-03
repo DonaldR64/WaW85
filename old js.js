@@ -1419,6 +1419,41 @@ log(weapons)
             return parentID;
         }
 
+        PlaceInHex(hex) {
+            let cX = hex.centre.x;
+            let cY = hex.centre.y;
+            let deltas = {
+                "1": [0,0],
+                "2": [[15,-15],[-15,15]],
+                "3": [[7,-20],[12,15],[-15,0]],
+                "4": [[0,-15],[15,0],[0,15],[-15,0]],
+            }
+
+            let number = hex.tokenIDs.length.toString();
+
+log("Number: " + number)
+log(hex.tokenIDs.length)
+log(deltas[number])
+
+            for (let i=0;i<hex.tokenIDs.length; i++) {
+                let x = cX + deltas[number][i][0] || cX;
+                let y = cY + deltas[number][i][1] || cY;
+                let id = hex.tokenIDs[i];
+                Units[id].token.set({
+                    left: x,
+                    top: y,
+                })
+            }
+        }
+
+
+
+
+
+
+
+
+
 
 
     }
@@ -5727,12 +5762,14 @@ log("Not Active, Distance > 1 or Remaining move === 0")
         unit.passUnloaded = false;
         unit.retreat = false;
         unit.hexLabel = endHex.label;
+        ChangeTokenIDs(unit,startHex.label,endHex.label);
+        unit.PlaceInHex(endHex);
+        /*
         unit.token.set({
             left: endHex.centre.x,
             top: endHex.centre.y,
         })
-
-        ChangeTokenIDs(unit,startHex.label,endHex.label);
+        */
         unit.MoveAttached();
         //minefields
         if (endHex.minefield !== false) {
