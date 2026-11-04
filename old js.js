@@ -176,7 +176,7 @@ const WaW85 = (() => {
                 "Ground": 0,
                 "Helo Landed": 0,
                 "Helo NOE": 0,
-                "Helo Hover": 1,
+                "Helo Hovering": 1,
                 "Helo Flying": 2,
                 "CAS": 2,    
             },
@@ -194,7 +194,7 @@ const WaW85 = (() => {
                 "Ground": 0,
                 "Helo Landed": false,
                 "Helo NOE": 0,
-                "Helo Hover": 1,
+                "Helo Hovering": 1,
                 "Helo Flying": 2,
                 "CAS": 2,    
             },
@@ -212,7 +212,7 @@ const WaW85 = (() => {
                 "Ground": 0,
                 "Helo Landed": false,
                 "Helo NOE": 1,
-                "Helo Hover": 2,
+                "Helo Hovering": 2,
                 "Helo Flying": 3,
                 "CAS": 3,    
             },
@@ -230,7 +230,7 @@ const WaW85 = (() => {
                 "Ground": 0,
                 "Helo Landed": false,
                 "Helo NOE": 1,
-                "Helo Hover": 2,
+                "Helo Hovering": 2,
                 "Helo Flying": 3,
                 "CAS": 3,    
             },
@@ -249,7 +249,7 @@ const WaW85 = (() => {
                 "Ground": 2,
                 "Helo Landed": 2,
                 "Helo NOE": 2,
-                "Helo Hover": 3,
+                "Helo Hovering": 3,
                 "Helo Flying": 4,
                 "CAS": 4,    
             },
@@ -269,7 +269,7 @@ const WaW85 = (() => {
                 "Ground": 3,
                 "Helo Landed": false,
                 "Helo NOE": 3,
-                "Helo Hover": 4,
+                "Helo Hovering": 4,
                 "Helo Flying": 5,
                 "CAS": 5,    
             },
@@ -288,7 +288,7 @@ const WaW85 = (() => {
                 "Ground": 2,
                 "Helo Landed": false,
                 "Helo NOE": 3,
-                "Helo Hover": 4,
+                "Helo Hovering": 4,
                 "Helo Flying": 5,
                 "CAS": 5,    
             },
@@ -307,7 +307,7 @@ const WaW85 = (() => {
                 "Ground": -1,
                 "Helo Landed": false,
                 "Helo NOE": 1,
-                "Helo Hover": 0,
+                "Helo Hovering": 0,
                 "Helo Flying": 1,
                 "CAS": 1,    
             },
@@ -630,7 +630,7 @@ const WaW85 = (() => {
                 "Ground": 0,
                 "Helo Landed": 0,
                 "Helo NOE": 0,
-                "Helo Hover": 1,
+                "Helo Hovering": 1,
                 "Helo Flying": 2,
                 "CAS": 2,    
             }
@@ -1109,7 +1109,8 @@ log(weapons)
 
 
         Ready() {
-            let ready = (this.token.get("aura1_color") === "#00ff00" || this.token.get("aura1_color") === "#ff00ff") ? true:false;
+            let aura = this.token.get("aura1_color");
+            let ready = (aura === "#00ffff" || aura === "#00ff00" || aura === "#ff00ff") ? true:false;
             if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
                 let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(this.id));
                 if (parentID) {
@@ -4346,7 +4347,7 @@ log(state.WaW85.playerIDs)
 
         SetupCard(formation.name,"Activation",formation.nation);
         let parentID = Object.keys(state.WaW85.attachedIDs).find(key => state.WaW85.attachedIDs[key].includes(hq.id));
-        if (!parentID) {
+        if (!parentID && hq.special.includes("Independent") === false) {
             parentID = hq.AutoAttach();
             if (!parentID) {
                 outputCard.body.push("Needs to be Attached to a Unit in Formation");
@@ -4461,7 +4462,7 @@ log(state.WaW85.playerIDs)
                         if (unit.special.includes("Recon")) {
                             ic = true;
                         }
-                        if (unit.special.includes("Helicopter")) {
+                        if (unit.special.includes("Independent")) {
                             ic = true;
                         }
                         if (ic === true) {
@@ -4763,7 +4764,6 @@ log(state.WaW85.playerIDs)
         let Tag = msg.content.split(";");
         let id = msg.selected[0]._id;
         let action = Tag[1];
-        let extra = Tag[2]; //helicopter mode or passengerID if Load
         let unit = Units[id];
         let errorMsg = [];
         RemoveMoveMarkers();
@@ -4785,14 +4785,14 @@ log(state.WaW85.playerIDs)
         if (unit.Disrupted() && action === "Assault") {
             errorMsg.push("Disrupted Units may not Assault");
         }
-        if (EventInfo === "Cautious Approach" && (action === "Direct Fire" || action === "Indirect Fire" || action === "Assault")) {
+        if (EventInfo === "Cautious Approach" && (action.includes("Fire") || action === "Assault")) {
             errorMsg.push("May not take this Action under a Cautious Approach Event")
         }
         if (EventInfo === "High Rate of Fire" && (action.includes("Move") || action === "Assault")) {
             errorMsg.push("May not take this Action under a High Rate of Fire Event")
         }
-        if (EventInfo === "High Speed Approach" && (action === "Direct Fire" || action === "Indirect Fire" || action === "Assault")) {
-            errorMsg.push("May not take this Action under a Cautious Approach Event")
+        if (EventInfo === "High Speed Approach" && action.includes("Move") === false) {
+            errorMsg.push("May not take this Action under a High Speed Approach Event")
         }
 
         state.WaW85.activeUnitID = unit.id;
@@ -4805,27 +4805,39 @@ log(state.WaW85.playerIDs)
             return;
         }
 
-        unit.token.SetCurrent();
+        unit.SetCurrent();
 
         if (unit.type === "Helicopter") {
             let oldMode = unit.HeloStatus();
-            if (oldMode !== extra) {
-                outputCard.body.push("Changing Flying Mode triggers Opp Fire");
+            let newMode;
+            if (action === "NOE Move") {newMode = "NOE"};
+            if (action.includes("Flying")) {newMode = "Flying"};
+            if (action === "Hover and Fire") {newMode = "Hovering"};
+            if (action.includes("Land")) {newMode = "Landed"};
+            if (oldMode !== newMode) {
+                outputCard.body.push("Changing Flying Mode can trigger Opp Fire");
             }
-            unit.SetHeloStatus(extra);
+            unit.SetHeloStatus(newMode);
         }
 
         unit.action = action;
 
         switch(action) {
             case 'Move':
-                Move(unit);
-                break;
+            case 'Flying Move':
+            case 'NOE Move':
+                Move(unit)
             case 'Move and Direct Fire':
+            case 'Flying Move and Fire':
                 Move(unit,"Fire");
                 break;
             case 'Direct Fire':
+            case 'Hover and Fire':
+            case 'Land and Fire':
                 outputCard.body.push("Unit may fire one Weapon");
+                break;
+            case 'Land':
+                outputCard.body.push("The Unit has Landed");
                 break;
             case 'Indirect Fire':
                 IndirectFire(unit);
@@ -5410,20 +5422,12 @@ log(state.WaW85.playerIDs)
             return;
         }
 
-        if (unit.type === "HQ") {
-            AddAbility("Activate Formation","!ActivateFormation",unit.charID);
+        if (unit.type === "HQ" || unit.special.includes("Independent"))  {
+            AddAbility("Formation","!ActivateFormation",unit.charID);
         }
         if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
             AddAbility("Attach","!Misc;Attach;@{target|Attach To|token_id}",unit.charID);
-        } else {
-            mode = "";
-            if (unit.type === "Helicopter") {
-                mode = ";?{Mode|Flying|NOE|Hovering}";
-                if (unit.special.includes("Transport")) {
-                    mode += "|Landed";
-                }
-                mode += "}";
-            }
+        } else if (unit.type !== "Helicopter") {
             let orders = "?{Order|Move";
             if (unit.weapons.length > 0) {
                 orders += "|Move and Direct Fire|Direct Fire";
@@ -5435,9 +5439,29 @@ log(state.WaW85.playerIDs)
                 orders += "|Assault"
             }
             orders += "}";
-            let action = "!Activate;" + orders + mode;
-            AddAbility("Activate",action,unit.charID);
+            action = "!Activate;" + orders;
+            AddAbility("Activate Unit",action,unit.charID);
+        } else if (unit.type === "Helicopter") {
+
+            let orders = "?{Order|NOE Move|Flying Move|Flying Move and Fire|Hover and Fire";
+            if (unit.special.includes("Transport")) {
+                orders += "|Land";
+                if (unit.weapons.length > 0) {
+                    orders += " and Fire";
+                }
+            }
+            orders += "}";
+            action = "!Activate;" + orders;
+
+
+
+            AddAbility("Activate Unit",action,unit.charID);
         }
+
+
+
+
+
 
         if (unit.special.includes("Transport")) {
             AddAbility("Load","!Misc;Load;@{target|Passenger|token_id}",unit.charID);
