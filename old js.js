@@ -1094,7 +1094,8 @@ log(weapons)
             }
         }
         Active() {
-            let active = (this.token.get("aura1_color") === "#00ff00") ? true:false;
+            let aura = this.token.get("aura1_color");
+            let active = (aura === "#00ff00" || aura === "#00ffff")  ? true:false;
             return active;
         }
         SetActive() {
@@ -1102,6 +1103,11 @@ log(weapons)
                 this.token.set("aura1_color","#00ff00");
             }
         }
+        SetCurrent() {
+            this.token.set("aura1_color","#00ffff");
+        }
+
+
         Ready() {
             let ready = (this.token.get("aura1_color") === "#00ff00" || this.token.get("aura1_color") === "#ff00ff") ? true:false;
             if (this.type === "Leader" || this.type === "HQ" || this.type === "Support") {
@@ -2611,6 +2617,9 @@ log(deltas[number])
                 disableSnapping: true,
                 disableTokenMenu: true,
             })
+            if (unit.type === "Helicopter") {
+                unit.token.set(SM.flying,true);
+            }
 
             coreNum = Naming(unit,coreNum);
             AddAbilities(unit);
@@ -4796,6 +4805,8 @@ log(state.WaW85.playerIDs)
             return;
         }
 
+        unit.token.SetCurrent();
+
         if (unit.type === "Helicopter") {
             let oldMode = unit.HeloStatus();
             if (oldMode !== extra) {
@@ -5821,7 +5832,7 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             log(unit.name + " moving")
             MoveHex(unit,prevHex,newHex);
         }
-        if (tok.get("height") !== prev.height || tok.get("width") !== prev.width && state.WaW85.turn > 0) {
+        if ((tok.get("height") !== prev.height || tok.get("width") !== prev.width) && state.WaW85.turn !== 0) {
             tok.set({
                 height: prev.height,
                 width: prev.width,
