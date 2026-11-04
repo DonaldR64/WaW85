@@ -996,7 +996,7 @@ log(weapons)
 
 
         SetDestroyed() {
-
+            if (this.type === "HQ") {return}; // ????
             let index = HexMap[this.hexLabel].tokenIDs.indexOf(this.id);
             if (index > -1) {
                 HexMap[this.hexLabel].tokenIDs.splice(index,1);
@@ -1018,14 +1018,24 @@ log(weapons)
             this.AttachedSupport("Destroyed");
             this.AttachedHQLeaders("Destroyed");
 
-            if (this.type !== "HQ" && this.type !== "Vehicle") {
-                if (this.type !== "Vehicle") {
-                    this.token.set("status_death",true);
-                    this.token.set("layer","map");
-                    toFront(this.token);
-                }
-                delete Unit[this.id];
+            let unitIDs = state.WaW85.formationInfo[this.formationID].unitIDs
+            index = unitIDs.indexOf(this.id);
+            if (index > -1) {
+                unitIDs.splice(index,1);
             }
+            state.WaW85.formationInfo[this.formationID].unitID = unitIDs;
+            if (unitIDs.length === 0) {
+                outputCard.body.push("[#ff0000]Formation Destroyed![/#]");
+                delete state.WaW85.formationInfo[this.formationID];
+                delete Scenario.formations[this.formationID];
+                state.WaW85.removeFormations.push(this.formationID);
+            }
+            if (this.type !== "Vehicle") {
+                this.token.set("status_death",true);
+                this.token.set("layer","map");
+                toFront(this.token);
+            }
+            delete Units[this.id];
         }
 
 
@@ -4308,6 +4318,7 @@ log(weapon.sound)
         }
         state.WaW85.activeFormationID = "";
         RemoveMoveMarkers();
+        CleanMap(); //no type so only removes dead
     }
 
     const ActivateFormation = (msg) => {
@@ -5398,7 +5409,7 @@ log(state.WaW85.playerIDs)
             if (unit.type === "Helicopter") {
                 mode = ";?{Mode|Flying|NOE|Hovering}";
                 if (unit.special.includes("Transport")) {
-                    mode += "|Landing";
+                    mode += "|Landed";
                 }
                 mode += "}";
             }
