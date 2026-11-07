@@ -1,7 +1,42 @@
 const ScenarioData = {
     "Scenario 1": {
+        maxTurns: 10,
+        initiativeFormation: 2,
+        designatedFormation: {},
+        eq: false,
+        eqAdvantage: "",
+        thirdEndOps: false,
+        night: false,
+        Red: "Soviet",
+        Blue: "US Army",
+        formations: {
+            1:{
+                id: 1,
+                name: "US 1/11th ACR",
+                hqName: "Charlie Co HQ",
+                morale: 7,
+                commandRange: [5,4],
+                nation: "US Army",
+                cards: 1,
+                type: "Formation",
+                opsDeck: true,
+                turnAvailable: 0,
+            },
+            2:{
+                id: 2,
+                name: "Soviet 1/15th GTR",
+                hqName: "1st Battalion HQ",
+                morale: 6,
+                commandRange: [4,3],
+                nation: "Soviet",
+                cards: 1,
+                type: "Formation",
+                opsDeck: true,
+                turnAvailable: 0,
+                reinforcementInfo: "", //just to note will use this to output the text in scenario book
+            }
 
-
+        }
     },
     "Scenario 2": {
         maxTurns: 11,
@@ -27,6 +62,7 @@ const ScenarioData = {
                 cards: 1,
                 type: "Formation",
                 opsDeck: true,
+                turnAvailable: 0,
             },
             2: {
                 //one artillery piece per formation
@@ -39,6 +75,7 @@ const ScenarioData = {
                 type: "Offboard Artillery",
                 opsDeck: false,
                 artTypes: ["HE","Smoke"],
+                turnAvailable: 0,
             },
             3: {
                 id: 3,
@@ -50,6 +87,7 @@ const ScenarioData = {
                 cards: 1,
                 type: "Formation",
                 opsDeck: true,
+                turnAvailable: 0,
             },
             //temp
             4: {
@@ -62,6 +100,7 @@ const ScenarioData = {
                 cards: 1,
                 type: "CAS",
                 opsDeck: true,
+                turnAvailable: 0,
             }
 
 

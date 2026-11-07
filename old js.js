@@ -3931,14 +3931,19 @@ log(weapon.sound)
     const CreateOpsDeck = (phase = "Start") => {
         let formations = Scenario.formations;
         let cards = [];
+        let turn = parseInt(state.WaW85.turn);
         _.each(formations,formation => {
-            if (formation.opsDeck === true) {
+            if (formation.opsDeck === true && turn >= formation.turnAvailable) {
                 for (let i=0;i<formation.cards;i++) {
                     cards.push(formation);
                 }
                 if (phase === "End" && state.WaW85.played.includes(formation.name) === false) {
                     state.WaW85.missed.push(formation.name);
                     outputCard.body.push(formation.name + " is Guaranteed to Activate");
+                    if (turn === formation.turnAvailable) {
+                        outputCard.body.push(formation.name + " enter as Reinforcements");
+                        outputCard.body.push(formation.reinforcementInfo);
+                    }
                 }
             }
         })
@@ -4753,6 +4758,10 @@ log(state.WaW85.playerIDs)
         //Victory Determination
         outputCard.body.push("Check Victory Conditions");
         
+
+
+
+
         state.WaW85.phase = "Operations";
         state.WaW85.endOps = 0;
         state.WaW85.turn++;
